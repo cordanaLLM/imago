@@ -1,0 +1,65 @@
+version: 1
+# cordanaLLM/imago canonical configuration manifest (praetor governance).
+# Target identity per the Aegis-OS connected stack contract; the GitHub
+# transfer from lusoris/lusoris-cloud-images is tracked in planning/plan.json.
+repository:
+    owner: cordanaLLM
+    name: imago
+    visibility: public
+    description: "Reusable OS image forge: hardened, hardware-accelerated cloud and bare-metal images built from a declarative version manifest, kernel artifacts consumed from nucleus"
+    homepage: "https://lusoris.github.io/lusoris-cloud-images"
+    topics:
+      - os-image
+      - packer
+      - cloud-init
+      - hardening
+      - hiss-16
+      - golusoris
+# Ed25519 Exit-0 receipt trust anchor (praetorctl gate keygen; private key
+# outside the repository at ~/.config/praetor/receipt.key or PRAETOR_RECEIPT_KEY).
+# Generated on the office workstation on 2026-09-15 so gates can mint receipts
+# here. The fleet anchor used by cordanaLLM/praetor, Aegis-OS and golusoris is
+# 213f9534a662075308e2087694985eff7590386760a19609b08437412b46e9d8; restore it
+# once that private key is available on the signing workstation.
+receipt:
+    public_key: "b0131beef6910ff40ff08643e3f4c3176f1e66d0f566ac309b8e08d9663e8c98"
+profiles:
+    - gitops-infra
+facets:
+    - security:high
+    - agent:sandboxed
+    - docs:seo-portal
+# Interim profile: no os-image archetype exists upstream yet. The proposal
+# lives in planning/archetypes/os-image.yaml; switch profiles once it ships.
+# Strictness only increases: the 60-line function bound matches docs/principles.md.
+overrides:
+    complexity:
+        max_cyclomatic: 10
+        max_cognitive: 10
+        max_func_loc: 60
+        max_statements: 30
+    branch_protection:
+        enforce_linear_history: true
+        require_signed_commits: true
+        required_approving_reviewers: 1
+        # Single maintainer today, as cordanaLLM/praetor and golusoris declare;
+        # restore independent review once a second maintainer or bot can approve.
+        review_mode: single_maintainer
+        dismiss_stale_reviews: true
+    supply_chain:
+        slsa_level: 3
+        enforce_cosign: true
+        require_sbom: true
+    ci:
+        diff_aware_filtering: true
+        skip_heavy_gates_on_docs_or_state: true
+# Framework capability demand declared towards golusoris (see .needs.yaml).
+needs:
+    required:
+        - clikit.cli
+        - mcp.server
+        - telemetry.logging
+        - time.clock
+    optional:
+        - config.yaml
+        - crypto.receipt

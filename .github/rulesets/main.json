@@ -1,0 +1,64 @@
+{
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "refs/heads/main",
+        "refs/heads/lts-*"
+      ]
+    }
+  },
+  "enforcement": "active",
+  "name": "praetor-main-protection",
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "required_linear_history"
+    },
+    {
+      "parameters": {
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": true,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 1,
+        "required_review_thread_resolution": true
+      },
+      "type": "pull_request"
+    },
+    {
+      "parameters": {
+        "required_status_checks": [
+          {
+            "context": "Detect Changed Paths"
+          },
+          {
+            "context": "Secret \u0026 Privacy Leak Scan"
+          },
+          {
+            "context": "CodeQL (${{ matrix.language }})"
+          },
+          {
+            "context": "Validate PR Milestone \u0026 Metadata"
+          },
+          {
+            "context": "required-checks"
+          },
+          {
+            "context": "Detect Security Scan Paths"
+          },
+          {
+            "context": "Gitleaks History Scan"
+          }
+        ],
+        "strict_required_status_checks_policy": true
+      },
+      "type": "required_status_checks"
+    }
+  ],
+  "target": "branch"
+}

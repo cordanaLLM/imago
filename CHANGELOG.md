@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Fleet migration to `cordanaLLM/imago` (ADR-0019): Go module `github.com/cordanaLLM/imago`, CLI and MCP server renamed to `imago`, praetor governance adopted with the interim `gitops-infra` profile, and a proposed `os-image` archetype under `planning/archetypes/`.
+- Golusoris core composition: `core/clikit` command tree, `core/log` logger, `core/clock` injected into the build dispatcher and staging guard, and `core/mcp` owning the MCP transport (stdio stdout-purity guard and streamable-HTTP).
+- Routed planning graph under `planning/` (praetor planning schema v1) with `imago plan validate`, `imago plan route`, and the `route_plan` MCP tool ranking ready work by (1 + transitive unblocks) / cost.
 - CloudNative immutable container host and Kubernetes node flavors (`cloudnative-generic`, `cloudnative-k8s`).
 - CNCF Storage appliance (`cloudnative-storage`) with NVMe-oF TCP, OpenZFS 2.3, iSCSI, and multipath support.
 - CloudNativePG database host flavor (`cloudnative-pg`) with strict memory overcommit and checkpoint dirty-ratio tuning.

@@ -6,11 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/mcp"
+	"github.com/golusoris/golusoris/core/clock"
+
+	"github.com/cordanaLLM/imago/pkg/mcp"
 )
 
 func BenchmarkStagerStage(b *testing.B) {
-	stager := mcp.NewStager()
+	stager := mcp.NewStager(clock.NewFake())
 	payload := map[string]any{"flavor": "base-generic", "backend": "local"}
 
 	b.ResetTimer()
@@ -22,7 +24,7 @@ func BenchmarkStagerStage(b *testing.B) {
 }
 
 func BenchmarkStagerGet(b *testing.B) {
-	stager := mcp.NewStager()
+	stager := mcp.NewStager(clock.NewFake())
 	payload := map[string]any{"flavor": "base-generic", "backend": "local"}
 	act := stager.Stage("trigger_build", "base-generic", payload, "Build local base-generic")
 
@@ -38,7 +40,7 @@ func BenchmarkStagerGet(b *testing.B) {
 }
 
 func BenchmarkStagerList(b *testing.B) {
-	stager := mcp.NewStager()
+	stager := mcp.NewStager(clock.NewFake())
 	payload := map[string]any{"flavor": "base-generic"}
 	for i := 0; i < 50; i++ {
 		stager.Stage("tool", fmt.Sprintf("target-%d", i), payload, "preview")
@@ -53,7 +55,7 @@ func BenchmarkStagerList(b *testing.B) {
 }
 
 func BenchmarkStagerPrune(b *testing.B) {
-	stager := mcp.NewStager()
+	stager := mcp.NewStager(clock.NewFake())
 	payload := map[string]any{"flavor": "base-generic"}
 	for i := 0; i < 100; i++ {
 		stager.Stage("tool", fmt.Sprintf("target-%d", i), payload, "preview")
@@ -68,7 +70,7 @@ func BenchmarkStagerPrune(b *testing.B) {
 }
 
 func BenchmarkStagerConcurrentParallel(b *testing.B) {
-	stager := mcp.NewStager()
+	stager := mcp.NewStager(clock.NewFake())
 	payload := map[string]any{"flavor": "k8s-node-cilium"}
 	act := stager.Stage("build", "k8s-node-cilium", payload, "Build")
 

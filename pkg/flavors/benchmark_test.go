@@ -4,7 +4,7 @@ package flavors_test
 import (
 	"testing"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/flavors"
+	"github.com/cordanaLLM/imago/pkg/flavors"
 )
 
 func BenchmarkGet(b *testing.B) {

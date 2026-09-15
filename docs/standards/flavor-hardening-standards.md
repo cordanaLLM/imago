@@ -1,6 +1,6 @@
 # Flavor-by-Flavor Hardening and Verification Standards
 
-`lusoris-cloud-images` defines explicit, verifiable hardening contracts for every workload tier and hardware stack across all 44 flavors. These contracts are machine-verifiable via `lusoris-forge standards [flavor]`, `lusoris-forge lint`, and the automated health audit suite.
+`lusoris-cloud-images` defines explicit, verifiable hardening contracts for every workload tier and hardware stack across all 44 flavors. These contracts are machine-verifiable via `imago standards [flavor]`, `imago lint`, and the automated health audit suite.
 
 ---
 

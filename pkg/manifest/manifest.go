@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -120,7 +121,7 @@ var (
 
 // Load reads and parses a versions.json file.
 func Load(path string) (*Manifest, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("manifest: read %s: %w", path, err)
 	}

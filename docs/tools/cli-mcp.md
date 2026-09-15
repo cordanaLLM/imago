@@ -1,12 +1,12 @@
-# Lusoris Forge: Unified CLI & AI Model Context Protocol (MCP) Server
+# Imago: Unified CLI & AI Model Context Protocol (MCP) Server
 
-`lusoris-forge` is the bleeding-edge Go 1.27 engineering CLI and official Model Context Protocol (MCP) server for `lusoris-cloud-images`. It unifies the 44-flavor catalog, cloud-init generator, multi-backend build dispatcher, imageless host provisioning, machine-verifiable hardening standards, and recurring Epics/Milestones lifecycle tracking.
+`imago` is the Go 1.27 engineering CLI and official Model Context Protocol (MCP) server of the image forge (`cordanaLLM/imago`, formerly `lusoris-cloud-images`). It unifies the 44-flavor catalog, cloud-init generator, multi-backend build dispatcher, imageless host provisioning, machine-verifiable hardening standards, recurring Epics/Milestones lifecycle tracking, and the routed planning graph. It is composed from [golusoris core](https://github.com/golusoris/golusoris): `core/clikit` builds the command tree, `core/log` provides the logger, `core/clock` supplies time, and `core/mcp` owns the MCP transport.
 
 ---
 
 ## 1. Architectural Principles
 
-1. **Stdout Purity & Framing Protection**: In `stdio` MCP transport mode, `lusoris-forge` pins genuine `os.Stdout` exclusively for JSON-RPC message framing. All internal runtime messages and third-party library writes are redirected through an OS-level pipe to `os.Stderr` via `lmittmann/tint`, preventing stream corruption.
+1. **Stdout Purity & Framing Protection**: In `stdio` MCP transport mode, golusoris `core/mcp` pins genuine `os.Stdout` exclusively for JSON-RPC message framing. All internal runtime messages and third-party library writes are redirected through an OS-level pipe to `os.Stderr`, preventing stream corruption. The guard lives in the framework; `imago` no longer carries its own copy.
 2. **Single Source of Truth (`versions.json`)**: Version extraction and semantic assertions are performed directly against `versions.json` and `.github/epics.json`.
 3. **Imageless Execution First**: Enables instant in-place host transformation or direct microVM kernel booting without requiring heavy disk imaging pipelines.
 4. **Power of 10 & SEI CERT Compliance**: Every Go function is constrained to $\le 60$ statements with strict error wrapping (`%w`), zero goroutine leaks, and bounded timeouts.
@@ -18,9 +18,9 @@ flowchart TD
     classDef mod fill:#7c3aed,stroke:#6d28d9,stroke-width:2px,color:#ffffff
     classDef exec fill:#059669,stroke:#047857,stroke-width:2px,color:#ffffff
 
-    subgraph CoreEngine["lusoris-forge Core Architecture (Go 1.27)"]
-        CLI["CLI Entrypoint<br/><small>cmd/lusoris-forge (spf13/cobra)</small>"]:::entry
-        MCP["MCP Server<br/><small>pkg/mcp (modelcontextprotocol/go-sdk)</small>"]:::entry
+    subgraph CoreEngine["imago Core Architecture (Go 1.27)"]
+        CLI["CLI Entrypoint<br/><small>cmd/imago (golusoris core/clikit)</small>"]:::entry
+        MCP["MCP Server<br/><small>pkg/mcp on golusoris core/mcp</small>"]:::entry
 
         subgraph Modules["Subsystem Packages"]
             Flavors["pkg/flavors<br/><small>44-Flavor Catalog</small>"]:::mod
@@ -30,6 +30,7 @@ flowchart TD
             Imageless["pkg/imageless<br/><small>In-Place & MicroVM</small>"]:::mod
             Standards["pkg/standards<br/><small>Hardening Profiles</small>"]:::mod
             Tracker["pkg/tracker<br/><small>Epics & Milestones</small>"]:::mod
+            Planning["pkg/planning<br/><small>Routed Planning Graph</small>"]:::mod
         end
 
         subgraph Execution["Execution Targets"]
@@ -58,52 +59,52 @@ flowchart TD
 ### 2.1 Flavor Catalog (`flavors`)
 ```bash
 # List all 44 production flavors across all 7 tiers
-lusoris-forge flavors list
+imago flavors list
 
 # Filter flavors by workload tier
-lusoris-forge flavors list --tier=kubernetes
-lusoris-forge flavors list --tier=homelab
+imago flavors list --tier=kubernetes
+imago flavors list --tier=homelab
 
 # Output machine-readable JSON
-lusoris-forge flavors list --json
+imago flavors list --json
 
 # Inspect exact specifications and provisioners for a flavor
-lusoris-forge flavors get appliance-vision-nvr
+imago flavors get appliance-vision-nvr
 ```
 
 ### 2.2 Version Manifest Verification (`manifest`)
 ```bash
 # Validate versions.json semantic invariants
-lusoris-forge manifest validate
+imago manifest validate
 ```
 
 ### 2.3 Hardened Cloud-Init Generation (`cloud-init`)
 Generates production-hardened `user-data` YAML with Anycast NTS, secure non-root users, and hypervisor optimizations:
 ```bash
 # Generate Proxmox cloud-init user-data
-lusoris-forge cloud-init generate --flavor=base-generic --hostname=node-01
+imago cloud-init generate --flavor=base-generic --hostname=node-01
 
 # Generate Unraid virtiofs user-data
-lusoris-forge cloud-init generate --flavor=docker-generic --platform=unraid
+imago cloud-init generate --flavor=docker-generic --platform=unraid
 
 # Generate TrueNAS SCALE NFS & VirtIO-SCSI discard user-data
-lusoris-forge cloud-init generate --flavor=docker-generic --platform=truenas
+imago cloud-init generate --flavor=docker-generic --platform=truenas
 
 # Generate Apple Silicon macOS UTM user-data
-lusoris-forge cloud-init generate --flavor=base-generic --platform=macos
+imago cloud-init generate --flavor=base-generic --platform=macos
 ```
 
 ### 2.4 Multi-Backend Build Dispatcher (`build`)
 Dispatches builds to local Packer or remote CI backends:
 ```bash
 # Formulate local packer build command
-lusoris-forge build --flavor=base-generic --backend=local
+imago build --flavor=base-generic --backend=local
 
 # Simulate dispatch to self-hosted Gitea / Forgejo Actions
-lusoris-forge build --flavor=k8s-node-cilium --backend=gitea --dry-run
+imago build --flavor=k8s-node-cilium --backend=gitea --dry-run
 
 # Trigger Proxmox VE template clone
-lusoris-forge build --flavor=cloudnative-storage --backend=proxmox
+imago build --flavor=cloudnative-storage --backend=proxmox
 ```
 
 Supported Backends: `local`, `gitea`, `proxmox`, `gitlab`, `woodpecker`, `harbor`, `minio`, `jenkins`, `github`.
@@ -112,63 +113,81 @@ Supported Backends: `local`, `gitea`, `proxmox`, `gitlab`, `woodpecker`, `harbor
 Transforms a running Linux machine or container directly into any of the 44 flavors without flashing virtual disks:
 ```bash
 # Dry-run inspection of provisioner steps
-lusoris-forge apply --flavor=ai-infer-nvidia --dry-run
+imago apply --flavor=ai-infer-nvidia --dry-run
 
 # Execute in-place flavor application
-lusoris-forge apply --flavor=docker-generic | sudo bash
+imago apply --flavor=docker-generic | sudo bash
 ```
 
 ### 2.6 MicroVM Direct Kernel Boot (`boot`)
 Generates direct kernel/initramfs boot commands for QEMU, Cloud-Hypervisor, or Firecracker:
 ```bash
-lusoris-forge boot --flavor=ai-infer-generic --kernel=/boot/vmlinuz --initrd=/boot/initrd.img
+imago boot --flavor=ai-infer-generic --kernel=/boot/vmlinuz --initrd=/boot/initrd.img
 ```
 
 ### 2.7 Machine-Verifiable Hardening Standards (`standards`)
 ```bash
 # List hardening baselines across all 44 flavors
-lusoris-forge standards list
+imago standards list
 
 # Output exact sysctl, package, and systemd requirements for a flavor
-lusoris-forge standards get k8s-node-cilium
+imago standards get k8s-node-cilium
 ```
 
 ### 2.8 Epics and Milestones Tracking (`epics`, `milestones`)
 ```bash
 # List tracked recurring operational epics
-lusoris-forge epics list
+imago epics list
 
 # List open release milestones and due dates
-lusoris-forge milestones list
+imago milestones list
 ```
 
-### 2.9 Static Analysis & Repository Health (`lint`, `audit`)
+### 2.9 Planning Graph Routing (`plan`)
+
+```bash
+# Validate planning/plan.json and planning/routing.json (schema, references, cycles, overlay coverage)
+imago plan validate
+
+# Rank every step: ready local work first, scored by (1 + transitive unblocks) / cost
+imago plan route
+
+# Ready set only, as JSON for agents and dashboards
+imago plan route --ready --json
+```
+
+See [Planning Graph & Todo Routing](planning-graph.md) for the file layout and the routing policy.
+
+### 2.10 Static Analysis & Repository Health (`lint`, `audit`)
 ```bash
 # Run internal schema and catalog linters
-lusoris-forge lint
+imago lint
 
 # Execute repository health audit script
-lusoris-forge audit
+imago audit
 ```
 
 ---
 
 ## 3. Model Context Protocol (MCP) Server Integration
 
-`lusoris-forge` exposes native AI tooling conforming to the Model Context Protocol v1.7.0.
+`imago` exposes native AI tooling conforming to the Model Context Protocol v1.7.0.
 
 ### 3.1 Launching the Server
 ```bash
 # Stdio transport (default for AI agents, Claude Desktop, Cursor)
-lusoris-forge mcp --transport=stdio
+imago mcp --transport=stdio
+
+# Streamable-HTTP transport (remote clients), served at /mcp
+imago mcp --transport=http --addr=:8899
 ```
 
 ### 3.2 Client Configuration Example (`claude_desktop_config.json`)
 ```json
 {
   "mcpServers": {
-    "lusoris-forge": {
-      "command": "/usr/local/bin/lusoris-forge",
+    "imago": {
+      "command": "/usr/local/bin/imago",
       "args": ["mcp", "--transport=stdio"]
     }
   }
@@ -192,12 +211,13 @@ lusoris-forge mcp --transport=stdio
 | **`list_staged_actions`** | None | List pending staged actions requiring operator confirmation |
 | **`confirm_action`** | `action_id` (string) | Confirm and execute a pending staged mutation |
 | **`discard_staged_action`** | `action_id` (string) | Discard and abort a pending staged mutation |
+| **`route_plan`** | `plan_path`, `routing_path` (optional, repository-relative), `ready_only` (bool) | Validate the planning graph and return steps ranked by (1 + transitive unblocks) / cost |
 
 ---
 
 ### 3.4 Two-Phase Staged Operations & Human-in-the-Loop Guardrails
 
-To prevent accidental execution of heavy or destructive tasks (e.g. running Packer image builds or triggering external CI jobs) by autonomous agents, `lusoris-forge` implements a **Two-Phase Mutation Guardrail** pattern inspired by OmniKube:
+To prevent accidental execution of heavy or destructive tasks (e.g. running Packer image builds or triggering external CI jobs) by autonomous agents, `imago` implements a **Two-Phase Mutation Guardrail** pattern inspired by OmniKube:
 
 1. **Staged Invocation**: When an agent calls `trigger_build` with `dry_run=false` and without `confirmed=true`, the MCP server does not immediately run the command. Instead, it registers a `StagedAction` in an in-memory thread-safe `Stager` store, generates a cryptographically random UUID (`action_id`), and returns a rich preview card:
    - Action ID and mutation description
@@ -218,7 +238,7 @@ sequenceDiagram
     autonumber
     actor Agent as AI Coding Agent (Claude / AGY / Cursor)
     participant PipeIn as OS Stdin (FD 0)
-    participant Forge as lusoris-forge MCP Server
+    participant Forge as imago MCP Server
     participant Stager as In-Memory Stager Store
     participant PipeRedirect as stdoutRedirect (OS Pipe)
     participant Stderr as OS Stderr (FD 2)

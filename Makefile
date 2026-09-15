@@ -45,8 +45,8 @@ lint-workflows: ## Run actionlint on GitHub Actions workflows
 lint-manifest: ## Validate versions.json against schema
 	@python3 -c "import json, jsonschema; jsonschema.validate(json.load(open('versions.json')), json.load(open('versions.schema.json')))"
 
-build-cli: ## Build Go 1.27 lusoris-forge CLI and MCP server
-	@go build -o bin/lusoris-forge ./cmd/lusoris-forge
+build-cli: ## Build Go 1.27 imago CLI and MCP server
+	@go build -o bin/imago ./cmd/imago
 
 test-go: ## Run Go unit test suite
 	@go test ./... -v
@@ -232,3 +232,18 @@ build-nvidia: build-docker-nvidia
 clean: ## Clean up local build artifacts and caches
 	@rm -rf output-images/ packer/packer_cache/ .pytest_cache/ site/
 	@echo "==> Build artifacts cleaned."
+
+# Praetor declared verification; existing project recipes remain unchanged.
+.PHONY: verify-all
+verify-all:
+	@standardsctl compile-context --verify
+	@standardsctl audit
+	@'go' 'build' '-v' './...'
+	@'go' 'test' '-v' '-race' './...'
+	@'python3' '-m' 'pytest'
+
+compile-context:
+	@standardsctl compile-context
+
+audit:
+	@standardsctl audit

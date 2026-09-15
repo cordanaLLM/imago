@@ -4,7 +4,7 @@ package cloudinit_test
 import (
 	"testing"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/cloudinit"
+	"github.com/cordanaLLM/imago/pkg/cloudinit"
 )
 
 func BenchmarkGenerateUserData(b *testing.B) {

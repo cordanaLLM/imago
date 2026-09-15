@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/manifest"
+	"github.com/cordanaLLM/imago/pkg/manifest"
 )
 
 func BenchmarkLoadActualVersionsJSON(b *testing.B) {

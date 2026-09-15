@@ -107,7 +107,7 @@ Cross-generation driver mixing or monolithic "universal" driver bloat is strictl
 1. **Multi-Language Power of 10 Contract**:
    - **Shell**: `set -euo pipefail`, functions $\le 60$ lines, bounded network/process execution (`timeout`, `curl --max-time`), zero ShellCheck warnings.
    - **Python**: Strict type annotations, test functions $\le 60$ lines, table-driven pytest execution, zero linter warnings.
-   - **Go 1.27**: Unified `lusoris-forge` CLI and official Model Context Protocol (MCP) server. Functions $\le 60$ statements, small interfaces ($\le 5$ methods), `stdoutRedirect` JSON-RPC framing protection, and `slog` exclusively to stderr.
+   - **Go 1.27**: Unified `imago` CLI and official Model Context Protocol (MCP) server. Functions $\le 60$ statements, small interfaces ($\le 5$ methods), `stdoutRedirect` JSON-RPC framing protection, and `slog` exclusively to stderr.
    - **HCL & YAML**: Declarative SSOT injection from `versions.json`, strict yamllint and actionlint compliance.
 2. **Automated Epics & Milestones Lifecycle**:
    - Machine-readable tracking catalogs in `.github/epics.json` and `.github/milestones.json`.

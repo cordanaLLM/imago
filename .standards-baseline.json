@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-15T08:17:18Z",
+  "repository": "",
+  "commit_sha": "",
+  "total_infractions": 1,
+  "infractions": [
+    {
+      "rule_id": "HISS-02",
+      "file_path": "scripts\\tunnel_hindsight.py",
+      "line_number": 53,
+      "message": "Legacy unbounded while True loop in Python",
+      "fingerprint": "scripts\\tunnel_hindsight.py:53:HISS-02"
+    }
+  ]
+}

@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/golusoris/golusoris/core/clock"
 )
 
 // StagedStatus represents the lifecycle state of a staged mutation action.
@@ -43,17 +45,17 @@ const MaxStagedCapacity = 1000
 type Stager struct {
 	mu      sync.RWMutex
 	actions map[string]*StagedAction
+	clock   clock.Clock
 }
 
-// NewStager constructs an initialized action stager.
-func NewStager() *Stager {
+// NewStager constructs an initialized action stager. The clock is injected
+// (golusoris core/clock) so TTL pruning is deterministic under test.
+func NewStager(c clock.Clock) *Stager {
 	return &Stager{
 		actions: make(map[string]*StagedAction),
+		clock:   c,
 	}
 }
-
-// DefaultStager is the package-level default stager instance.
-var DefaultStager = NewStager()
 
 // Stage registers a new action and returns its staged descriptor.
 func (s *Stager) Stage(tool, target string, payload map[string]any, preview string) *StagedAction {
@@ -64,7 +66,7 @@ func (s *Stager) Stage(tool, target string, payload map[string]any, preview stri
 		s.pruneLocked(DefaultStagingTTL)
 	}
 
-	id := generateActionID()
+	id := generateActionID(s.clock)
 	act := &StagedAction{
 		ID:        id,
 		Tool:      tool,
@@ -72,7 +74,7 @@ func (s *Stager) Stage(tool, target string, payload map[string]any, preview stri
 		Payload:   payload,
 		Preview:   preview,
 		Status:    StatusPending,
-		CreatedAt: time.Now().UTC(),
+		CreatedAt: s.clock.Now().UTC(),
 	}
 	s.actions[id] = act
 	return act
@@ -90,7 +92,7 @@ func (s *Stager) pruneLocked(maxAge time.Duration) int {
 	if maxAge <= 0 {
 		maxAge = DefaultStagingTTL
 	}
-	cutoff := time.Now().UTC().Add(-maxAge)
+	cutoff := s.clock.Now().UTC().Add(-maxAge)
 	pruned := 0
 	for id, act := range s.actions {
 		if act.CreatedAt.Before(cutoff) {
@@ -155,10 +157,10 @@ func (s *Stager) Discard(id string) error {
 	return nil
 }
 
-func generateActionID() string {
+func generateActionID(c clock.Clock) string {
 	b := make([]byte, 4)
 	if _, err := rand.Read(b); err != nil {
-		return fmt.Sprintf("act-%d", time.Now().UnixNano()%1000000)
+		return fmt.Sprintf("act-%d", c.Now().UnixNano()%1000000)
 	}
 	return fmt.Sprintf("act-%s", hex.EncodeToString(b))
 }

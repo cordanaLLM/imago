@@ -8,11 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/mcp"
+	"github.com/golusoris/golusoris/core/clock"
+
+	"github.com/cordanaLLM/imago/pkg/mcp"
 )
 
 func TestStagerLifecycle(t *testing.T) {
-	stager := mcp.NewStager()
+	stager := mcp.NewStager(clock.NewFake())
 	require.NotNil(t, stager)
 
 	// 1. Initial list empty
@@ -56,7 +58,7 @@ func TestStagerLifecycle(t *testing.T) {
 }
 
 func TestStagerErrors(t *testing.T) {
-	stager := mcp.NewStager()
+	stager := mcp.NewStager(clock.NewFake())
 
 	_, err := stager.Get("nonexistent-id")
 	assert.Error(t, err)
@@ -69,7 +71,8 @@ func TestStagerErrors(t *testing.T) {
 }
 
 func TestStagerPrune(t *testing.T) {
-	stager := mcp.NewStager()
+	fc := clock.NewFake()
+	stager := mcp.NewStager(fc)
 	payload := map[string]any{"test": true}
 
 	act := stager.Stage("test_tool", "target1", payload, "preview1")
@@ -80,9 +83,8 @@ func TestStagerPrune(t *testing.T) {
 	assert.Equal(t, 0, pruned)
 	assert.Len(t, stager.List(), 1)
 
-	// Pruning with 1 nanosecond (effectively anything in past)
-	// We simulate expiration by pruning with -1 ns offset or by sleeping 2ms with 1ms TTL
-	time.Sleep(2 * time.Millisecond)
+	// Boundary: advancing the injected clock exactly past the TTL expires the action.
+	fc.Advance(2 * time.Millisecond)
 	pruned = stager.Prune(1 * time.Millisecond)
 	assert.Equal(t, 1, pruned)
 	assert.Empty(t, stager.List())

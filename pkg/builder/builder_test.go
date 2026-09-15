@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/builder"
+	"github.com/golusoris/golusoris/core/clock"
+
+	"github.com/cordanaLLM/imago/pkg/builder"
 )
 
 func TestDispatchDryRun(t *testing.T) {
@@ -20,6 +22,7 @@ func TestDispatchDryRun(t *testing.T) {
 		Backend: builder.BackendLocal,
 		Flavor:  "base-generic",
 		DryRun:  true,
+		Clock:   clock.NewFake(),
 	}
 
 	res, err := builder.Dispatch(ctx, req)
@@ -33,11 +36,21 @@ func TestDispatchInvalidFlavor(t *testing.T) {
 	req := builder.Request{
 		Backend: builder.BackendLocal,
 		Flavor:  "invalid-flavor-name",
+		Clock:   clock.NewFake(),
 	}
 
 	_, err := builder.Dispatch(ctx, req)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid flavor")
+}
+
+func TestDispatchRequiresClock(t *testing.T) {
+	_, err := builder.Dispatch(context.Background(), builder.Request{
+		Backend: builder.BackendLocal,
+		Flavor:  "base-generic",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "clock is required")
 }
 
 func TestDispatchBackends(t *testing.T) {
@@ -58,6 +71,7 @@ func TestDispatchBackends(t *testing.T) {
 		req := builder.Request{
 			Backend: b,
 			Flavor:  "base-generic",
+			Clock:   clock.NewFake(),
 		}
 		res, err := builder.Dispatch(ctx, req)
 		require.NoError(t, err, "backend %s should succeed", b)

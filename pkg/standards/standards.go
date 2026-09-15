@@ -6,7 +6,7 @@ package standards
 import (
 	"strings"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/flavors"
+	"github.com/cordanaLLM/imago/pkg/flavors"
 )
 
 // Standard describes the hardening and verification requirements for a flavor.

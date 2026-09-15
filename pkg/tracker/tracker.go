@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -43,7 +44,7 @@ var (
 
 // LoadEpics parses an epics catalog JSON file.
 func LoadEpics(path string) ([]Epic, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("tracker: read epics %s: %w", path, err)
 	}
@@ -56,7 +57,7 @@ func LoadEpics(path string) ([]Epic, error) {
 
 // LoadMilestones parses a milestones catalog JSON file.
 func LoadMilestones(path string) ([]Milestone, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("tracker: read milestones %s: %w", path, err)
 	}

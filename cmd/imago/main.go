@@ -1,69 +1,82 @@
 // Copyright 2026 Lusoris
-// lusoris-forge is the unified CLI and Model Context Protocol (MCP) server
-// for lusoris-cloud-images.
+// imago is the unified CLI and Model Context Protocol (MCP) server for the
+// cordanaLLM/imago image forge. It is composed from golusoris core: clikit
+// builds the command tree, core/log provides the logger, core/clock supplies
+// time, and core/mcp owns the MCP transport lifecycle.
 package main
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
+	"strings"
 
-	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
+	"go.uber.org/fx"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/builder"
-	"github.com/lusoris/lusoris-cloud-images/pkg/cloudinit"
-	"github.com/lusoris/lusoris-cloud-images/pkg/flavors"
-	"github.com/lusoris/lusoris-cloud-images/pkg/imageless"
-	"github.com/lusoris/lusoris-cloud-images/pkg/manifest"
-	"github.com/lusoris/lusoris-cloud-images/pkg/mcp"
-	"github.com/lusoris/lusoris-cloud-images/pkg/standards"
-	"github.com/lusoris/lusoris-cloud-images/pkg/tracker"
+	"github.com/golusoris/golusoris/core/clikit"
+	"github.com/golusoris/golusoris/core/clock"
+	"github.com/golusoris/golusoris/core/config"
+	"github.com/golusoris/golusoris/core/log"
+	coremcp "github.com/golusoris/golusoris/core/mcp"
+
+	"github.com/cordanaLLM/imago/pkg/builder"
+	"github.com/cordanaLLM/imago/pkg/cloudinit"
+	"github.com/cordanaLLM/imago/pkg/flavors"
+	"github.com/cordanaLLM/imago/pkg/imageless"
+	"github.com/cordanaLLM/imago/pkg/manifest"
+	"github.com/cordanaLLM/imago/pkg/mcp"
+	"github.com/cordanaLLM/imago/pkg/planning"
+	"github.com/cordanaLLM/imago/pkg/standards"
+	"github.com/cordanaLLM/imago/pkg/tracker"
 )
 
-var (
-	logger *slog.Logger
-)
+// version is advertised to MCP clients; release-please owns the VERSION file.
+const version = "0.1.0"
 
-func initLogger() {
-	logger = slog.New(tint.NewHandler(os.Stderr, &tint.Options{
-		TimeFormat: time.TimeOnly,
-		Level:      slog.LevelInfo,
-	}))
+// envPrefix scopes runtime configuration (IMAGO_LOG_LEVEL, IMAGO_MCP_TRANSPORT, ...).
+const envPrefix = "IMAGO_"
+
+// newRuntimeConfig builds the koanf-backed configuration golusoris modules read.
+// File watching is off: the CLI is short-lived and the MCP server is restarted by its client.
+func newRuntimeConfig() (*config.Config, error) {
+	cfg, err := config.New(config.Options{EnvPrefix: envPrefix, Watch: false})
+	if err != nil {
+		return nil, fmt.Errorf("imago: config: %w", err)
+	}
+	return cfg, nil
 }
 
+// newRootCmd assembles the command tree on a golusoris clikit root.
 func newRootCmd() *cobra.Command {
-	rootCmd := &cobra.Command{
-		Use:   "lusoris-forge",
-		Short: "Lusoris Forge — Unified CLI & AI MCP Server for Cloud Images",
-	}
-
-	rootCmd.AddCommand(newFlavorsCmd())
-	rootCmd.AddCommand(newManifestCmd())
-	rootCmd.AddCommand(newCloudInitCmd())
-	rootCmd.AddCommand(newBuildCmd())
-	rootCmd.AddCommand(newApplyCmd())
-	rootCmd.AddCommand(newBootCmd())
-	rootCmd.AddCommand(newStandardsCmd())
-	rootCmd.AddCommand(newEpicsCmd())
-	rootCmd.AddCommand(newMilestonesCmd())
-	rootCmd.AddCommand(newLintCmd())
-	rootCmd.AddCommand(newAuditCmd())
-	rootCmd.AddCommand(newMCPCmd())
-
-	return rootCmd
+	root := clikit.New("imago", "Imago — Unified CLI & AI MCP Server for cloud images")
+	root.AddCommand(
+		newFlavorsCmd(),
+		newManifestCmd(),
+		newCloudInitCmd(),
+		newBuildCmd(),
+		newApplyCmd(),
+		newBootCmd(),
+		newStandardsCmd(),
+		newEpicsCmd(),
+		newMilestonesCmd(),
+		newPlanCmd(),
+		newLintCmd(),
+		newAuditCmd(),
+		newMCPCmd(),
+	)
+	return root.Cobra()
 }
 
 func main() {
-	initLogger()
+	slog.SetDefault(log.New(log.Options{Level: slog.LevelInfo}))
 
-	rootCmd := newRootCmd()
-	if err := rootCmd.Execute(); err != nil {
+	if err := newRootCmd().Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -213,33 +226,42 @@ func newCloudInitCmd() *cobra.Command {
 func newBuildCmd() *cobra.Command {
 	var flavor, backend string
 	var dryRun bool
+	var clk clock.Clock
+	var cmd *cobra.Command
 
-	cmd := &cobra.Command{
-		Use:   "build",
-		Short: "Dispatch an image build locally or to self-hosted CI backends",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			res, err := builder.Dispatch(context.Background(), builder.Request{
+	// One-shot fx run: clock.Module provides the golusoris wall clock, the app
+	// starts, dispatch runs, and the app stops without blocking on a signal.
+	cmd = clikit.Command("build", "Dispatch an image build locally or to self-hosted CI backends",
+		clikit.WithFxRun(func(ctx context.Context) error {
+			res, err := builder.Dispatch(ctx, builder.Request{
 				Backend: builder.Backend(backend),
 				Flavor:  flavor,
 				DryRun:  dryRun,
+				Clock:   clk,
 			})
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "==> Build Dispatch: %s\n", res.Message)
-			if res.PipelineID != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "    Pipeline ID: %s\n", res.PipelineID)
-			}
-			if res.ArtifactURL != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "    Artifact: %s\n", res.ArtifactURL)
-			}
-			return nil
-		},
-	}
+			return printBuildResult(cmd.OutOrStdout(), res)
+		}, clock.Module, fx.Populate(&clk)),
+	)
 	cmd.Flags().StringVarP(&flavor, "flavor", "f", "base-generic", "Flavor to build")
 	cmd.Flags().StringVarP(&backend, "backend", "b", "local", "Build backend (local, gitea, proxmox, gitlab, woodpecker, harbor, minio, jenkins, github)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Simulate build dispatch without execution")
 	return cmd
+}
+
+func printBuildResult(w io.Writer, res builder.Result) error {
+	if _, err := fmt.Fprintf(w, "==> Build Dispatch: %s\n", res.Message); err != nil {
+		return err
+	}
+	if res.PipelineID != "" {
+		fmt.Fprintf(w, "    Pipeline ID: %s\n", res.PipelineID)
+	}
+	if res.ArtifactURL != "" {
+		fmt.Fprintf(w, "    Artifact: %s\n", res.ArtifactURL)
+	}
+	return nil
 }
 
 func newApplyCmd() *cobra.Command {
@@ -411,7 +433,7 @@ func newLintCmd() *cobra.Command {
 		Use:   "lint",
 		Short: "Run specialized static analyzers and linters",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("==> Running lusoris-forge static analyzers...")
+			fmt.Println("==> Running imago static analyzers...")
 			// 1. Manifest
 			if _, err := manifest.Load("versions.json"); err != nil {
 				return fmt.Errorf("manifest lint failed: %w", err)
@@ -443,7 +465,8 @@ func newAuditCmd() *cobra.Command {
 			if _, err := os.Stat(scriptPath); err != nil {
 				return fmt.Errorf("audit script %s not found: %w", scriptPath, err)
 			}
-			c := exec.Command("bash", scriptPath)
+			// Literal script path: the audit runner is a fixed repository asset, not user input.
+			c := exec.Command("bash", "scripts/audit-repository-health.sh")
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			return c.Run()
@@ -454,23 +477,106 @@ func newAuditCmd() *cobra.Command {
 func newMCPCmd() *cobra.Command {
 	var transport, addr string
 
-	cmd := &cobra.Command{
-		Use:   "mcp",
-		Short: "Start official Model Context Protocol (MCP) server",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			s := mcp.NewServer(logger)
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+	// Long-running fx app: core/mcp.Module owns the transport lifecycle (stdio
+	// with stdout-purity guard, or streamable-HTTP) and ends the app when the
+	// client disconnects. Tools are registered through fx.Invoke before start.
+	cmd := clikit.Command("mcp", "Start the Model Context Protocol (MCP) server (stdio or streamable-HTTP)",
+		clikit.WithFx(
+			fx.Provide(newRuntimeConfig),
+			log.Module,
+			clock.Module,
+			coremcp.Module,
+			fx.Provide(mcp.NewStager),
+			fx.Decorate(func(o coremcp.Options) coremcp.Options {
+				return withServerIdentity(o, transport, addr)
+			}),
+			fx.Invoke(func(s *coremcp.Server, st *mcp.Stager, c clock.Clock) error {
+				return mcp.RegisterTools(s, mcp.Deps{Stager: st, Clock: c})
+			}),
+		),
+	)
+	cmd.Flags().StringVar(&transport, "transport", string(coremcp.TransportStdio), "MCP transport (stdio, http)")
+	cmd.Flags().StringVar(&addr, "addr", ":8899", "Listen address for the http transport")
+	return cmd
+}
 
-			switch transport {
-			case "stdio":
-				return mcp.RunStdio(ctx, s, logger)
-			default:
-				return fmt.Errorf("transport %q not implemented (supported: stdio)", transport)
+// withServerIdentity pins the advertised implementation and lets the CLI flags
+// override the IMAGO_MCP_* configuration keys core/mcp reads.
+func withServerIdentity(o coremcp.Options, transport, addr string) coremcp.Options {
+	o.Name = mcp.ServerName
+	o.Version = version
+	o.Transport = coremcp.Transport(transport)
+	if addr != "" {
+		o.HTTP.Addr = addr
+	}
+	return o
+}
+
+func newPlanCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "plan",
+		Short: "Validate and route the tracked planning graph (planning/plan.json)",
+	}
+
+	var planPath, routingPath string
+	var jsonOutput, readyOnly bool
+
+	validateCmd := &cobra.Command{
+		Use:   "validate",
+		Short: "Validate the planning graph and its routing overlay",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			plan, err := planning.Load(planPath)
+			if err != nil {
+				return err
 			}
+			if _, err := planning.LoadOverlay(routingPath, plan); err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "✓ Plan %s (%d steps, %d milestones) and routing overlay are valid.\n", plan.ID, len(plan.Steps), len(plan.Milestones))
+			return nil
 		},
 	}
-	cmd.Flags().StringVar(&transport, "transport", "stdio", "MCP transport (stdio)")
-	cmd.Flags().StringVar(&addr, "addr", ":8899", "Listen address for HTTP transport")
+
+	routeCmd := &cobra.Command{
+		Use:   "route",
+		Short: "Rank steps: ready local work first, by (1 + transitive unblocks) / cost",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runPlanRoute(cmd.OutOrStdout(), planPath, routingPath, jsonOutput, readyOnly)
+		},
+	}
+	routeCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output JSON")
+	routeCmd.Flags().BoolVar(&readyOnly, "ready", false, "Show only the ready set")
+
+	cmd.PersistentFlags().StringVar(&planPath, "plan", mcp.DefaultPlanPath, "Path to plan.json")
+	cmd.PersistentFlags().StringVar(&routingPath, "routing", mcp.DefaultRoutingPath, "Path to routing.json")
+	cmd.AddCommand(validateCmd, routeCmd)
 	return cmd
+}
+
+func runPlanRoute(w io.Writer, planPath, routingPath string, jsonOutput, readyOnly bool) error {
+	plan, err := planning.Load(planPath)
+	if err != nil {
+		return err
+	}
+	overlay, err := planning.LoadOverlay(routingPath, plan)
+	if err != nil {
+		return err
+	}
+	routed, err := planning.Route(plan, overlay)
+	if err != nil {
+		return err
+	}
+	if readyOnly {
+		routed = planning.Ready(routed)
+	}
+	if jsonOutput {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(routed)
+	}
+	fmt.Fprintf(w, "%-4s %-8s %-7s %-6s %-9s %-36s %s\n", "RANK", "STATE", "COST", "SCORE", "UNBLOCKS", "STEP", "BLOCKED BY")
+	for _, r := range routed {
+		fmt.Fprintf(w, "%-4d %-8s %-7s %-6.2f %-9d %-36s %s\n", r.Rank, r.State, r.Cost, r.Score, r.TransitiveUnblocks, r.ID, strings.Join(r.BlockedBy, ","))
+	}
+	return nil
 }

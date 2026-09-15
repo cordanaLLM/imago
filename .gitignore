@@ -45,9 +45,11 @@ site/
 .workingdir/
 .workingdir2/
 .agyfleet/
-.claude/
+.claude/*
+!.claude/agents/
 
 # Go build binaries
 bin/
-/lusoris-forge
+/imago
 
+/.workingdir/

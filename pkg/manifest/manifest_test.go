@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/manifest"
+	"github.com/cordanaLLM/imago/pkg/manifest"
 )
 
 func validTestManifest() *manifest.Manifest {

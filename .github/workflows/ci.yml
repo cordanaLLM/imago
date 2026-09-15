@@ -128,8 +128,8 @@ jobs:
           check-latest: true
       - name: Run Go Unit Tests
         run: go test ./... -v
-      - name: Compile lusoris-forge
-        run: go build -o bin/lusoris-forge ./cmd/lusoris-forge
+      - name: Compile imago
+        run: go build -o bin/imago ./cmd/imago
 
   test-python:
     name: Pytest Verification Suite
