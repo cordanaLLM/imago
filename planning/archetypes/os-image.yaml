@@ -1,7 +1,11 @@
-# Proposed praetor archetype for OS image forges (Packer, mkosi, kernel and
-# provisioner pipelines). Drafted in cordanaLLM/imago for upstream adoption in
-# cordanaLLM/praetor (.config/archetypes/os-image.yaml). Until praetor ships
-# it, the repository declares the interim profile "gitops-infra".
+# ACCEPTED UPSTREAM. Praetor ships this archetype as of praetor#54, and this
+# repository now declares it: see .standards.yaml and the vendored catalog entry
+# at .config/archetypes/os-image.yaml, which is authoritative.
+#
+# This file is retained as the recorded output of step-archetype-draft, not as a
+# live definition. Praetor widened the name and description to cover kernel and
+# UKI forges as well as image forges, so that cordanaLLM/nucleus shares the
+# profile; every other field was adopted from this draft unchanged.
 #
 # Schema: praetor profile definition (docs/guides/archetype-authoring.md).
 # Complexity bounds follow the Holzmann Power of 10 adaptation this repository

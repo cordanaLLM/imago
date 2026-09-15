@@ -10,7 +10,7 @@ The migration to `cordanaLLM/imago` is tracked as a typed dependency graph under
 | `planning/TODO.md`, `ROADMAP.md`, `MILESTONES.md` | Generated projections | Rendered by `praetorctl planning prepare`; cross-linked by stable IDs and the plan digest. Never edited by hand. |
 | `planning/routing.json` | Routing overlay | Per-step cost class, completion, owner, and the flags that push work behind local steps (`needs_external_contract`, `needs_hardware`). |
 | `planning/DECISIONS.md` | Planning source | Operator decisions the plan cites by hash; changing a decision invalidates the dependent draft. |
-| `planning/archetypes/os-image.yaml` | Upstream proposal | The praetor archetype this repository declares once praetor ships it. |
+| `planning/archetypes/os-image.yaml` | Recorded draft | The archetype proposed upstream and accepted in praetor#54. Retained as the output of `step-archetype-draft`; the authoritative copy is the vendored `.config/archetypes/os-image.yaml`. |
 
 ```mermaid
 flowchart LR

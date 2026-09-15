@@ -1,11 +1,11 @@
 version: 1
 pinned_version: v1.0.0
-digest: sha256:61a7e7f30a198ea70c17bb1c13da61857e404170700b8498cb08d9bfe0dcac1b
+digest: sha256:52224a6da9330c5d983feddb9d51227578f18a54c02a1040d0665416c7f94128
 generated_at: ""
 profiles:
-    - id: gitops-infra
+    - id: os-image
       version: v1.0.0
-      digest: sha256:cf4e44806b73f90a85179739a52e20927ae443cf1732114e9b9652a10ce1ca8c
+      digest: sha256:236ba3a1bb7dcdde43e86a46cb49dd935ef8070ecd39584045510df842ff136f
 facets:
     - id: security:high
       version: v1.0.0

@@ -24,13 +24,11 @@ repository:
 receipt:
     public_key: "b0131beef6910ff40ff08643e3f4c3176f1e66d0f566ac309b8e08d9663e8c98"
 profiles:
-    - gitops-infra
+    - os-image
 facets:
     - security:high
     - agent:sandboxed
     - docs:seo-portal
-# Interim profile: no os-image archetype exists upstream yet. The proposal
-# lives in planning/archetypes/os-image.yaml; switch profiles once it ships.
 # Strictness only increases: the 60-line function bound matches docs/principles.md.
 overrides:
     complexity:
