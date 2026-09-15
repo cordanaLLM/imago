@@ -114,6 +114,7 @@ nav:
       - "0016: Hypervisor & Image Runtime Optimizations": adr/0016-hypervisor-and-image-runtime-optimizations.md
       - "0017: Developer Workstations, Single-Node K8s & Orchestration": adr/0017-developer-workstations-single-node-k8s-and-orchestration-expansion.md
       - "0019: Fleet Migration to cordanaLLM/imago": adr/0019-imago-fleet-migration-praetor-golusoris-planning-graph.md
+      - "0020: Aegis Product-Input Contract Acceptance": adr/0020-aegis-product-input-contract-acceptance.md
       - "0018: NAS & Storage Appliance Ecosystem": adr/0018-nas-and-storage-appliance-ecosystem.md
   - Engineering & Governance:
       - Engineering Principles: principles.md

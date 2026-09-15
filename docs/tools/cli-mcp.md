@@ -167,6 +167,18 @@ imago lint
 imago audit
 ```
 
+### 2.11 Aegis Product-Input Acceptance (`aegis`)
+
+```bash
+# Strictly decode and validate an Aegis product-input manifest (aegis.p01.product-input.v1)
+imago aegis validate build/product-input.json
+
+# Print the mapped imago build request as JSON
+imago aegis validate build/product-input.json --json
+```
+
+The decoder rejects unknown fields, trailing content, and manifests above 1 MiB. Every rejection is a correlated error `aegis product-input <correlation-id>: <field>: <reason>` (`(missing)` when the manifest carries no correlation id) and exits non-zero. Contract bounds: `retries.max-attempts` 1..10, `retries.backoff-seconds` 0..3600, 1..256 unique packages, `revision` exactly 40 lowercase hex characters, definition paths relative and free of `..` segments. See [ADR-0020](../adr/0020-aegis-product-input-contract-acceptance.md) for the full contract and why the request is not a Packer flavor dispatch.
+
 ---
 
 ## 3. Model Context Protocol (MCP) Server Integration
