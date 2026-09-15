@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Aegis product-input acceptance (ADR-0020): `pkg/aegis` decodes `aegis.p01.product-input.v1` strictly (unknown fields, trailing content, and inputs above 1 MiB rejected), validates every field against documented bounds (retries 1..10 attempts and 0..3600 s backoff, 1..256 unique packages, 40-hex revision, relative definition paths), maps it to a typed build request with a symmetric `Result` type, and reports correlated errors; `imago aegis validate <path> [--json]` exposes it.
+- Pinned kernel artifact contract with `cordanaLLM/nucleus` (ADR-0021): `pkg/kernel` strictly decodes the Aegis `aegis.p01-nucleus.kernel-requirement.v1` payload (fixtures vendored from `cordanallm/Aegis-OS@5148ab2` under `pkg/kernel/testdata/`, empty feature lists rejected with `ErrEmptyRequirement`) and the `imago.nucleus.kernel-artifact.v1` manifest, and `kernel.Verify` recomputes the `SHA256SUMS` digest, every artifact digest and size, and the presence of the cosign bundle under bounded reads.
+- `imago kernel requirement validate` and `imago kernel artifact verify` CLI commands with positive, tampered-artifact, and empty-requirement tests; `kernel/requirement.json` carries imago's own requirement (`imago-kernel-requirement-0001`, `required-by` ids naming flavor tiers).
+- Typed `kernel` section in `versions.json` and `versions.schema.json` pinning the provider `cordanaLLM/nucleus`, the contract id, the dispatch event, and per-stream `version`, `artifact_digest`, and provenance; `streams` is empty until the first verified nucleus release.
 - Repository transferred to `cordanaLLM/imago` and the kernel forge to `cordanaLLM/nucleus`; badges, documentation portal URL, and the kernel dispatch target follow the new identities.
 - Fleet migration to `cordanaLLM/imago` (ADR-0019): Go module `github.com/cordanaLLM/imago`, CLI and MCP server renamed to `imago`, praetor governance adopted with the interim `gitops-infra` profile, and a proposed `os-image` archetype under `planning/archetypes/`.
 - Golusoris core composition: `core/clikit` command tree, `core/log` logger, `core/clock` injected into the build dispatcher and staging guard, and `core/mcp` owning the MCP transport (stdio stdout-purity guard and streamable-HTTP).
@@ -84,6 +87,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - TrueNAS SCALE platform configuration in hardened cloud-init generator (`pkg/cloudinit/cloudinit.go`) with VirtIO-SCSI discard rules and NFS mounts.
   - Two-phase staged MCP operations TTL eviction guard and capacity bounding (`pkg/mcp/staging.go`).
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
+
+### Changed
+- **Breaking**: `sync-kernel-manifest.yml` refuses a `kernel_release_published` payload without `stream`, `version`, and `tag` (the default-version fallback is removed), downloads the nucleus release, verifies the keyless cosign bundle over `SHA256SUMS`, runs `imago kernel artifact verify` against the payload and the `versions.json` contract pin, and only then proposes the `kernel.streams.<stream>` pin (version, `artifact_digest`, provenance) as a pull request that adds only `versions.json`.
+- `dispatch-kernel-requirements.yml` validates `kernel/requirement.json` and dispatches its path, `sha256`, and commit to the provider named in `versions.json` instead of the unread drivers/runtimes/kubernetes triple; it triggers on changes to the requirement file.
+- `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).
 
 ### Fixed
 - Catalog desynchronization in `pkg/flavors/flavors.go`: aligned 13 provisioner script references with `packer/builds.pkr.hcl` across AMD, NVIDIA, Podman, K3s, and homelab appliance tiers, eliminating silent failures in imageless host conversion.

@@ -4,6 +4,7 @@ package manifest_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -224,6 +225,85 @@ func TestValidateDeepNegativeCases(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := validTestManifest()
 			tc.mutate(m)
+			err := m.Validate()
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.expectErr)
+		})
+	}
+}
+
+func pinnedKernel() *manifest.Kernel {
+	return &manifest.Kernel{
+		Provider:      "cordanaLLM/nucleus",
+		Contract:      "imago.nucleus.kernel-artifact.v1",
+		DispatchEvent: "kernel_release_published",
+		Streams: map[string]manifest.KernelStream{
+			"mainstream": {
+				Version:        "7.2.4-lusoris1",
+				ArtifactDigest: "sha256:" + strings.Repeat("a", 64),
+				Provenance: manifest.KernelProvenance{
+					Tag:      "v7.2.4-lusoris1",
+					Revision: "188c35d188c35d188c35d188c35d188c35d18800",
+					Bundle:   "SHA256SUMS.bundle",
+				},
+			},
+		},
+	}
+}
+
+func TestValidateKernelPin(t *testing.T) {
+	m := validTestManifest()
+	require.NoError(t, m.Validate(), "kernel section is optional")
+
+	m.Kernel = pinnedKernel()
+	require.NoError(t, m.Validate(), "a fully pinned stream is accepted")
+
+	m.Kernel.Streams = map[string]manifest.KernelStream{}
+	require.NoError(t, m.Validate(), "zero pinned streams is the state before the first verified release")
+
+	actual, err := manifest.Load("../../versions.json")
+	require.NoError(t, err)
+	require.NotNil(t, actual.Kernel, "versions.json must carry the kernel contract pin")
+	assert.Equal(t, "cordanaLLM/nucleus", actual.Kernel.Provider)
+	assert.Equal(t, "imago.nucleus.kernel-artifact.v1", actual.Kernel.Contract)
+}
+
+func TestValidateKernelPinNegative(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(k *manifest.Kernel)
+		expectErr string
+	}{
+		{"provider_not_slug", func(k *manifest.Kernel) { k.Provider = "nucleus" }, "kernel provider must be an owner/repository slug"},
+		{"empty_contract", func(k *manifest.Kernel) { k.Contract = "" }, "kernel contract must not be empty"},
+		{"nil_streams", func(k *manifest.Kernel) { k.Streams = nil }, "kernel streams must be an object"},
+		{"stream_name", func(k *manifest.Kernel) { k.Streams["Nightly"] = k.Streams["mainstream"] }, "must be a lowercase token"},
+		{"missing_artifact_digest", func(k *manifest.Kernel) {
+			s := k.Streams["mainstream"]
+			s.ArtifactDigest = ""
+			k.Streams["mainstream"] = s
+		}, "artifact_digest must be sha256:<64 hex>"},
+		{"tag_without_v", func(k *manifest.Kernel) {
+			s := k.Streams["mainstream"]
+			s.Provenance.Tag = "7.2.4-lusoris1"
+			k.Streams["mainstream"] = s
+		}, "must be a v-prefixed release tag"},
+		{"short_revision", func(k *manifest.Kernel) {
+			s := k.Streams["mainstream"]
+			s.Provenance.Revision = "188c35d"
+			k.Streams["mainstream"] = s
+		}, "provenance revision must be a 40-character commit hash"},
+		{"empty_bundle", func(k *manifest.Kernel) {
+			s := k.Streams["mainstream"]
+			s.Provenance.Bundle = ""
+			k.Streams["mainstream"] = s
+		}, "provenance bundle must not be empty"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := validTestManifest()
+			m.Kernel = pinnedKernel()
+			tc.mutate(m.Kernel)
 			err := m.Validate()
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectErr)

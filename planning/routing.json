@@ -127,9 +127,10 @@
     },
     "step-nucleus-contract": {
       "cost": "medium",
-      "done": false,
+      "done": true,
       "owner": "cordanaLLM/imago",
-      "needs_external_contract": true
+      "needs_external_contract": true,
+      "evidence": "feat/nucleus-kernel-contract-20260915: pkg/kernel (Aegis requirement decoder, imago.nucleus.kernel-artifact.v1 verifier), imago kernel CLI, versions.json kernel pin, sync-kernel-manifest.yml verification order, ADR-0021; nucleus manifest generation in cordanaLLM/nucleus#11"
     },
     "step-app-hardening": {
       "cost": "medium",

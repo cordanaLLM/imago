@@ -6,11 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       stream:
-        description: "Kernel stream (lts, mainstream, bleeding, realtime)"
+        description: "Kernel stream (bleeding, mainstream, lts, realtime)"
         required: true
-        default: "mainstream"
       version:
-        description: "Semantic version (e.g. 7.2.4-lusoris1)"
+        description: "Kernel version the release carries (e.g. 7.2.4-lusoris1)"
+        required: true
+      tag:
+        description: "nucleus release tag (e.g. v7.2.4-lusoris1)"
         required: true
 
 permissions:
@@ -22,9 +24,9 @@ concurrency:
 
 jobs:
   sync:
-    name: Sync Kernel Manifest from nucleus
+    name: Verify and Pin Kernel Release from nucleus
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: write
       pull-requests: write
@@ -33,65 +35,162 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name: Setup Go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+        with:
+          go-version: "1.27.x"
+          check-latest: true
+
       - name: Setup Python
         uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.12"
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+
       - name: Install Validation Dependencies
         run: pip install --no-cache-dir jsonschema pytest
 
-      - name: Extract Target Stream and Version
+      # The payload names the release; nothing is pinned on its word alone and
+      # nothing is defaulted: a payload without stream, version, and tag fails.
+      - name: Resolve Release Coordinates
         id: meta
         env:
           INPUT_STREAM: ${{ github.event.client_payload.stream || github.event.inputs.stream }}
           INPUT_VERSION: ${{ github.event.client_payload.version || github.event.inputs.version }}
+          INPUT_TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag }}
         run: |
-          STREAM="${INPUT_STREAM:-mainstream}"
-          VERSION="${INPUT_VERSION:-7.2.4-lusoris1}"
-          echo "stream=${STREAM}" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [[ -z "${INPUT_STREAM}" || -z "${INPUT_VERSION}" || -z "${INPUT_TAG}" ]]; then
+            echo "::error::the payload must carry stream, version, and tag; no defaults are applied" >&2
+            exit 1
+          fi
+          if [[ ! "${INPUT_STREAM}" =~ ^[a-z][a-z0-9-]{0,31}$ ]]; then
+            echo "::error::stream '${INPUT_STREAM}' is not a lowercase token" >&2
+            exit 1
+          fi
+          if [[ ! "${INPUT_VERSION}" =~ ^[0-9][A-Za-z0-9._+-]{0,63}$ ]]; then
+            echo "::error::version '${INPUT_VERSION}' is not a bounded version token" >&2
+            exit 1
+          fi
+          if [[ ! "${INPUT_TAG}" =~ ^v[0-9][A-Za-z0-9._-]{0,62}$ ]]; then
+            echo "::error::tag '${INPUT_TAG}' is not a v-prefixed release tag" >&2
+            exit 1
+          fi
+          PROVIDER="$(python3 -c 'import json; print(json.load(open("versions.json"))["kernel"]["provider"])')"
+          {
+            echo "stream=${INPUT_STREAM}"
+            echo "version=${INPUT_VERSION}"
+            echo "tag=${INPUT_TAG}"
+            echo "provider=${PROVIDER}"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Update versions.json Manifest
+      - name: Download Release Assets and Manifest
+        id: assets
         env:
+          GH_TOKEN: ${{ secrets.KERNEL_FORGE_TOKEN || github.token }}
+          PROVIDER: ${{ steps.meta.outputs.provider }}
+          STREAM: ${{ steps.meta.outputs.stream }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          ASSETS="${RUNNER_TEMP}/nucleus-${STREAM}"
+          MANIFEST="${RUNNER_TEMP}/kernel-${STREAM}.manifest.json"
+          mkdir -p "${ASSETS}"
+          gh release download "${TAG}" --repo "${PROVIDER}" --dir "${ASSETS}"
+          if [[ ! -s "${ASSETS}/kernel-${STREAM}.manifest.json" ]]; then
+            echo "::error::release ${TAG} of ${PROVIDER} ships no kernel-${STREAM}.manifest.json" >&2
+            exit 1
+          fi
+          mv "${ASSETS}/kernel-${STREAM}.manifest.json" "${MANIFEST}"
+          ls -l "${ASSETS}"
+          {
+            echo "dir=${ASSETS}"
+            echo "manifest=${MANIFEST}"
+          } >> "$GITHUB_OUTPUT"
+
+      # Verification order: cosign bundle, SHA256SUMS digest, per-artifact
+      # digests and sizes, then the versions.json pin. Cosign is the only step
+      # that checks a signature; the Go verifier checks digests and provenance.
+      - name: Verify Keyless Signature of SHA256SUMS
+        env:
+          ASSETS: ${{ steps.assets.outputs.dir }}
+          PROVIDER: ${{ steps.meta.outputs.provider }}
+        run: |
+          set -euo pipefail
+          cosign verify-blob \
+            --bundle "${ASSETS}/SHA256SUMS.bundle" \
+            --certificate-identity-regexp "^https://github.com/${PROVIDER}/" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "${ASSETS}/SHA256SUMS"
+
+      - name: Verify Artifact Manifest Digests and Provenance
+        id: verify
+        env:
+          ASSETS: ${{ steps.assets.outputs.dir }}
+          MANIFEST: ${{ steps.assets.outputs.manifest }}
           STREAM: ${{ steps.meta.outputs.stream }}
           VERSION: ${{ steps.meta.outputs.version }}
+          TAG: ${{ steps.meta.outputs.tag }}
         run: |
-          python3 -c "
-          import json, os
-          stream = os.environ.get('STREAM', 'mainstream')
-          version = os.environ.get('VERSION', '7.2.4-lusoris1')
-          with open('versions.json', 'r') as f:
-              data = json.load(f)
-          if 'kernel' not in data:
-              data['kernel'] = {'provider': 'lusoris-kernel-forge', 'streams': {}}
-          if 'streams' not in data['kernel']:
-              data['kernel']['streams'] = {}
-          data['kernel']['streams'][stream] = {'version': version}
-          with open('versions.json', 'w') as f:
-              json.dump(data, f, indent=2)
-              f.write('\n')
-          "
+          set -euo pipefail
+          RESULT="${RUNNER_TEMP}/kernel-verification.json"
+          go run ./cmd/imago kernel artifact verify \
+            --manifest "${MANIFEST}" \
+            --dir "${ASSETS}" \
+            --expect-stream "${STREAM}" \
+            --expect-version "${VERSION}" \
+            --expect-tag "${TAG}" \
+            --json | tee "${RESULT}"
+          echo "result=${RESULT}" >> "$GITHUB_OUTPUT"
 
-      - name: Validate SSOT Manifest Schema
+      - name: Pin Verified Stream in versions.json
+        id: pin
+        env:
+          RESULT: ${{ steps.verify.outputs.result }}
         run: |
-          python3 -c "
-          import json, jsonschema
-          schema = json.load(open('versions.schema.json'))
-          manifest = json.load(open('versions.json'))
-          jsonschema.validate(manifest, schema)
-          "
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+
+          result = json.load(open(os.environ["RESULT"], encoding="utf-8"))
+          with open("versions.json", encoding="utf-8") as f:
+              data = json.load(f)
+          data["kernel"]["streams"][result["stream"]] = {
+              "version": result["version"],
+              "artifact_digest": result["artifact_digest"],
+              "provenance": {key: result["provenance"][key] for key in ("tag", "revision", "bundle")},
+          }
+          with open("versions.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"artifact_digest={result['artifact_digest']}\n")
+              out.write(f"revision={result['provenance']['revision']}\n")
+          PY
+
+      - name: Validate SSOT Manifest Schema and Contract Pin
+        run: |
+          set -euo pipefail
+          python3 -c "import json, jsonschema; jsonschema.validate(json.load(open('versions.json')), json.load(open('versions.schema.json')))"
+          go run ./cmd/imago manifest validate --path versions.json
           pytest tests/test_manifest.py -v
 
-      - name: Propose Kernel Synchronization PR
+      - name: Propose Kernel Pin PR
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c8cb932dcc # v7.0.8
         with:
+          add-paths: versions.json
           branch: chore/sync-kernel-${{ steps.meta.outputs.stream }}
-          title: "chore(kernel): sync ${{ steps.meta.outputs.stream }} to ${{ steps.meta.outputs.version }}"
+          title: "chore(kernel): pin ${{ steps.meta.outputs.stream }} to ${{ steps.meta.outputs.version }}"
           body: |
-            Automated downstream kernel synchronization from `nucleus`.
+            Verified kernel release from `${{ steps.meta.outputs.provider }}`.
 
             - **Stream**: `${{ steps.meta.outputs.stream }}`
             - **Version**: `${{ steps.meta.outputs.version }}`
-            - **Trigger**: `repository_dispatch (kernel_release_published)`
-          commit-message: "chore(kernel): sync ${{ steps.meta.outputs.stream }} to ${{ steps.meta.outputs.version }}"
+            - **Release tag**: `${{ steps.meta.outputs.tag }}` at `${{ steps.pin.outputs.revision }}`
+            - **Artifact digest (SHA256SUMS)**: `${{ steps.pin.outputs.artifact_digest }}`
+            - **Verification**: cosign keyless bundle, SHA256SUMS digest, per-artifact digests and sizes (`imago kernel artifact verify`)
+            - **Trigger**: `${{ github.event_name }}`
+          commit-message: "chore(kernel): pin ${{ steps.meta.outputs.stream }} to ${{ steps.meta.outputs.version }}"

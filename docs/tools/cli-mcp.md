@@ -178,6 +178,23 @@ imago aegis validate build/product-input.json --json
 ```
 
 The decoder rejects unknown fields, trailing content, and manifests above 1 MiB. Every rejection is a correlated error `aegis product-input <correlation-id>: <field>: <reason>` (`(missing)` when the manifest carries no correlation id) and exits non-zero. Contract bounds: `retries.max-attempts` 1..10, `retries.backoff-seconds` 0..3600, 1..256 unique packages, `revision` exactly 40 lowercase hex characters, definition paths relative and free of `..` segments. See [ADR-0020](../adr/0020-aegis-product-input-contract-acceptance.md) for the full contract and why the request is not a Packer flavor dispatch.
+### 2.12 Kernel Requirement and Artifact Contract (`kernel`)
+
+```bash
+# Strictly validate an aegis.p01-nucleus.kernel-requirement.v1 document (imago's own or an Aegis payload)
+imago kernel requirement validate kernel/requirement.json
+
+# Verify a nucleus release against its kernel-<stream>.manifest.json before pinning it in versions.json
+imago kernel artifact verify --manifest kernel-mainstream.manifest.json --dir ./release-assets \
+  --expect-stream mainstream --expect-version 7.2.4-lusoris1 --expect-tag v7.2.4-lusoris1
+
+# Machine-readable result; artifact_digest is the value pinned as kernel.streams.<stream>.artifact_digest
+imago kernel artifact verify --manifest kernel-mainstream.manifest.json --dir ./release-assets --json
+```
+
+`kernel requirement validate` decodes with unknown fields disallowed and a 1 MiB bound, requires the exact schema id and a correlation id, checks every `CONFIG_*` symbol, state, and probe against the contract, and rejects an empty feature list explicitly (`ErrEmptyRequirement`).
+
+`kernel artifact verify` reads the provider and contract from `versions.json` (`--versions`, default `versions.json`), rejects a manifest whose stream, version, or tag differ from the dispatch payload, recomputes the `SHA256SUMS` digest and every artifact digest and size (bounded reads), requires `SHA256SUMS.bundle` to be present, and reports unlisted extra files without failing. The keyless signature itself is verified by `cosign verify-blob` in `sync-kernel-manifest.yml` before this command runs. See [the nucleus blueprint](../operations/sister-repo-kernel-forge-blueprint.md) section 4 and ADR-0021.
 
 ---
 

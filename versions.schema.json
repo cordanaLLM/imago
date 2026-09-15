@@ -117,6 +117,37 @@
         "enroot": { "type": "string" }
       }
     },
+    "kernel": {
+      "type": "object",
+      "description": "Pinned kernel artifact contract with the kernel forge (cordanaLLM/nucleus); streams is empty until a release has been verified",
+      "required": ["provider", "contract", "streams"],
+      "properties": {
+        "provider": { "type": "string", "pattern": "^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$" },
+        "contract": { "type": "string", "pattern": "^imago\\.nucleus\\.kernel-artifact\\.v[0-9]+$" },
+        "dispatch_event": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "streams": {
+          "type": "object",
+          "propertyNames": { "enum": ["bleeding", "mainstream", "lts", "realtime"] },
+          "additionalProperties": {
+            "type": "object",
+            "required": ["version", "artifact_digest", "provenance"],
+            "properties": {
+              "version": { "type": "string", "pattern": "^[0-9][A-Za-z0-9._+-]{0,63}$" },
+              "artifact_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+              "provenance": {
+                "type": "object",
+                "required": ["tag", "revision", "bundle"],
+                "properties": {
+                  "tag": { "type": "string", "pattern": "^v[0-9][A-Za-z0-9._-]{0,62}$" },
+                  "revision": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+                  "bundle": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "time": {
       "type": "object",
       "required": ["anycast_nts", "stratum1_nts", "fallback_pool"],

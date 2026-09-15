@@ -108,3 +108,66 @@ class TestManifestIntegrity:
         assert len(time_cfg["stratum1_nts"]) >= 2, "Require at least 2 Stratum-1 national peers"
         assert "fallback_pool" in time_cfg and len(time_cfg["fallback_pool"]) > 0
 
+
+PINNED_KERNEL_STREAM = {
+    "version": "7.2.4-lusoris1",
+    "artifact_digest": "sha256:" + "a" * 64,
+    "provenance": {
+        "tag": "v7.2.4-lusoris1",
+        "revision": "188c35d188c35d188c35d188c35d188c35d18800",
+        "bundle": "SHA256SUMS.bundle",
+    },
+}
+
+
+class TestKernelContractPin:
+    def test_kernel_contract_section(self) -> None:
+        """Verify the kernel forge contract pin names the provider, contract, and dispatch event."""
+        kernel = load_manifest()["kernel"]
+        assert kernel["provider"] == "cordanaLLM/nucleus"
+        assert kernel["contract"] == "imago.nucleus.kernel-artifact.v1"
+        assert kernel["dispatch_event"] == "kernel_release_published"
+        assert isinstance(kernel["streams"], dict)
+        for name, stream in kernel["streams"].items():
+            assert name in ("bleeding", "mainstream", "lts", "realtime"), f"Unknown stream {name}"
+            assert stream["artifact_digest"].startswith("sha256:")
+
+    def test_schema_accepts_pinned_stream(self) -> None:
+        """Verify a fully pinned stream (version, artifact_digest, provenance) validates."""
+        data = load_manifest()
+        data["kernel"]["streams"]["mainstream"] = PINNED_KERNEL_STREAM
+        jsonschema.validate(instance=data, schema=load_schema())
+
+    def test_schema_rejects_stream_without_artifact_digest(self) -> None:
+        """Verify a stream pin missing artifact_digest is rejected by the schema."""
+        data = load_manifest()
+        stream = {k: v for k, v in PINNED_KERNEL_STREAM.items() if k != "artifact_digest"}
+        data["kernel"]["streams"]["mainstream"] = stream
+        try:
+            jsonschema.validate(instance=data, schema=load_schema())
+        except jsonschema.ValidationError as err:
+            assert "artifact_digest" in err.message
+        else:
+            raise AssertionError("schema accepted a kernel stream without artifact_digest")
+
+    def test_schema_rejects_unknown_stream_and_bad_digest(self) -> None:
+        """Verify unknown stream names and non-sha256 digests are rejected by the schema."""
+        data = load_manifest()
+        data["kernel"]["streams"]["nightly"] = PINNED_KERNEL_STREAM
+        try:
+            jsonschema.validate(instance=data, schema=load_schema())
+        except jsonschema.ValidationError:
+            pass
+        else:
+            raise AssertionError("schema accepted an unknown kernel stream name")
+
+        data = load_manifest()
+        bad = dict(PINNED_KERNEL_STREAM, artifact_digest="md5:" + "a" * 32)
+        data["kernel"]["streams"]["lts"] = bad
+        try:
+            jsonschema.validate(instance=data, schema=load_schema())
+        except jsonschema.ValidationError:
+            pass
+        else:
+            raise AssertionError("schema accepted a non-sha256 artifact_digest")
+

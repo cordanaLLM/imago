@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -30,6 +31,7 @@ import (
 	"github.com/cordanaLLM/imago/pkg/cloudinit"
 	"github.com/cordanaLLM/imago/pkg/flavors"
 	"github.com/cordanaLLM/imago/pkg/imageless"
+	"github.com/cordanaLLM/imago/pkg/kernel"
 	"github.com/cordanaLLM/imago/pkg/manifest"
 	"github.com/cordanaLLM/imago/pkg/mcp"
 	"github.com/cordanaLLM/imago/pkg/planning"
@@ -68,6 +70,7 @@ func newRootCmd() *cobra.Command {
 		newMilestonesCmd(),
 		newPlanCmd(),
 		newAegisCmd(),
+		newKernelCmd(),
 		newLintCmd(),
 		newAuditCmd(),
 		newMCPCmd(),
@@ -625,5 +628,145 @@ func runAegisValidate(w io.Writer, path string, jsonOutput bool) error {
 	fmt.Fprintf(w, "  Distribution: %s (snapshot %s)\n", req.Distribution.ID, req.Distribution.Snapshot)
 	fmt.Fprintf(w, "  Kernel: %s (%s); packages: %d\n", req.KernelPackage, req.KernelSource, len(req.Packages))
 	fmt.Fprintf(w, "  Retries: %d attempts, %s backoff\n", req.Retry.Attempts, req.Retry.Backoff)
+	return nil
+}
+
+func newKernelCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "kernel",
+		Short: "Validate the Aegis kernel requirement and verify nucleus kernel artifacts",
+	}
+	cmd.AddCommand(newKernelRequirementCmd(), newKernelArtifactCmd())
+	return cmd
+}
+
+func newKernelRequirementCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "requirement",
+		Short: "Work with the aegis.p01-nucleus.kernel-requirement.v1 payload imago sends to nucleus",
+	}
+	validateCmd := &cobra.Command{
+		Use:   "validate <file>",
+		Short: "Strictly decode and validate a kernel requirement document",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q, err := kernel.LoadRequirement(args[0])
+			if err != nil {
+				return err
+			}
+			return printKernelRequirement(cmd.OutOrStdout(), q)
+		},
+	}
+	cmd.AddCommand(validateCmd)
+	return cmd
+}
+
+func printKernelRequirement(w io.Writer, q *kernel.Requirement) error {
+	if _, err := fmt.Fprintf(w, "✓ Kernel requirement %s is valid (%s).\n", q.CorrelationID, q.Schema); err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "  Architectures: %s\n", strings.Join(q.Architectures, ", "))
+	fmt.Fprintf(w, "  ABI: minimum-release %s", q.ABI.MinimumRelease)
+	if q.ABI.TargetRelease != "" {
+		fmt.Fprintf(w, ", target-release %s", q.ABI.TargetRelease)
+	}
+	if q.ABI.ModuleABI != "" {
+		fmt.Fprintf(w, ", module-abi %s", q.ABI.ModuleABI)
+	}
+	fmt.Fprintf(w, "\n  Features: %d\n", len(q.Features))
+	for _, f := range q.Features {
+		fmt.Fprintf(w, "    %-32s %-9s %-14s %s\n", f.Symbol, f.State, f.Probe, f.RequiredBy)
+	}
+	return nil
+}
+
+// kernelVerifyOptions are the flags of `imago kernel artifact verify`.
+type kernelVerifyOptions struct {
+	Manifest string
+	Dir      string
+	Versions string
+	Stream   string
+	Version  string
+	Tag      string
+	JSON     bool
+}
+
+func newKernelArtifactCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "artifact",
+		Short: "Work with the imago.nucleus.kernel-artifact.v1 manifest nucleus publishes",
+	}
+	var opts kernelVerifyOptions
+	verifyCmd := &cobra.Command{
+		Use:   "verify",
+		Short: "Verify a kernel artifact manifest against downloaded release assets before pinning it",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKernelArtifactVerify(cmd.OutOrStdout(), opts)
+		},
+	}
+	f := verifyCmd.Flags()
+	f.StringVar(&opts.Manifest, "manifest", "", "Path to kernel-<stream>.manifest.json (required)")
+	f.StringVar(&opts.Dir, "dir", "", "Directory holding the release assets, SHA256SUMS, and SHA256SUMS.bundle (required)")
+	f.StringVar(&opts.Versions, "versions", "versions.json", "Path to versions.json carrying the kernel provider and contract pin")
+	f.StringVar(&opts.Stream, "expect-stream", "", "Stream named by the dispatch payload; must match the manifest")
+	f.StringVar(&opts.Version, "expect-version", "", "Version named by the dispatch payload; must match the manifest")
+	f.StringVar(&opts.Tag, "expect-tag", "", "Release tag named by the dispatch payload; must match the manifest provenance")
+	f.BoolVar(&opts.JSON, "json", false, "Output the verification result as JSON")
+	cmd.AddCommand(verifyCmd)
+	return cmd
+}
+
+// runKernelArtifactVerify binds the manifest to the versions.json contract pin
+// and the dispatch payload, then recomputes every digest. Cosign signature
+// verification of SHA256SUMS.bundle happens in the workflow before this step.
+func runKernelArtifactVerify(w io.Writer, o kernelVerifyOptions) error {
+	if o.Manifest == "" || o.Dir == "" {
+		return errors.New("kernel artifact verify: --manifest and --dir are required")
+	}
+	v, err := manifest.Load(o.Versions)
+	if err != nil {
+		return err
+	}
+	if v.Kernel == nil {
+		return fmt.Errorf("kernel artifact verify: %s has no kernel section", o.Versions)
+	}
+	if v.Kernel.Contract != kernel.ArtifactSchema {
+		return fmt.Errorf("kernel artifact verify: %s pins contract %q but this build implements %q", o.Versions, v.Kernel.Contract, kernel.ArtifactSchema)
+	}
+	m, err := kernel.LoadArtifactManifest(o.Manifest)
+	if err != nil {
+		return err
+	}
+	policy := kernel.Policy{Provider: v.Kernel.Provider, Stream: o.Stream, Version: o.Version, Tag: o.Tag}
+	if err := m.Conform(policy); err != nil {
+		return err
+	}
+	res, err := kernel.Verify(m, o.Dir)
+	if err != nil {
+		return err
+	}
+	if o.JSON {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(res)
+	}
+	return printKernelVerification(w, res)
+}
+
+func printKernelVerification(w io.Writer, res *kernel.Verification) error {
+	if _, err := fmt.Fprintf(w, "✓ Kernel artifact %s@%s verified (%d artifacts).\n", res.Stream, res.Version, len(res.Artifacts)); err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "  Kernel release: %s\n", res.KernelRelease)
+	fmt.Fprintf(w, "  Config digest: %s\n", res.ConfigDigest)
+	fmt.Fprintf(w, "  Artifact digest (SHA256SUMS): %s\n", res.ArtifactDigest)
+	fmt.Fprintf(w, "  Provenance: %s @ %s, bundle %s\n", res.Provenance.Tag, res.Provenance.Revision, res.Provenance.Bundle)
+	fmt.Fprintf(w, "  Signer identity: %s\n", res.Provenance.SignerIdentity)
+	for _, a := range res.Artifacts {
+		fmt.Fprintf(w, "  %s  %s  (%d bytes)\n", a.SHA256, a.Name, a.Size)
+	}
+	for _, e := range res.Extra {
+		fmt.Fprintf(w, "  extra (unlisted, not verified): %s\n", e)
+	}
 	return nil
 }
