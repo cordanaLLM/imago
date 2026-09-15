@@ -6,8 +6,8 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
-    "ghcr.io/devcontainers/features/terraform:1": {}
+    "ghcr.io/devcontainers/features/go:1": {},
+    "ghcr.io/devcontainers/features/python:1": {}
   },
   "customizations": {
     "praetor": {
@@ -16,10 +16,10 @@
         "state": "source-bundle",
         "builderImage": "docker.io/library/golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125",
         "baseImage": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04@sha256:d94c97dd9cacf183d0a6fd12a8e87b526e9e928307674ae9c94139139c0c6eae",
-        "sourceSHA256": "sha256:e6a9af02bde5d4e95ecc7df2190145d3adb5ceca4785108f0f39065e47bd852d",
-        "archiveSHA256": "sha256:19a06ec834f661c0c7b7aaccc01b3fd909097e0b18da161750e34f90faf9487a",
+        "sourceSHA256": "sha256:62ec2d51c215075223f1971147d813b6b7e5c39650da6354916d52b169ebfdad",
+        "archiveSHA256": "sha256:efcc824b17569bede57ed9cb9c4728dbf7fd15fb29dfbc60b26e4ada0a6d9d0f",
         "archiveParts": 3,
-        "dockerfileSHA256": "sha256:74dc4a64e1317c987c1e120a586a91a67dff042c127fc7aae843a0759faefba5"
+        "dockerfileSHA256": "sha256:2922c61c912f713d5d1b3926baa7726c370467196c5bb06a278bc0c457f3f054"
       }
     },
     "vscode": {
@@ -28,10 +28,15 @@
         "aquasecurity.trivy-vulnerability-scanner",
         "davidanson.vscode-markdownlint",
         "eamodio.gitlens",
-        "github.copilot"
+        "github.copilot",
+        "golang.go"
       ],
       "settings": {
         "editor.formatOnSave": true,
+        "go.lintOnSave": "package",
+        "go.lintTool": "golangci-lint",
+        "go.toolsManagement.autoUpdate": true,
+        "go.useLanguageServer": true,
         "security.workspace.trust.enabled": true
       }
     }
