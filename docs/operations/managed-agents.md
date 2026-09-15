@@ -37,7 +37,7 @@ flowchart TD
     end
 
     subgraph Sandbox["4. Ephemeral Linux Sandbox (/workspace)"]
-        Mount["Mounted GitHub Repository<br/><small>github://lusoris/lusoris-cloud-images</small>"]:::sandbox
+        Mount["Mounted GitHub Repository<br/><small>github://cordanaLLM/imago</small>"]:::sandbox
         Network["Egress Domain Allowlist<br/><small>github.com · k8s.io · ubuntu.com · debian.org</small>"]:::sandbox
     end
 

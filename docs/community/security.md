@@ -20,7 +20,7 @@ We welcome responsible security research and vulnerability reports. Please **nev
 
 ### Reporting Channels
 All vulnerability reports must be submitted through **GitHub Private Vulnerability Reporting**:
-- Navigate to the **Security** tab of [lusoris/lusoris-cloud-images](https://github.com/lusoris/lusoris-cloud-images/security/advisories/new).
+- Navigate to the **Security** tab of [cordanaLLM/imago](https://github.com/cordanaLLM/imago/security/advisories/new).
 - Click **Report a vulnerability** to open an encrypted private advisory draft.
 - Include affected flavors, reproduction steps, and potential exploit impact.
 

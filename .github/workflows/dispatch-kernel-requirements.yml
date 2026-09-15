@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   dispatch:
-    name: Dispatch Requirements to lusoris-kernel-forge
+    name: Dispatch Requirements to nucleus
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -40,13 +40,13 @@ jobs:
           "
           echo "has_payload=true" >> "$GITHUB_OUTPUT"
 
-      - name: Dispatch Event to lusoris-kernel-forge
+      - name: Dispatch Event to nucleus
         if: env.KERNEL_FORGE_TOKEN != ''
         uses: peter-evans/repository-dispatch@26b39f2445243964d4c7385747e4b2144255d441 # v3.0.0
         env:
           KERNEL_FORGE_TOKEN: ${{ secrets.KERNEL_FORGE_TOKEN }}
         with:
           token: ${{ secrets.KERNEL_FORGE_TOKEN }}
-          repository: lusoris/lusoris-kernel-forge
+          repository: cordanaLLM/nucleus
           event-type: kernel_requirements_updated
-          client-payload: '{"source": "lusoris-cloud-images", "ref": "${{ github.sha }}"}'
+          client-payload: '{"source": "imago", "ref": "${{ github.sha }}"}'

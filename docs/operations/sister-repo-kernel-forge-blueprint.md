@@ -1,16 +1,16 @@
-# Autonomous Agent Onboarding Blueprint: `lusoris-kernel-forge`
+# Autonomous Agent Onboarding Blueprint: `nucleus`
 
 > **Turnkey Agent Operating Directive & Repository Scaffolding Manual**
 >
-> This document serves as the authoritative, self-contained onboarding specification for an autonomous engineering agent (`agy`, Claude Code, Cursor) tasked with bootstrapping and operating the sister repository **`lusoris-kernel-forge`** from scratch.
+> This document serves as the authoritative, self-contained onboarding specification for an autonomous engineering agent (`agy`, Claude Code, Cursor) tasked with bootstrapping and operating the sister repository **`nucleus`** from scratch.
 >
-> **Privacy Invariant**: This specification strictly adheres to the Zero-Leak Invariant (Hard Rules 6 & 10). Zero developer workstation paths (`/home/...`) and zero private RFC 1918 IPs exist within this document. All paths use `/opt/lusoris/...` or standard documentation placeholders (`192.0.2.x`, `kernel.example.com`, `https://github.com/lusoris/lusoris-kernel-forge`).
+> **Privacy Invariant**: This specification strictly adheres to the Zero-Leak Invariant (Hard Rules 6 & 10). Zero developer workstation paths (`/home/...`) and zero private RFC 1918 IPs exist within this document. All paths use `/opt/lusoris/...` or standard documentation placeholders (`192.0.2.x`, `kernel.example.com`, `https://github.com/cordanaLLM/nucleus`).
 
 ---
 
 ## 1. Mission, Authority & Architectural Contract
 
-`lusoris-kernel-forge` is the dedicated compilation and packaging factory for custom-patched, high-performance Linux kernels consumed by `lusoris-cloud-images` and the wider Lusoris ecosystem.
+`nucleus` is the dedicated compilation and packaging factory for custom-patched, high-performance Linux kernels consumed by `imago` and the wider Lusoris ecosystem.
 
 ### Core Objectives
 1. **Decouple Compilation Compute**: Isolate heavy, multi-hour kernel compilation (Clang/LLVM 20, GCC 15, patch queues, kselftests) from cloud OS image generation.
@@ -26,10 +26,10 @@
 
 ## 2. Repository Scaffolding & Directory Layout
 
-An autonomous agent initializing `lusoris-kernel-forge` must scaffold the following directory structure:
+An autonomous agent initializing `nucleus` must scaffold the following directory structure:
 
 ```text
-lusoris-kernel-forge/
+nucleus/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                          # Linting, kconfig validation, commit hygiene
@@ -142,7 +142,7 @@ main "$@"
 
 ## 4. Cross-Repository Bidirectional Synchronization Engine
 
-`lusoris-kernel-forge` and `lusoris-cloud-images` communicate autonomously via GitHub Actions `repository_dispatch` and Renovate custom managers:
+`nucleus` and `imago` communicate autonomously via GitHub Actions `repository_dispatch` and Renovate custom managers:
 
 ### 4.1 Downstream Release Pipeline (`kernel-forge` -> `cloud-images`)
 Upon successful compilation, signing, and APT publishing in `publish-release.yml`:
@@ -158,11 +158,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Dispatch Release to lusoris-cloud-images
+      - name: Dispatch Release to imago
         uses: peter-evans/repository-dispatch@26b39f2445243964d4c7385747e4b2144255d441 # v3.0.0
         with:
           token: ${{ secrets.DISPATCH_ACCESS_TOKEN }}
-          repository: lusoris/lusoris-cloud-images
+          repository: cordanaLLM/imago
           event-type: kernel_release_published
           client-payload: >
             {
@@ -174,18 +174,18 @@ jobs:
 ```
 
 ### 4.2 Upstream Demand Pipeline (`cloud-images` -> `kernel-forge`)
-When `lusoris-cloud-images` updates `versions.json` (e.g., driver updates or new flavor requirements):
+When `imago` updates `versions.json` (e.g., driver updates or new flavor requirements):
 - `dispatch-kernel-requirements.yml` emits `kernel_requirements_updated`.
-- In `lusoris-kernel-forge`, `verify-requirements.yml` automatically evaluates whether all `.config` trees contain the required symbols (`CONFIG_VIRTIO_NET=y`, `CONFIG_BBR3=m`, `CONFIG_PREEMPT_RT=y`, etc.).
+- In `nucleus`, `verify-requirements.yml` automatically evaluates whether all `.config` trees contain the required symbols (`CONFIG_VIRTIO_NET=y`, `CONFIG_BBR3=m`, `CONFIG_PREEMPT_RT=y`, etc.).
 
 ---
 
 ## 5. Agent Bootstrapping & Migration Order
 
-When launching an agent to bootstrap `lusoris-kernel-forge`, provide the following prompt:
+When launching an agent to bootstrap `nucleus`, provide the following prompt:
 
 ```text
-You are an autonomous engineering agent initializing the repository lusoris-kernel-forge.
+You are an autonomous engineering agent initializing the repository nucleus.
 Read the authoritative blueprint at:
 docs/operations/sister-repo-kernel-forge-blueprint.md
 

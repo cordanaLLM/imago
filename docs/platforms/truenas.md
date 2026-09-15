@@ -16,7 +16,7 @@ Log in to your TrueNAS host via SSH and decompress the release artifact into you
 cd /mnt/tank/vm-images/
 
 # Download and stream-decompress the Lusoris flavor (e.g. docker-generic or k8s-node-generic)
-curl -fsSL https://github.com/lusoris/lusoris-cloud-images/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > docker-generic.qcow2
+curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > docker-generic.qcow2
 
 # Create a sparse Zvol for maximum performance (e.g. 32GB)
 zfs create -V 32G -s tank/vms/docker-node-zvol

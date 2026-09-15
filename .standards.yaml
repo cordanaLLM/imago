@@ -6,8 +6,8 @@ repository:
     owner: cordanaLLM
     name: imago
     visibility: public
-    description: "Reusable OS image forge: hardened, hardware-accelerated cloud and bare-metal images built from a declarative version manifest, kernel artifacts consumed from nucleus"
-    homepage: "https://lusoris.github.io/lusoris-cloud-images"
+    description: "Reusable OS image forge: hardened, hardware-accelerated cloud and bare-metal images built from a declarative version manifest, kernel artifacts consumed from cordanaLLM/nucleus"
+    homepage: "https://cordanallm.github.io/imago"
     topics:
       - os-image
       - packer

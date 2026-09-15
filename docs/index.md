@@ -1,16 +1,16 @@
-# lusoris-cloud-images
+# imago
 
 > Enterprise-grade, hardened, hardware-accelerated cloud and bare-metal OS images with pre-baked runtimes.
 >
-> Migrating to the fleet identity `cordanaLLM/imago`; see [ADR-0019](adr/0019-imago-fleet-migration-praetor-golusoris-planning-graph.md) and the [planning graph](tools/planning-graph.md).
+> Fleet identity `cordanaLLM/imago` (formerly `lusoris/lusoris-cloud-images`); see [ADR-0019](adr/0019-imago-fleet-migration-praetor-golusoris-planning-graph.md) and the [planning graph](tools/planning-graph.md).
 
 ---
 
-## What is lusoris-cloud-images?
+## What is imago?
 
-`lusoris-cloud-images` is an automated OS image forge that builds production-ready, zero-bloat images for **virtualization** (Proxmox VE, Unraid, VMware ESXi, QEMU/KVM), **bare-metal servers**, and **public clouds**.
+`imago` is an automated OS image forge that builds production-ready, zero-bloat images for **virtualization** (Proxmox VE, Unraid, VMware ESXi, QEMU/KVM), **bare-metal servers**, and **public clouds**.
 
-Instead of deploying generic stock distributions that spend minutes pulling gigabytes of packages and container layers on first boot, `lusoris-cloud-images` provides:
+Instead of deploying generic stock distributions that spend minutes pulling gigabytes of packages and container layers on first boot, `imago` provides:
 
 - **Zero Base Bloat**: Complete purge of `snapd`, `lxd`, Ubuntu Pro telemetry, and unneeded documentation.
 - **Hardware Acceleration Tiers**: Tailored GPU driver stacks for Intel Arc/Xe, AMD Mesa & ROCm, and NVIDIA generational CUDA (Pascal 535, Ampere/Ada 565, Hopper/Blackwell Open Modules + Fabric Manager).

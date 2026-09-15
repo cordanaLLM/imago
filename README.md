@@ -1,13 +1,13 @@
-# lusoris-cloud-images
+# imago
 
 [![HISS-16 Adopted](https://img.shields.io/badge/Standards-HISS--16%20Adopted%20(6%20baselined)-yellow)](AGENTS.md)
 
 <div align="center">
 
-[![CI Quality Gates](https://img.shields.io/github/actions/workflow/status/lusoris/lusoris-cloud-images/ci.yml?branch=main&label=CI%20Gates&logo=githubactions&logoColor=white&style=flat-square)](https://github.com/lusoris/lusoris-cloud-images/actions/workflows/ci.yml)
-[![Security Scans](https://img.shields.io/github/actions/workflow/status/lusoris/lusoris-cloud-images/security-scans.yml?branch=main&label=Security%20Scans&logo=github&logoColor=white&style=flat-square)](https://github.com/lusoris/lusoris-cloud-images/actions/workflows/security-scans.yml)
-[![Supply Chain](https://img.shields.io/github/actions/workflow/status/lusoris/lusoris-cloud-images/supply-chain.yml?branch=main&label=Scorecard&logo=securityscorecards&logoColor=white&style=flat-square)](https://github.com/lusoris/lusoris-cloud-images/actions/workflows/supply-chain.yml)
-[![Release Matrix](https://img.shields.io/github/actions/workflow/status/lusoris/lusoris-cloud-images/release-matrix.yml?branch=main&label=Release%20Engine&logo=packer&logoColor=white&style=flat-square)](https://github.com/lusoris/lusoris-cloud-images/actions/workflows/release-matrix.yml)
+[![CI Quality Gates](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/ci.yml?branch=main&label=CI%20Gates&logo=githubactions&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/ci.yml)
+[![Security Scans](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/security-scans.yml?branch=main&label=Security%20Scans&logo=github&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/security-scans.yml)
+[![Supply Chain](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/supply-chain.yml?branch=main&label=Scorecard&logo=securityscorecards&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/supply-chain.yml)
+[![Release Matrix](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/release-matrix.yml?branch=main&label=Release%20Engine&logo=packer&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/release-matrix.yml)
 
 [![Flavors](https://img.shields.io/badge/Flavors-44%20Production%20Targets-blue?logo=linux&logoColor=white&style=flat-square)](FLAVORS.md)
 [![Base OS](https://img.shields.io/badge/Base%20OS-Ubuntu%2026.04%20LTS%20Resolute-E95420?logo=ubuntu&logoColor=white&style=flat-square)](versions.json)
@@ -18,27 +18,27 @@
 [![Accelerators](https://img.shields.io/badge/Accelerators-NVIDIA%20CUDA%20%7C%20Intel%20Xe%20%7C%20AMD%20ROCm-76B900?logo=nvidia&logoColor=white&style=flat-square)](docs/hardware/nvidia.md)
 [![Hypervisors](https://img.shields.io/badge/Hypervisors-Proxmox%20%7C%20Unraid%20%7C%20ESXi%20%7C%20KVM-orange?style=flat-square)](docs/platforms/proxmox.md)
 [![Open Standards](https://img.shields.io/badge/Open%20Standards-CDI%20%7C%20OCI%20%7C%20CNI%20%7C%20CSI-purple?style=flat-square)](docs/principles.md)
-[![Documentation](https://img.shields.io/badge/Docs-MkDocs%20Material-teal?logo=materialformkdocs&logoColor=white&style=flat-square)](https://lusoris.github.io/lusoris-cloud-images)
+[![Documentation](https://img.shields.io/badge/Docs-MkDocs%20Material-teal?logo=materialformkdocs&logoColor=white&style=flat-square)](https://cordanallm.github.io/imago)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
 
 <br/>
 
 **Enterprise-grade, hardened, hardware-accelerated cloud and bare-metal OS image forge with pre-baked runtimes.**
 
-> **Fleet identity**: this repository is migrating to **`cordanaLLM/imago`**, the reusable image builder named in the [Aegis-OS connected stack contract](https://github.com/cordanallm/Aegis-OS/blob/main/docs/integration/stack.md). The Go module is already `github.com/cordanaLLM/imago` and the CLI is `imago`; the GitHub transfer, praetor governance, and golusoris adoption are tracked in the [routed planning graph](planning/TODO.md) (see [ADR-0019](docs/adr/0019-imago-fleet-migration-praetor-golusoris-planning-graph.md)).
+> **Fleet identity**: this repository is **`cordanaLLM/imago`** (formerly `lusoris/lusoris-cloud-images`), the reusable image builder named in the [Aegis-OS connected stack contract](https://github.com/cordanallm/Aegis-OS/blob/main/docs/integration/stack.md); its kernel forge is [`cordanaLLM/nucleus`](https://github.com/cordanaLLM/nucleus). Governance, golusoris adoption and the remaining migration steps are tracked in the [routed planning graph](planning/TODO.md) (see [ADR-0019](docs/adr/0019-imago-fleet-migration-praetor-golusoris-planning-graph.md)).
 
-[📖 Documentation Portal](https://lusoris.github.io/lusoris-cloud-images) &nbsp;•&nbsp;
+[📖 Documentation Portal](https://cordanallm.github.io/imago) &nbsp;•&nbsp;
 [📋 Complete Flavor Catalog (44 Flavors)](FLAVORS.md) &nbsp;•&nbsp;
 [📐 Architecture & Principles](docs/principles.md) &nbsp;•&nbsp;
-[🔒 Security Advisories](https://github.com/lusoris/lusoris-cloud-images/security/advisories)
+[🔒 Security Advisories](https://github.com/cordanaLLM/imago/security/advisories)
 
 </div>
 
 ---
 
-## Why lusoris-cloud-images?
+## Why imago?
 
-Stock cloud distributions waste minutes downloading gigabytes of kernel modules, GPU drivers, and container runtimes on first boot. `lusoris-cloud-images` bakes these dependencies into production-ready, verified images (`.qcow2`, `.raw`, `.vmdk`, and Proxmox/Unraid/VMware templates).
+Stock cloud distributions waste minutes downloading gigabytes of kernel modules, GPU drivers, and container runtimes on first boot. `imago` bakes these dependencies into production-ready, verified images (`.qcow2`, `.raw`, `.vmdk`, and Proxmox/Unraid/VMware templates).
 
 - **Zero Base Bloat**: Complete elimination of Canonical snaps, telemetry services (`ubuntu-pro-client`, `landscape-common`, `popularity-contest`), motd news, and unneeded documentation.
 - **Single Source of Truth (`versions.json`)**: Every upstream URL, driver branch, and container tag originates from a single declarative manifest validated against `versions.schema.json`.
@@ -120,7 +120,7 @@ To keep maintenance low and usability high, flavors are partitioned into 7 disti
 | **6. AI & LLM Inference** | 6 | AMX/AVX-512, Intel Xe2, AMD ROCm 10, NVIDIA (565/610/615) | Transparent Hugepages, NUMA, vLLM / Ollama | [📖 AI Inference Guide](docs/flavors/ai-infer.md) |
 | **7. Homelab Appliances** | 5 | Coral TPU, QuickSync, Dual VA-API, ARM64 binfmt, i386 | Frigate NVR, AdGuard/Pi-hole, Jellyfin, CI runner, SteamCMD | [📖 Homelab Guide](docs/flavors/homelab-appliances.md) |
 
-> 📋 **Detailed Specifications**: Browse the complete list of all 44 target configurations in [**`FLAVORS.md`**](FLAVORS.md) or explore them interactively in the [**Documentation Portal Matrix**](https://lusoris.github.io/lusoris-cloud-images/flavors/matrix/).
+> 📋 **Detailed Specifications**: Browse the complete list of all 44 target configurations in [**`FLAVORS.md`**](FLAVORS.md) or explore them interactively in the [**Documentation Portal Matrix**](https://cordanallm.github.io/imago/flavors/matrix/).
 
 ---
 
@@ -136,8 +136,8 @@ To keep maintenance low and usability high, flavors are partitioned into 7 disti
 
 ```bash
 # Clone the repository
-git clone https://github.com/lusoris/lusoris-cloud-images.git
-cd lusoris-cloud-images
+git clone https://github.com/cordanaLLM/imago.git
+cd imago
 
 # Initialize plugins and run quality gates
 make init
@@ -180,7 +180,7 @@ make build-ai-infer-nvidia     # AI inference appliance (vLLM / NUMA tuning)
 
 ## Governance & Security
 
-- **Security Advisories**: To report security vulnerabilities, open a [GitHub Private Security Advisory](https://github.com/lusoris/lusoris-cloud-images/security/advisories/new).
+- **Security Advisories**: To report security vulnerabilities, open a [GitHub Private Security Advisory](https://github.com/cordanaLLM/imago/security/advisories/new).
 - **Engineering Principles**: All changes must satisfy [Engineering Principles](docs/principles.md) and [Rule Crosswalk](docs/repository-rule-crosswalk.md).
 - **License**: [Apache 2.0](LICENSE) — Copyright &copy; 2026 The Lusoris Authors.
 

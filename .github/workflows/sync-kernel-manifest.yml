@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   sync:
-    name: Sync Kernel Manifest from lusoris-kernel-forge
+    name: Sync Kernel Manifest from nucleus
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -89,7 +89,7 @@ jobs:
           branch: chore/sync-kernel-${{ steps.meta.outputs.stream }}
           title: "chore(kernel): sync ${{ steps.meta.outputs.stream }} to ${{ steps.meta.outputs.version }}"
           body: |
-            Automated downstream kernel synchronization from `lusoris-kernel-forge`.
+            Automated downstream kernel synchronization from `nucleus`.
 
             - **Stream**: `${{ steps.meta.outputs.stream }}`
             - **Version**: `${{ steps.meta.outputs.version }}`

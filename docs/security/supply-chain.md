@@ -8,7 +8,7 @@ Release artifacts are signed using **Sigstore Cosign** keyless signing. The sign
 
 ```bash
 cosign verify-blob \
-  --certificate-identity "https://github.com/lusoris/lusoris-cloud-images/.github/workflows/release-matrix.yml@refs/tags/v0.1.0" \
+  --certificate-identity "https://github.com/cordanaLLM/imago/.github/workflows/release-matrix.yml@refs/tags/v0.1.0" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
   --signature SHA256SUMS.sig \
   SHA256SUMS
