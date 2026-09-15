@@ -23,7 +23,7 @@ func executeCommand(args ...string) (string, error) {
 func TestRootHelp(t *testing.T) {
 	out, err := executeCommand("--help")
 	require.NoError(t, err)
-	assert.Contains(t, out, "Lusoris Forge — Unified CLI & AI MCP Server")
+	assert.Contains(t, out, "Imago — Unified CLI & AI MCP Server")
 	assert.Contains(t, out, "flavors")
 	assert.Contains(t, out, "manifest")
 	assert.Contains(t, out, "standards")

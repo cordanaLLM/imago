@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/tracker"
+	"github.com/cordanaLLM/imago/pkg/tracker"
 )
 
 func TestLoadActualEpics(t *testing.T) {

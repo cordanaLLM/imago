@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/imageless"
+	"github.com/cordanaLLM/imago/pkg/imageless"
 )
 
 func TestGenerateApplyScript(t *testing.T) {

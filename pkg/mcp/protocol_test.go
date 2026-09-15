@@ -11,8 +11,6 @@ import (
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/lusoris/lusoris-cloud-images/pkg/mcp"
 )
 
 func setupTestSession(t *testing.T) (*sdkmcp.ClientSession, func()) {
@@ -25,7 +23,7 @@ func setupTestSession(t *testing.T) (*sdkmcp.ClientSession, func()) {
 	require.NoError(t, err)
 
 	logger := slog.New(slog.DiscardHandler)
-	server := mcp.NewServer(logger)
+	server := newTestServer(t, logger)
 
 	serverTransport, clientTransport := sdkmcp.NewInMemoryTransports()
 	ctx := context.Background()
@@ -72,6 +70,7 @@ func TestMCPProtocolHandshakeAndToolListing(t *testing.T) {
 		"list_staged_actions",
 		"confirm_action",
 		"discard_staged_action",
+		"route_plan",
 	}
 
 	assert.Equal(t, len(expectedTools), len(res.Tools))
@@ -349,5 +348,42 @@ func TestMCPProtocolToolExecution(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.True(t, resDiscardErr.IsError)
+	})
+}
+
+func TestMCPProtocolRoutePlan(t *testing.T) {
+	session, cleanup := setupTestSession(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	t.Run("ready_set_from_tracked_graph", func(t *testing.T) {
+		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
+			Name:      "route_plan",
+			Arguments: map[string]any{"ready_only": true},
+		})
+		require.NoError(t, err)
+		require.False(t, res.IsError)
+		text := res.Content[0].(*sdkmcp.TextContent).Text
+		assert.Contains(t, text, `"state": "ready"`)
+		assert.NotContains(t, text, `"state": "blocked"`)
+	})
+
+	t.Run("rejects_path_escape", func(t *testing.T) {
+		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
+			Name:      "route_plan",
+			Arguments: map[string]any{"plan_path": "../outside/plan.json"},
+		})
+		require.NoError(t, err)
+		assert.True(t, res.IsError)
+		assert.Contains(t, res.Content[0].(*sdkmcp.TextContent).Text, "relative to the repository")
+	})
+
+	t.Run("missing_overlay_is_an_error", func(t *testing.T) {
+		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
+			Name:      "route_plan",
+			Arguments: map[string]any{"routing_path": "planning/absent.json"},
+		})
+		require.NoError(t, err)
+		assert.True(t, res.IsError)
 	})
 }

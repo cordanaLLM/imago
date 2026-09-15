@@ -1,6 +1,8 @@
 # lusoris-cloud-images
 
 > Enterprise-grade, hardened, hardware-accelerated cloud and bare-metal OS images with pre-baked runtimes.
+>
+> Migrating to the fleet identity `cordanaLLM/imago`; see [ADR-0019](adr/0019-imago-fleet-migration-praetor-golusoris-planning-graph.md) and the [planning graph](tools/planning-graph.md).
 
 ---
 

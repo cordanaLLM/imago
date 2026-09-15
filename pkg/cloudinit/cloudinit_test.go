@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/cloudinit"
+	"github.com/cordanaLLM/imago/pkg/cloudinit"
 )
 
 func TestGenerateUserDataDefault(t *testing.T) {

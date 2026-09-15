@@ -13,7 +13,7 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-FORGE_BIN = REPO_ROOT / "bin" / "lusoris-forge.exe"
+FORGE_BIN = REPO_ROOT / "bin" / "imago.exe"
 
 PLATFORMS = ["proxmox", "unraid", "truenas", "macos", "windows"]
 TIERS = [
@@ -37,7 +37,7 @@ class TestCloudInitDeepMatrix:
             [
                 "go",
                 "run",
-                "./cmd/lusoris-forge",
+                "./cmd/imago",
                 "cloud-init",
                 "generate",
                 f"--flavor={flavor}",
@@ -96,7 +96,7 @@ class TestCloudInitDeepMatrix:
             [
                 "go",
                 "run",
-                "./cmd/lusoris-forge",
+                "./cmd/imago",
                 "cloud-init",
                 "metadata",
                 f"--hostname={hostname}",

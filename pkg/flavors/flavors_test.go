@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/flavors"
+	"github.com/cordanaLLM/imago/pkg/flavors"
 )
 
 func TestAllFlavorsCount(t *testing.T) {

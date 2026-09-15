@@ -49,7 +49,7 @@ class TestGovernanceIntegrity:
             REPO_ROOT / ".github" / "epics.json",
             REPO_ROOT / ".github" / "milestones.json",
             REPO_ROOT / "go.mod",
-            REPO_ROOT / "cmd" / "lusoris-forge" / "main.go",
+            REPO_ROOT / "cmd" / "imago" / "main.go",
             REPO_ROOT / "docs" / "hardware" / "architectures-and-form-factors.md",
             REPO_ROOT / "docs" / "standards" / "hardware-market-and-datacenter-survey.md",
             REPO_ROOT / "docs" / "standards" / "flavor-hardening-standards.md",

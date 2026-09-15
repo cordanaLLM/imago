@@ -5,11 +5,14 @@ package builder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/flavors"
+	"github.com/golusoris/golusoris/core/clock"
+
+	"github.com/cordanaLLM/imago/pkg/flavors"
 )
 
 // Backend identifies the execution target.
@@ -37,6 +40,9 @@ type Request struct {
 	Ref        string        `json:"ref,omitempty"`
 	DryRun     bool          `json:"dry_run"`
 	Timeout    time.Duration `json:"timeout"`
+	// Clock supplies "now" for TriggeredAt and pipeline identifiers. It is
+	// injected (golusoris core/clock) so dispatch timing is testable.
+	Clock clock.Clock `json:"-"`
 }
 
 // Result describes the outcome of a build dispatch.
@@ -56,6 +62,10 @@ func Dispatch(ctx context.Context, req Request) (Result, error) {
 		return Result{}, fmt.Errorf("builder: invalid flavor: %w", err)
 	}
 
+	if req.Clock == nil {
+		return Result{}, errors.New("builder: request clock is required")
+	}
+
 	if req.Timeout == 0 {
 		req.Timeout = 10 * time.Minute
 	}
@@ -63,7 +73,7 @@ func Dispatch(ctx context.Context, req Request) (Result, error) {
 	res := Result{
 		Backend:     req.Backend,
 		Flavor:      req.Flavor,
-		TriggeredAt: time.Now().UTC(),
+		TriggeredAt: req.Clock.Now().UTC(),
 	}
 
 	if req.DryRun {
@@ -103,28 +113,28 @@ func dispatchLocal(ctx context.Context, req Request, res Result) (Result, error)
 func dispatchWorkflow(ctx context.Context, req Request, res Result) (Result, error) {
 	backendName := strings.ToUpper(string(req.Backend))
 	res.Success = true
-	res.PipelineID = fmt.Sprintf("%s-job-%d", string(req.Backend), time.Now().Unix())
+	res.PipelineID = fmt.Sprintf("%s-job-%d", string(req.Backend), req.Clock.Now().Unix())
 	res.Message = fmt.Sprintf("%s Actions workflow dispatch dispatched for flavor %q", backendName, req.Flavor)
 	return res, nil
 }
 
 func dispatchProxmox(ctx context.Context, req Request, res Result) (Result, error) {
 	res.Success = true
-	res.PipelineID = fmt.Sprintf("pve-clone-%s-%d", req.Flavor, time.Now().Unix())
+	res.PipelineID = fmt.Sprintf("pve-clone-%s-%d", req.Flavor, req.Clock.Now().Unix())
 	res.Message = fmt.Sprintf("Proxmox VE template clone task scheduled for flavor %q", req.Flavor)
 	return res, nil
 }
 
 func dispatchGitLab(ctx context.Context, req Request, res Result) (Result, error) {
 	res.Success = true
-	res.PipelineID = fmt.Sprintf("gl-pipeline-%d", time.Now().Unix())
+	res.PipelineID = fmt.Sprintf("gl-pipeline-%d", req.Clock.Now().Unix())
 	res.Message = fmt.Sprintf("GitLab CI pipeline trigger scheduled for flavor %q", req.Flavor)
 	return res, nil
 }
 
 func dispatchWoodpecker(ctx context.Context, req Request, res Result) (Result, error) {
 	res.Success = true
-	res.PipelineID = fmt.Sprintf("wp-build-%d", time.Now().Unix())
+	res.PipelineID = fmt.Sprintf("wp-build-%d", req.Clock.Now().Unix())
 	res.Message = fmt.Sprintf("Woodpecker CI build triggered for flavor %q", req.Flavor)
 	return res, nil
 }
@@ -145,7 +155,7 @@ func dispatchMinIO(ctx context.Context, req Request, res Result) (Result, error)
 
 func dispatchJenkins(ctx context.Context, req Request, res Result) (Result, error) {
 	res.Success = true
-	res.PipelineID = fmt.Sprintf("jenkins-build-%d", time.Now().Unix())
+	res.PipelineID = fmt.Sprintf("jenkins-build-%d", req.Clock.Now().Unix())
 	res.Message = fmt.Sprintf("Jenkins remote job trigger scheduled for flavor %q", req.Flavor)
 	return res, nil
 }

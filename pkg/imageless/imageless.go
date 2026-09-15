@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lusoris/lusoris-cloud-images/pkg/flavors"
+	"github.com/cordanaLLM/imago/pkg/flavors"
 )
 
 // ApplyOptions configures the in-place host provisioning script.
@@ -30,7 +30,7 @@ func GenerateApplyScript(opts ApplyOptions) (string, error) {
 	sb.WriteString("#!/usr/bin/env bash\n")
 	sb.WriteString("# Lusoris Imageless Provisioning Script\n")
 	fmt.Fprintf(&sb, "# Target Flavor: %s (%s)\n", fl.ID, fl.Name)
-	sb.WriteString("# Generated automatically by lusoris-forge\n")
+	sb.WriteString("# Generated automatically by imago\n")
 	sb.WriteString("set -euo pipefail\n\n")
 
 	sb.WriteString("echo \"==> Initiating Lusoris imageless flavor application...\"\n")

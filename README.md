@@ -1,5 +1,7 @@
 # lusoris-cloud-images
 
+[![HISS-16 Adopted](https://img.shields.io/badge/Standards-HISS--16%20Adopted%20(6%20baselined)-yellow)](AGENTS.md)
+
 <div align="center">
 
 [![CI Quality Gates](https://img.shields.io/github/actions/workflow/status/lusoris/lusoris-cloud-images/ci.yml?branch=main&label=CI%20Gates&logo=githubactions&logoColor=white&style=flat-square)](https://github.com/lusoris/lusoris-cloud-images/actions/workflows/ci.yml)
@@ -22,6 +24,8 @@
 <br/>
 
 **Enterprise-grade, hardened, hardware-accelerated cloud and bare-metal OS image forge with pre-baked runtimes.**
+
+> **Fleet identity**: this repository is migrating to **`cordanaLLM/imago`**, the reusable image builder named in the [Aegis-OS connected stack contract](https://github.com/cordanallm/Aegis-OS/blob/main/docs/integration/stack.md). The Go module is already `github.com/cordanaLLM/imago` and the CLI is `imago`; the GitHub transfer, praetor governance, and golusoris adoption are tracked in the [routed planning graph](planning/TODO.md) (see [ADR-0019](docs/adr/0019-imago-fleet-migration-praetor-golusoris-planning-graph.md)).
 
 [📖 Documentation Portal](https://lusoris.github.io/lusoris-cloud-images) &nbsp;•&nbsp;
 [📋 Complete Flavor Catalog (44 Flavors)](FLAVORS.md) &nbsp;•&nbsp;
@@ -81,7 +85,7 @@ flowchart TD
             Tiers --> Artifacts
         end
         subgraph TrackImageless["Track B: Imageless & MicroVMs"]
-            CLI["lusoris-forge CLI / MCP<br/><small>Go 1.27 Engine</small>"]:::imageless
+            CLI["imago CLI / MCP<br/><small>Go 1.27 Engine</small>"]:::imageless
             Apply["In-Place Provisioning<br/><small>SSH / Local Host Apply</small>"]:::imageless
             Boot["MicroVM Direct Kernel Boot<br/><small>Cloud-Hypervisor & Firecracker</small>"]:::imageless
             CLI --> Apply
@@ -179,3 +183,14 @@ make build-ai-infer-nvidia     # AI inference appliance (vLLM / NUMA tuning)
 - **Security Advisories**: To report security vulnerabilities, open a [GitHub Private Security Advisory](https://github.com/lusoris/lusoris-cloud-images/security/advisories/new).
 - **Engineering Principles**: All changes must satisfy [Engineering Principles](docs/principles.md) and [Rule Crosswalk](docs/repository-rule-crosswalk.md).
 - **License**: [Apache 2.0](LICENSE) — Copyright &copy; 2026 The Lusoris Authors.
+
+## Standards & Governance
+
+This repository conforms to High-Integrity Systems Standards (HISS-16)
+and modernized NASA JPL Power-of-10 rules.
+
+| Gate | Command | Description |
+| :--- | :--- | :--- |
+| **Verification** | `make verify-all` | Runs full audit, test suite, and context integrity check |
+| **HISS Audit** | `standardsctl audit` | Enforces zero technical debt regression against baseline |
+| **Context Sync** | `standardsctl compile-context` | Transpiles canonical `AGENTS.md` to all AI targets |

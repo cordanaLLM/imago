@@ -1,0 +1,63 @@
+version: 1
+repository: github.com/cordanaLLM/imago
+language: go
+go_version: 1.27.1
+framework: github.com/golusoris/golusoris
+capabilities:
+  required: []
+dependencies:
+  - package: github.com/golusoris/golusoris/core
+    version: v0.9.1
+    capability: fleet.golusoris
+    status: native
+    notes: First-party fleet module; not a framework gap
+  - package: github.com/golusoris/golusoris/core/clikit
+    capability: fleet.clikit
+    status: native
+    notes: First-party fleet module; not a framework gap
+  - package: github.com/golusoris/golusoris/core/clock
+    capability: fleet.clock
+    status: native
+    notes: First-party fleet module; not a framework gap
+  - package: github.com/golusoris/golusoris/core/config
+    capability: fleet.config
+    status: native
+    notes: First-party fleet module; not a framework gap
+  - package: github.com/golusoris/golusoris/core/log
+    capability: fleet.log
+    status: native
+    notes: First-party fleet module; not a framework gap
+  - package: github.com/golusoris/golusoris/core/mcp
+    capability: fleet.mcp
+    status: native
+    notes: First-party fleet module; not a framework gap
+  - package: github.com/modelcontextprotocol/go-sdk
+    version: v1.8.0
+    capability: mcp.server
+    status: covered
+    golusoris_replacement: github.com/golusoris/golusoris/core/mcp
+    notes: Official MCP Go SDK wrapped in Golusoris mcp module
+  - package: github.com/spf13/cobra
+    version: v1.10.2
+    capability: clikit.cobra
+    status: covered
+    golusoris_replacement: github.com/golusoris/golusoris/core/clikit
+    notes: Command line interface framework with flags
+  - package: github.com/stretchr/testify
+    version: v1.12.1
+    capability: test.assert
+    status: covered
+    golusoris_replacement: github.com/golusoris/golusoris/testutil
+    notes: "Retained on purpose: golusoris testutil provides infrastructure fixtures (pg, redis, kafka, ...), not an assertion API; declared non-goal pending praetor #34"
+  - package: go.uber.org/fx
+    version: v1.24.0
+    capability: clikit.ioc
+    status: covered
+    golusoris_replacement: github.com/golusoris/golusoris/core/clikit
+    notes: Dependency injection container mapped to Golusoris clikit
+readiness:
+  score: 100
+  total_third_party_deps: 10
+  covered_deps: 10
+  gap_deps: 0
+updated_at: 2026-09-15T08:11:58.1256101Z
