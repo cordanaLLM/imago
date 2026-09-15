@@ -1,0 +1,6 @@
+{
+  "global": {
+    "exclude": "",
+    "exclude-dir": "site,.workingdir,.workingdir2,packer_cache,output-images"
+  }
+}

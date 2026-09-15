@@ -1,5 +1,7 @@
 # Upstream report: praetor adoption and planning writers fail on Windows
 
+Filed as <https://github.com/cordanaLLM/praetor/issues/48> on 2026-09-15.
+
 Target: `cordanallm/praetor` (main, `89c56ec3`). Observed on Windows 11 with Go 1.27.0 on 2026-09-15 while adopting `cordanaLLM/imago` (then `lusoris/lusoris-cloud-images`).
 
 ## Defect 1: catalog artifact path validation compares platform separators against a slash constant

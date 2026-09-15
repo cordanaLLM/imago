@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 )
 
@@ -77,7 +78,7 @@ func Load(path string) (*Plan, error) {
 	if info.Size() > MaxPlanBytes {
 		return nil, fmt.Errorf("planning: plan exceeds %d bytes", MaxPlanBytes)
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("planning: read plan: %w", err)
 	}

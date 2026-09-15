@@ -465,7 +465,8 @@ func newAuditCmd() *cobra.Command {
 			if _, err := os.Stat(scriptPath); err != nil {
 				return fmt.Errorf("audit script %s not found: %w", scriptPath, err)
 			}
-			c := exec.Command("bash", scriptPath)
+			// Literal script path: the audit runner is a fixed repository asset, not user input.
+			c := exec.Command("bash", "scripts/audit-repository-health.sh")
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			return c.Run()

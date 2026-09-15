@@ -253,7 +253,7 @@ func inspectComplianceHandler(_ context.Context, req *coremcp.CallToolRequest) (
 	if p == "" {
 		p = filepath.Join("tests", "compliance", "goss.yaml")
 	}
-	data, err := os.ReadFile(p)
+	data, err := os.ReadFile(filepath.Clean(p))
 	if err != nil {
 		return errorResult(err), nil
 	}

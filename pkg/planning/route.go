@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 )
 
@@ -79,7 +80,7 @@ func LoadOverlay(path string, plan *Plan) (*Overlay, error) {
 	if info.Size() > MaxPlanBytes {
 		return nil, fmt.Errorf("planning: routing overlay exceeds %d bytes", MaxPlanBytes)
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("planning: read routing overlay: %w", err)
 	}

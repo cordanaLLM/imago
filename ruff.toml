@@ -1,0 +1,25 @@
+# Ruff configuration for the Python verification suites (tests/) and
+# automation scripts (scripts/). Mirrors the Power-of-10 adaptation in
+# docs/principles.md: short functions, explicit bounds, no unused state.
+target-version = "py312"
+line-length = 120
+extend-exclude = ["site", "output-images", "packer_cache", ".workingdir", ".workingdir2"]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "PL"]
+ignore = [
+  "E501",    # line length is enforced by the formatter
+  "PLR0913", # test helpers legitimately take several parameters
+  "PLR2004", # magic values in assertions are the expected literals
+]
+
+[lint.pylint]
+max-branches = 10
+max-statements = 50
+
+[lint.isort]
+known-first-party = ["tests", "scripts"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

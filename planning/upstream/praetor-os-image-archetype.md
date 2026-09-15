@@ -1,5 +1,7 @@
 # Upstream request: `os-image` archetype and flavor detection for OS image forges
 
+Filed as <https://github.com/cordanaLLM/praetor/issues/49> on 2026-09-15.
+
 Target: `cordanallm/praetor` (main, `89c56ec3`). Requested by `cordanaLLM/imago` (the image forge named in the Aegis-OS connected stack contract; today `lusoris/lusoris-cloud-images`) on 2026-09-15.
 
 ## Problem
