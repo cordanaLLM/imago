@@ -4,7 +4,7 @@ Status: draft proposal; structurally valid; review required. Source provenance i
 
 - Plan: `plan-imago-fleet-migration`
 - Project: `project-cordanallm-imago`
-- Digest: `33f52c838ab10089395ed1fb191ba964684403ef4f1bfa3c69c31caed1d8166d`
+- Digest: `b2701894e9166d9953da00dd7276d4e20399b21a8126938443eaad4650d0b524`
 - Canonical data: [plan.json](plan.json)
 
 Unsupported in this proposal:
@@ -482,7 +482,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
 
 ### Actions
 
-1. File the archetype request with the drafted YAML and the flavor mis\-detection evidence.
+1. File the archetype request with the drafted YAML and the flavor misdetection evidence.
 2. Submit the pull request once praetor maintainers accept the request.
 
 ### Expected outputs
