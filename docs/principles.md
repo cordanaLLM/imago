@@ -40,7 +40,7 @@ Gerard J. Holzmann's [_The Power of 10: Rules for Developing Safety-Critical Cod
 
 ## 3. Single Source of Truth (`versions.json`)
 
-1. **Declarative Invariant**: Distribution image URLs, checksums, kernel versions, driver versions, Kubernetes releases, and container image tags reside exclusively in [`versions.json`](https://github.com/lusoris/lusoris-cloud-images/blob/main/versions.json).
+1. **Declarative Invariant**: Distribution image URLs, checksums, kernel versions, driver versions, Kubernetes releases, and container image tags reside exclusively in [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json).
 2. **Zero Hardcoded Versions**: Shell provisioners and Packer HCL templates never hardcode version numbers or branch names.
 3. **Automated Drift Prevention**: Automated dependency tools (Renovate) update only `versions.json`, producing minimal, verifiable pull request diffs.
 
@@ -49,8 +49,8 @@ Gerard J. Holzmann's [_The Power of 10: Rules for Developing Safety-Critical Cod
 ## 4. Generational Hardware Segmentation
 
 Hardware acceleration drivers and runtimes must remain strictly isolated by generational architecture:
-- **Intel Arc / Xe**: Dedicated Battlemage Xe2, Alchemist, Level Zero, and Media Driver stack ([`30-gpu-intel.sh`](https://github.com/lusoris/lusoris-cloud-images/blob/main/packer/provisioners/30-gpu-intel.sh)).
-- **AMD Radeon / ROCm**: Segregated into user-space Mesa VA-API/RADV ([`31-gpu-amd-mesa.sh`](https://github.com/lusoris/lusoris-cloud-images/blob/main/packer/provisioners/31-gpu-amd-mesa.sh)) and ROCm 10 compute ([`32-gpu-amd-rocm.sh`](https://github.com/lusoris/lusoris-cloud-images/blob/main/packer/provisioners/32-gpu-amd-rocm.sh)).
+- **Intel Arc / Xe**: Dedicated Battlemage Xe2, Alchemist, Level Zero, and Media Driver stack ([`30-gpu-intel.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/30-gpu-intel.sh)).
+- **AMD Radeon / ROCm**: Segregated into user-space Mesa VA-API/RADV ([`31-gpu-amd-mesa.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/31-gpu-amd-mesa.sh)) and ROCm 10 compute ([`32-gpu-amd-rocm.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/32-gpu-amd-rocm.sh)).
 - **NVIDIA Segmentation**:
   - `legacy`: Driver 535 + CUDA 12.2 (Pascal / Volta).
   - `mainstream`: Driver 565 + CUDA 12.8 (Turing / Ampere / Ada).
@@ -88,7 +88,7 @@ Cross-generation driver mixing or monolithic "universal" driver bloat is strictl
 
 ## 8. Docs & Code Synchrony
 
-1. **Atomic Documentation**: Every user-discoverable addition or modification (new flavor, CLI flag, build target, or provisioner parameter) must be fully documented under [the documentation portal](index.md) and [`README.md`](https://github.com/lusoris/lusoris-cloud-images/blob/main/README.md) in the **exact same pull request**.
+1. **Atomic Documentation**: Every user-discoverable addition or modification (new flavor, CLI flag, build target, or provisioner parameter) must be fully documented under [the documentation portal](index.md) and [`README.md`](https://github.com/cordanaLLM/imago/blob/main/README.md) in the **exact same pull request**.
 2. **Strict MkDocs Verification**: The documentation portal must build with `mkdocs build --strict` with zero broken links and zero warnings.
 
 ---

@@ -20,7 +20,7 @@ The deduplicated local authority for this repository is [`docs/principles.md`](p
 
 Across the reference repositories, the stable architectural pattern is:
 
-1. **One Root Engineering Contract**: A centralized, authoritative [`docs/principles.md`](principles.md) and [`AGENTS.md`](https://github.com/lusoris/lusoris-cloud-images/blob/main/AGENTS.md).
+1. **One Root Engineering Contract**: A centralized, authoritative [`docs/principles.md`](principles.md) and [`AGENTS.md`](https://github.com/cordanaLLM/imago/blob/main/AGENTS.md).
 2. **Narrow Set of Hard Automated Gates**: Zero-lint merge floors, strict static analysis, and cryptographic pinning.
 3. **Explicit Governance & Community Surfaces**: Standard `CONTRIBUTING.md`, `SECURITY.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`.
 4. **Immutable Supply Chain**: All GitHub Actions references pinned to full 40-character commit hashes; SLSA provenance attestations.
@@ -34,16 +34,16 @@ Across the reference repositories, the stable architectural pattern is:
 
 | Reference Convention | Local Decision | Concrete Surface |
 | :--- | :--- | :--- |
-| **Root Engineering Contract** | **Adopted** | [`docs/principles.md`](principles.md) & [`AGENTS.md`](https://github.com/lusoris/lusoris-cloud-images/blob/main/AGENTS.md) |
+| **Root Engineering Contract** | **Adopted** | [`docs/principles.md`](principles.md) & [`AGENTS.md`](https://github.com/cordanaLLM/imago/blob/main/AGENTS.md) |
 | **NASA/JPL Power of 10** | **Adapted** for Shell & Packer | Functions $\le$ 60 lines, `set -euo pipefail`, bounded loops in `packer/provisioners/` |
-| **Single Source of Truth (SSOT)** | **Adopted** | Declarative [`versions.json`](https://github.com/lusoris/lusoris-cloud-images/blob/main/versions.json) driving Packer HCL and provisioner env vars |
+| **Single Source of Truth (SSOT)** | **Adopted** | Declarative [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json) driving Packer HCL and provisioner env vars |
 | **Zero-Warning Merge Floor** | **Adopted** | `make lint` (Packer, ShellCheck, Yamllint, shfmt, Codespell) + `make test` |
 | **Trunk-Based PR Merge Flow** | **Adopted** | Protected `main`, branch protection requiring `required-checks`, squash/rebase only |
 | **Pinned GitHub Actions** | **Adopted** | All 26 actions in `.github/workflows/` pinned to 40-character commit SHAs |
 | **Conventional Commits** | **Adopted** | `type(scope): subject` syntax enforced via PR titles and release automation |
 | **Semantic Versioning (Release Please)** | **Adopted** | Automated releases, CHANGELOG generation, and release pull requests |
 | **Append-Only ADRs** | **Adopted** | [`docs/adr/`](adr/README.md) following standardized format |
-| **Material for MkDocs Portal** | **Adopted** | `mkdocs build --strict` deploying to GitHub Pages via [`pages.yml`](https://github.com/lusoris/lusoris-cloud-images/blob/main/.github/workflows/pages.yml) |
+| **Material for MkDocs Portal** | **Adopted** | `mkdocs build --strict` deploying to GitHub Pages via [`pages.yml`](https://github.com/cordanaLLM/imago/blob/main/.github/workflows/pages.yml) |
 | **Privacy & Zero-Leak Invariant** | **Adopted** | Strict prohibition on RFC 1918 IPs and `/home/*` paths (`test_no_private_ips_or_user_paths`) |
 | **Supply-Chain & SAST Scans** | **Adopted** | OpenSSF Scorecard v2.4.4, Semgrep SAST, Trivy CVE filesystem scan, Gitleaks |
 | **Worktree Discipline** | **Adopted** | Isolated branch/worktree execution under `.workingdir2/worktrees/`; never run parallel agents in main |
@@ -62,7 +62,7 @@ Across the reference repositories, the stable architectural pattern is:
 
 The following repository settings were verified via `gh api`:
 
-- **Visibility & Metadata**: Public repository, description set, topics registered, homepage set to `https://lusoris.github.io/lusoris-cloud-images`.
+- **Visibility & Metadata**: Public repository, description set, topics registered, homepage set to `https://cordanallm.github.io/imago`.
 - **Merge Settings**: Squash and rebase merges allowed; merge commits disabled; delete branch on merge enabled.
 - **Workflow Permissions**: `can_approve_pull_request_reviews: true` to enable Release Please automation.
 - **Branch Protection on `main`**: Required status check `required-checks`; strict linear history; force-pushes and deletions blocked.

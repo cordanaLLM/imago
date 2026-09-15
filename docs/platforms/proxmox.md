@@ -6,7 +6,7 @@
 
 ```bash
 # 1. Download and decompress the desired release image
-curl -fsSL https://github.com/lusoris/lusoris-cloud-images/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > /tmp/image.qcow2
+curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > /tmp/image.qcow2
 
 # 2. Create a VM shell (ID: 9000)
 qm create 9000 --name "lusoris-docker-template" --memory 4096 --cores 4 --net0 virtio,bridge=vmbr0

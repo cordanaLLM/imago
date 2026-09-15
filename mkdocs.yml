@@ -1,8 +1,8 @@
-site_name: lusoris-cloud-images
+site_name: imago
 site_description: Enterprise-grade, hardened, hardware-accelerated cloud and bare-metal OS image forge
-site_url: https://lusoris.github.io/lusoris-cloud-images
-repo_url: https://github.com/lusoris/lusoris-cloud-images
-repo_name: lusoris/lusoris-cloud-images
+site_url: https://cordanallm.github.io/imago
+repo_url: https://github.com/cordanaLLM/imago
+repo_name: cordanaLLM/imago
 edit_uri: edit/main/docs/
 copyright: "Copyright &copy; 2026 The Lusoris Authors — Apache 2.0 License"
 

@@ -55,8 +55,8 @@ def build_agent_payload(spec: Dict[str, Any]) -> Dict[str, Any]:
             "sources": [
                 {
                     "type": "repository",
-                    "source": "https://github.com/lusoris/lusoris-cloud-images",
-                    "target": "/workspace/lusoris-cloud-images",
+                    "source": "https://github.com/cordanaLLM/imago",
+                    "target": "/workspace/imago",
                 }
             ],
             "network": {

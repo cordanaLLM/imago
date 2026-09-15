@@ -101,13 +101,15 @@
     },
     "step-create-repo": {
       "cost": "small",
-      "done": false,
-      "owner": "cordanaLLM"
+      "done": true,
+      "owner": "cordanaLLM",
+      "evidence": "GitHub transfer 2026-09-15: https://github.com/cordanaLLM/imago (old URL redirects); fleet topology entry waits for praetor fix/fleet-topology-from-config-20260914"
     },
     "step-redirects": {
       "cost": "small",
-      "done": false,
-      "owner": "cordanaLLM/imago"
+      "done": true,
+      "owner": "cordanaLLM/imago",
+      "evidence": "chore/imago-redirects: badges, site_url, dispatch target cordanaLLM/nucleus, homepage; nucleus repoints its downstream dispatch in cordanaLLM/nucleus#10"
     },
     "step-aegis-schema-pin": {
       "cost": "large",

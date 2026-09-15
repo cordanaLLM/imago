@@ -7,7 +7,7 @@ All `lusoris-cloud-images` flavors are engineered for seamless operation in Unra
 1. Download and decompress the release image into your Unraid domains share:
    ```bash
    cd /mnt/user/domains/my-appliance/
-   curl -fsSL https://github.com/lusoris/lusoris-cloud-images/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > vdisk1.qcow2
+   curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > vdisk1.qcow2
    ```
 2. In the Unraid Web GUI:
    - Navigate to **VMs -> Add VM -> Linux**.

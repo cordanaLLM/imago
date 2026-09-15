@@ -1,6 +1,6 @@
 # Planning Graph & Todo Routing
 
-The migration to `cordanaLLM/imago` is tracked as a typed dependency graph under [`planning/`](https://github.com/lusoris/lusoris-cloud-images/tree/main/planning), compiled with praetor's planning compiler and routed by the `imago` CLI. Recurring, cadence-driven work stays in `.github/epics.json`; one-off work with dependencies lives in the graph.
+The migration to `cordanaLLM/imago` is tracked as a typed dependency graph under [`planning/`](https://github.com/cordanaLLM/imago/tree/main/planning), compiled with praetor's planning compiler and routed by the `imago` CLI. Recurring, cadence-driven work stays in `.github/epics.json`; one-off work with dependencies lives in the graph.
 
 ## Files
 
