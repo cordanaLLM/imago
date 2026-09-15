@@ -3,5 +3,5 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.codespell]
-skip = ".git,output-images,packer_cache,*.qcow2,*.img,*.lock,.pytest_cache,*.zst,*.iso"
+skip = ".git,output-images,packer_cache,*.qcow2,*.img,*.lock,.pytest_cache,*.zst,*.iso,*.b64,.standards-receipt.json,planning/TODO.md,planning/ROADMAP.md,planning/MILESTONES.md"
 ignore-words-list = "nts,ptb,vainfo,clinfo,amdgpu,radeonsi,cgroup,cgroups,cgroupfs,containerd,virtio,virtiofs,unraid,resolute,nd,renderd,te,hart,hindsight"
