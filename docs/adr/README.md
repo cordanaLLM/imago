@@ -29,5 +29,6 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0017](0017-developer-workstations-single-node-k8s-and-orchestration-expansion.md) | Developer Workstation Environments, Single-Node Kubernetes, and Clustered Orchestration Expansion | Accepted | 2026-09-10 |
 | [0018](0018-nas-and-storage-appliance-ecosystem.md) | Open-Source and Virtual Network Attached Storage (NAS) Ecosystem Architecture | Accepted | 2026-09-10 |
 | [0019](0019-imago-fleet-migration-praetor-golusoris-planning-graph.md) | Fleet Migration to cordanaLLM/imago: Praetor Governance, Golusoris Core, and a Routed Planning Graph | Accepted | 2026-09-15 |
+| [0020](0020-aegis-product-input-contract-acceptance.md) | Aegis Product-Input Contract Acceptance | Accepted | 2026-09-15 |
 
 

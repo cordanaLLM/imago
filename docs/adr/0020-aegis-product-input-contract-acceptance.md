@@ -1,0 +1,32 @@
+# 20. Aegis Product-Input Contract Acceptance
+
+Date: 2026-09-15
+
+## Status
+
+Accepted
+
+## Context
+
+The connected-stack contract in `cordanaLLM/Aegis-OS` (`docs/integration/stack.md`) requires every crossing of the Aegis boundary to carry a schema, a correlation identifier, an exact revision, bounded retries, and a recorded result. It asks `cordanaLLM/imago` for three consumer proofs: the Aegis configuration is accepted, the pinned kernel is consumed, and an output digest with boot evidence is returned. Aegis milestone M18 shipped the product-input manifest `build/product-input.json` under the schema `aegis.p01.product-input.v1` (commit `5148ab27bb4c9d32759e8739b97c05d9b423b912`): correlation id, exact revision, the pinned Arch snapshot (Aegis D18), the four configuration references (`repart`, `sysupdate`, `mkosi`, `kernel-requirement`), the package set, the boot kernel identity (Aegis D07), and a retry budget. The Aegis-side crate validates every field while decoding, so an ill-formed field is a refusal rather than a value checked later or not at all.
+
+ADR-0019 left this contract as a planned milestone flagged as needing an external contract. The planning graph tracks it as `step-aegis-schema-pin` under `req-aegis-contract`, whose acceptance criteria are: the Aegis fixture is accepted, a manifest without a correlation id is rejected, and a retry count at the bound is accepted while one above it is refused.
+
+`pkg/builder.Request` is the Packer flavor dispatcher: it names one of the 44 catalog flavors and a CI backend. The Aegis manifest describes an mkosi/UKI image of a pinned distribution snapshot with an externally produced kernel; no flavor or provisioner in this repository produces that output today.
+
+## Decision
+
+1. **Acceptance boundary, not executor.** `pkg/aegis` accepts the manifest and stops. A typed `ProductInput` mirrors the fixture field for field with the hyphenated Aegis wire keys. Decoding uses `encoding/json` with `DisallowUnknownFields`, rejects trailing content after the first JSON value, and bounds the input to `MaxInputBytes` (1 MiB) through `io.LimitReader`, refusing anything longer before parsing. The fixture is vendored byte-for-byte under `pkg/aegis/testdata/product-input.json` and is the positive test.
+2. **Documented bounds as exported constants.** `schema` must equal `Schema`. `correlation-id` is 1..`MaxCorrelationIDLen` (128) characters of `[A-Za-z0-9._-]`. `revision` is exactly `RevisionLen` (40) lowercase hexadecimal characters. `distribution.id` is a 1..`MaxTokenLen` (128) token of `[A-Za-z0-9._-]`; `distribution.snapshot` is a 1..128 token of `[A-Za-z0-9./_:-]`. Each `definitions.*` path is required, at most `MaxPathLen` (256) characters, relative, forward-slash separated, free of control characters, backslashes, empty segments, and `..` segments. `packages` holds 1..`MaxPackages` (256) unique names of `[A-Za-z0-9._+@-]` starting alphanumeric. `kernel.source` is a bounded token (not an enumeration; consuming the pinned kernel is the nucleus contract tracked as `step-nucleus-contract`), and `kernel.default-package` must be one of `packages`. `retries.max-attempts` is 1..`MaxRetryAttempts` = **10** and `retries.backoff-seconds` is 0..`MaxBackoffSeconds` = **3600**. Validation walks bytes against fixed character sets; no regular expression is used, so it is linear in the already bounded input with no backtracking hazard.
+3. **Correlated errors.** Every rejection is an `*aegis.Error{CorrelationID, Field, Reason, Err}` whose text reads `aegis product-input <correlation-id>: <field>: <reason>`. When the manifest carries no correlation id the placeholder is `(missing)`; when it carries one that is not a valid token the placeholder is `(invalid)`, so an unbounded or unprintable value never reaches a log line. The correlation id is probed leniently from the first JSON value before strict decoding, so unknown-field and trailing-content refusals are correlated regardless of key order. Sentinel causes (`ErrInputTooLarge`, `ErrTrailingContent`, `ErrDecode`, `ErrSchema`, `ErrMissingField`, `ErrInvalidField`, `ErrOutOfBounds`) support `errors.Is`; the `encoding/json` error is wrapped so `errors.As` reaches it.
+4. **Mapping to an imago-side request.** `ProductInput.BuildRequest()` validates and returns `aegis.BuildRequest` (snake_case keys: `correlation_id`, `revision`, `distribution`, `definitions`, `packages`, `kernel_source`, `kernel_package`, `retry{attempts, backoff}` with the backoff as a `time.Duration`). It is deliberately not `pkg/builder.Request`: that type dispatches Packer flavors and has no mkosi/UKI flavor, and forcing the manifest into it would fabricate a flavor that does not exist. Binding the accepted request to an executor (mkosi/UKI synthesis consuming the nucleus kernel artifact) is the next planning step.
+5. **Symmetric result.** `aegis.Result` pins the recorded outcome the stack contract requires: `schema` (`imago.p01.product-result.v1`, proposed to Aegis alongside the request/result pair in M09), `correlation-id`, `image-digest` (`sha256:` plus 64 lowercase hexadecimal characters), `signature-ref`, and `boot-evidence-ref` (each at most `MaxReferenceLen` = 512 characters, no control characters). `Result.Validate()` returns the same correlated error. Nothing produces a result yet.
+6. **CLI.** `imago aegis validate <path>` loads, validates, and prints the mapped request (`--json` prints the `BuildRequest`); a rejection exits non-zero with the correlated error.
+
+## Consequences
+
+- **Positive**: Aegis M09 can test one request/result pair against a real consumer, and every malformed manifest yields one deterministic, correlated refusal that names the field and the rule.
+- **Positive**: the bounds are named constants recorded here; changing any of them is a contract change that requires a superseding ADR, not a silent edit.
+- **Negative**: the input is parsed twice (lenient correlation probe, then strict decode). Both parses are bounded by 1 MiB and happen once per request at the acceptance boundary, so the cost is accepted for deterministic correlation.
+- **Negative**: `imago aegis validate` accepts but does not build. The executor binding and the Aegis-owned request/result pairing (`step-aegis-pair`, which needs hardware) remain open in the planning graph.
+- **Neutral**: the result schema identifier is proposed by this repository; if Aegis records a different name in M09, a superseding ADR renames the constant.

@@ -113,9 +113,10 @@
     },
     "step-aegis-schema-pin": {
       "cost": "large",
-      "done": false,
+      "done": true,
       "owner": "cordanaLLM/imago",
-      "needs_external_contract": true
+      "needs_external_contract": true,
+      "evidence": "pkg/aegis strict decoder, bounds, correlated errors, BuildRequest and Result types; imago aegis validate; feat/aegis-product-input-20260915 pull request"
     },
     "step-aegis-pair": {
       "cost": "medium",

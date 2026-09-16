@@ -25,6 +25,7 @@ import (
 	"github.com/golusoris/golusoris/core/log"
 	coremcp "github.com/golusoris/golusoris/core/mcp"
 
+	"github.com/cordanaLLM/imago/pkg/aegis"
 	"github.com/cordanaLLM/imago/pkg/builder"
 	"github.com/cordanaLLM/imago/pkg/cloudinit"
 	"github.com/cordanaLLM/imago/pkg/flavors"
@@ -66,6 +67,7 @@ func newRootCmd() *cobra.Command {
 		newEpicsCmd(),
 		newMilestonesCmd(),
 		newPlanCmd(),
+		newAegisCmd(),
 		newLintCmd(),
 		newAuditCmd(),
 		newMCPCmd(),
@@ -578,5 +580,50 @@ func runPlanRoute(w io.Writer, planPath, routingPath string, jsonOutput, readyOn
 	for _, r := range routed {
 		fmt.Fprintf(w, "%-4d %-8s %-7s %-6.2f %-9d %-36s %s\n", r.Rank, r.State, r.Cost, r.Score, r.TransitiveUnblocks, r.ID, strings.Join(r.BlockedBy, ","))
 	}
+	return nil
+}
+
+func newAegisCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "aegis",
+		Short: "Accept Aegis product-input manifests (aegis.p01.product-input.v1) as build requests",
+	}
+
+	var jsonOutput bool
+	validateCmd := &cobra.Command{
+		Use:   "validate <path>",
+		Short: "Strictly decode and validate a product-input manifest and map it to a build request",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runAegisValidate(cmd.OutOrStdout(), args[0], jsonOutput)
+		},
+	}
+	validateCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output the mapped build request as JSON")
+
+	cmd.AddCommand(validateCmd)
+	return cmd
+}
+
+// runAegisValidate loads the manifest and prints the mapped request. A
+// rejection is returned unchanged so the correlated error reaches the caller.
+func runAegisValidate(w io.Writer, path string, jsonOutput bool) error {
+	input, err := aegis.Load(path)
+	if err != nil {
+		return err
+	}
+	req, err := input.BuildRequest()
+	if err != nil {
+		return err
+	}
+	if jsonOutput {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(req)
+	}
+	fmt.Fprintf(w, "✓ Aegis product-input %s accepted (%s).\n", req.CorrelationID, aegis.Schema)
+	fmt.Fprintf(w, "  Revision: %s\n", req.Revision)
+	fmt.Fprintf(w, "  Distribution: %s (snapshot %s)\n", req.Distribution.ID, req.Distribution.Snapshot)
+	fmt.Fprintf(w, "  Kernel: %s (%s); packages: %d\n", req.KernelPackage, req.KernelSource, len(req.Packages))
+	fmt.Fprintf(w, "  Retries: %d attempts, %s backoff\n", req.Retry.Attempts, req.Retry.Backoff)
 	return nil
 }

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Aegis product-input acceptance (ADR-0020): `pkg/aegis` decodes `aegis.p01.product-input.v1` strictly (unknown fields, trailing content, and inputs above 1 MiB rejected), validates every field against documented bounds (retries 1..10 attempts and 0..3600 s backoff, 1..256 unique packages, 40-hex revision, relative definition paths), maps it to a typed build request with a symmetric `Result` type, and reports correlated errors; `imago aegis validate <path> [--json]` exposes it.
 - Repository transferred to `cordanaLLM/imago` and the kernel forge to `cordanaLLM/nucleus`; badges, documentation portal URL, and the kernel dispatch target follow the new identities.
 - Fleet migration to `cordanaLLM/imago` (ADR-0019): Go module `github.com/cordanaLLM/imago`, CLI and MCP server renamed to `imago`, praetor governance adopted with the interim `gitops-infra` profile, and a proposed `os-image` archetype under `planning/archetypes/`.
 - Golusoris core composition: `core/clikit` command tree, `core/log` logger, `core/clock` injected into the build dispatcher and staging guard, and `core/mcp` owning the MCP transport (stdio stdout-purity guard and streamable-HTTP).

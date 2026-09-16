@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -132,4 +133,44 @@ func TestBuildCommand(t *testing.T) {
 	out, err := executeCommand("build", "--flavor=base-generic", "--backend=local", "--dry-run")
 	require.NoError(t, err)
 	assert.Contains(t, out, "dry-run:")
+}
+
+func TestAegisValidate(t *testing.T) {
+	fixturePath, err := filepath.Abs("../../pkg/aegis/testdata/product-input.json")
+	require.NoError(t, err)
+
+	out, err := executeCommand("aegis", "validate", fixturePath)
+	require.NoError(t, err)
+	assert.Contains(t, out, "aegis-m18-product-input-0001 accepted")
+	assert.Contains(t, out, "Kernel: linux-rt (built-here); packages: 3")
+	assert.Contains(t, out, "Retries: 3 attempts, 30s backoff")
+}
+
+func TestAegisValidateJSON(t *testing.T) {
+	fixturePath, err := filepath.Abs("../../pkg/aegis/testdata/product-input.json")
+	require.NoError(t, err)
+
+	out, err := executeCommand("aegis", "validate", fixturePath, "--json")
+	require.NoError(t, err)
+	assert.Contains(t, out, `"correlation_id": "aegis-m18-product-input-0001"`)
+	assert.Contains(t, out, `"revision": "61f2fe16bab7889e007b2fd1474b025023906e91"`)
+	assert.Contains(t, out, `"backoff": "30s"`)
+}
+
+func TestAegisValidateRejectsMissingCorrelationID(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "product-input.json")
+	require.NoError(t, os.WriteFile(path, []byte(`{"schema": "aegis.p01.product-input.v1"}`), 0o600))
+
+	_, err := executeCommand("aegis", "validate", path)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "aegis product-input (missing): correlation-id: required")
+}
+
+func TestAegisValidateRejectsUnknownField(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "product-input.json")
+	require.NoError(t, os.WriteFile(path, []byte(`{"schema": "aegis.p01.product-input.v1", "correlation-id": "cid-1", "extra": 1}`), 0o600))
+
+	_, err := executeCommand("aegis", "validate", path)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "aegis product-input cid-1: input: strict decode")
 }
