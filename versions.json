@@ -57,7 +57,7 @@
     "stargz_snapshotter": "0.18.2"
   },
   "tools": {
-    "cdebug": "0.5.1",
+    "cdebug": "0.0.19",
     "enroot": "3.4.1"
   },
   "kernel": {

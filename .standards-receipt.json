@@ -2,11 +2,11 @@
   "version": "v1",
   "command": "praetorctl gate run",
   "exit_code": 0,
-  "timestamp": "2026-09-15T08:30:08.5402087Z",
-  "commit_sha": "e0b9aa3569bb07b6360dd5cb575c938ae8ac1474",
-  "repository": "lusoris/lusoris-cloud-images",
-  "output_hash": "8f590bea131b8992fdee534a79e30c615f70c695dcec7b909bd642216c02367f",
-  "public_key": "b0131beef6910ff40ff08643e3f4c3176f1e66d0f566ac309b8e08d9663e8c98",
-  "signature": "a85e917d1dbab6fd2e95fa882eae230988269660572a43a43b1307964363dff796cacea9bdfa9f76222d05a35ff2a14f12a2bb93a2c5ff3efb5ea2d9c689f806",
-  "gate_output": "praetor-gate-output/v1\nrepository\tlusoris/lusoris-cloud-images\ncommit_sha\te0b9aa3569bb07b6360dd5cb575c938ae8ac1474\nworktree_clean\tfalse\ndry_run\tfalse\nstage\tPrefetch \u0026 Lockfiles\ttrue\t\nstage\tHISS Invariant Scan\ttrue\t1 infractions within the 1 baselined limit\nstage\tSecurity \u0026 SCA Scan\ttrue\t\nstage\tFlavor Conformance\ttrue\t\nstage\tRace-Detector Tests\ttrue\t\n"
+  "timestamp": "2026-09-16T09:17:41.8957368Z",
+  "commit_sha": "b9eb552c802294a9bda3d64a057e8ab5f44dbfe4",
+  "repository": "cordanaLLM/imago",
+  "output_hash": "9ff227c3d40015ce09222a74172da28c28094ed5413fda1416eeae79ec3636b3",
+  "public_key": "ae39fce4e6b6ff241835ce4288906b610d219a84b2284944790c292dd8d8e7e5",
+  "signature": "bbcc8a8d49d1cb21086289b2dcdc266229fcf74e5d73f9f9e760d2aa69db4564c686709d46916bcf9397d1c8f44b75c50990374907822190954faa3ba59cc406",
+  "gate_output": "praetor-gate-output/v1\nrepository\tcordanaLLM/imago\ncommit_sha\tb9eb552c802294a9bda3d64a057e8ab5f44dbfe4\nworktree_clean\ttrue\ndry_run\tfalse\nstage\tPrefetch \u0026 Lockfiles\ttrue\t\nstage\tHISS Invariant Scan\ttrue\t1 infractions within the 1 baselined limit\nstage\tSecurity \u0026 SCA Scan\ttrue\t\nstage\tFlavor Conformance\ttrue\tskipped: flavor: the declared profile has no flavor to audit against: profile \"os-image\"\nstage\tRace-Detector Tests\ttrue\t\n"
 }

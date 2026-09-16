@@ -95,6 +95,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Template cleanup seals the build account last instead of first. Revoking sudo at the
+  start left every later step unable to run, so SSH hardening, the apt cache, the
+  machine identity, host keys, logs and the free-space zeroing were all skipped while
+  the build reported only that a terminal was required to authenticate.
+- The cdebug installer names a release that exists. The manifest pinned 0.5.1, which
+  upstream has never published, and the asset name carried a version the file name
+  does not have; the download is now checked rather than discarded.
+
 - The QEMU accelerator is a variable rather than a hardcoded `kvm`. A GitHub-hosted
   runner has no `/dev/kvm`, so every build died with "Qemu failed to start" as soon
   as it got past authoring the seed ISO; the workflow now emulates, while a build on
