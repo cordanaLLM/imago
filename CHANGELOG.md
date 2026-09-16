@@ -95,6 +95,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The built image is found where it is written. Packer runs inside `packer/`, so the
+  artifacts land there, while compression and upload looked at the repository root;
+  and the flavor variable was never passed, so every flavor wrote into the default
+  directory instead of its own.
+
 - The build account is sealed by the shutdown command rather than by a provisioner.
   The shutdown authenticates with the build password, so locking that password
   beforehand left the machine unable to power off and the build waiting for it.
