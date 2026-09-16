@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/cordanaLLM/imago/compare/v0.1.0...v0.2.0) (2026-09-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **precache:** pin preheated images to tags that exist, and fail when one cannot be cached ([#44](https://github.com/cordanaLLM/imago/issues/44))
+* **kernel:** pin the nucleus kernel artifact contract and accept the Aegis kernel-requirement payload ([#35](https://github.com/cordanaLLM/imago/issues/35))
+* **fleet:** migrate to cordanaLLM/imago with praetor governance, golusoris core, and a routed planning graph ([#30](https://github.com/cordanaLLM/imago/issues/30))
+
+### Features
+
+* **aegis:** accept the aegis.p01.product-input.v1 manifest with strict decoding and correlated errors ([#32](https://github.com/cordanaLLM/imago/issues/32)) ([4d2e2e5](https://github.com/cordanaLLM/imago/commit/4d2e2e5e4e698899c1d1a223a96aaaad488713f2))
+* **agents:** implement ai studio managed agents fleet, compliance pipeline, and diagram styling ([#24](https://github.com/cordanaLLM/imago/issues/24)) ([c1605d9](https://github.com/cordanaLLM/imago/commit/c1605d98489167c8ba389079bba81a7a0c21721d))
+* **core:** audit modernization, enterprise test suites, and hardened hindsight mcp ([#26](https://github.com/cordanaLLM/imago/issues/26)) ([ffb111c](https://github.com/cordanaLLM/imago/commit/ffb111c5b79dfa445557e915645e107a169fd6a9))
+* **fleet:** migrate to cordanaLLM/imago with praetor governance, golusoris core, and a routed planning graph ([#30](https://github.com/cordanaLLM/imago/issues/30)) ([ed782df](https://github.com/cordanaLLM/imago/commit/ed782df025090b026bf0b8d136b37010d533cd37))
+* **forge:** add cloudnative immutable and cncf storage appliances ([#18](https://github.com/cordanaLLM/imago/issues/18)) ([a8d4cca](https://github.com/cordanaLLM/imago/commit/a8d4ccaa164ac99acadca57c53dea1aad67d2e53))
+* **forge:** implement Go 1.27 CLI/MCP, project gates, and hardening ([#22](https://github.com/cordanaLLM/imago/issues/22)) ([4327bf8](https://github.com/cordanaLLM/imago/commit/4327bf8ad0e6d6c61dffa1a69ac0a69a3f3e8f7f))
+* **governance:** adopt fleet engineering principles, crosswalk, and agent skills ([#10](https://github.com/cordanaLLM/imago/issues/10)) ([5be7558](https://github.com/cordanaLLM/imago/commit/5be755830de17a8fb3b8ff0521756b872421e859))
+* **governance:** declare the os-image archetype now that praetor ships it ([#37](https://github.com/cordanaLLM/imago/issues/37)) ([26d8249](https://github.com/cordanaLLM/imago/commit/26d824913c4c6e28d133bd91721f94224b78c60a))
+* **gpu-nvidia:** add 600-series (R610) and CUDA 13.3 modern flavors ([#13](https://github.com/cordanaLLM/imago/issues/13)) ([284875c](https://github.com/cordanaLLM/imago/commit/284875c41301abd9ce9cc3c67e9b24378b48e490))
+* **homelab:** add 5 specialized homelab appliance flavors and provisioners ([#21](https://github.com/cordanaLLM/imago/issues/21)) ([4b04cba](https://github.com/cordanaLLM/imago/commit/4b04cba18818c2aaa32eb880646b8dcbaa2e89ea))
+* initial repository bootstrap for lusoris-cloud-images ([c0e6389](https://github.com/cordanaLLM/imago/commit/c0e63898522f36fe7c5e9ddef40c2575c929d123))
+* **k3s:** add 5 lightweight edge fleet flavors and runtime provisioner ([#17](https://github.com/cordanaLLM/imago/issues/17)) ([c4dc002](https://github.com/cordanaLLM/imago/commit/c4dc0028390b9463fb8e21e086d242265a1d97d5))
+* **kernel:** pin the nucleus kernel artifact contract and accept the Aegis kernel-requirement payload ([#35](https://github.com/cordanaLLM/imago/issues/35)) ([c16c9cb](https://github.com/cordanaLLM/imago/commit/c16c9cb56d7e239e0dcf9038a17043cf672111ed))
+* **platform:** implement progressive skills, staged mcp, nas ecosystem, and kernel forge blueprint ([#28](https://github.com/cordanaLLM/imago/issues/28)) ([73a4e1d](https://github.com/cordanaLLM/imago/commit/73a4e1dadd5b206ac828c0230ea7b50be91c8418))
+* **security:** implement native codeql static analysis, zero-noise renovate, and openssf least-privilege workflows ([#27](https://github.com/cordanaLLM/imago/issues/27)) ([70ecd68](https://github.com/cordanaLLM/imago/commit/70ecd681658cb6c2385c33d11dbe6cee212c1b9d))
+* **ssot:** add versions.schema.json, dynamic test invariants, and fleet rules parity ([#16](https://github.com/cordanaLLM/imago/issues/16)) ([68326d3](https://github.com/cordanaLLM/imago/commit/68326d306e4ba117e1f9e765e260108a5f290920))
+* universal community image forge, fleet repo setup, and SSOT manifest ([#1](https://github.com/cordanaLLM/imago/issues/1)) ([8ac4dc9](https://github.com/cordanaLLM/imago/commit/8ac4dc9829f7d6a1636144486be1a15a45d911ae))
+
+
+### Bug Fixes
+
+* **ci:** find the built image where it is written, and give each flavor its own directory ([#43](https://github.com/cordanaLLM/imago/issues/43)) ([335a22a](https://github.com/cordanaLLM/imago/commit/335a22a534d80aec78f52f94df8008fe250b8d23))
+* **ci:** install xorriso so the image build can author its cloud-init seed ([#39](https://github.com/cordanaLLM/imago/issues/39)) ([cd2ce0c](https://github.com/cordanaLLM/imago/commit/cd2ce0cbd83418a82fdccc1bd8b184d1aa199a9a))
+* **ci:** update scorecard-action to v2.4.4 and fix pymdown-extensions in pages ([#7](https://github.com/cordanaLLM/imago/issues/7)) ([ebc41ae](https://github.com/cordanaLLM/imago/commit/ebc41ae7aa976efcdd14a836feb7c36908357f33))
+* **docs:** resolve internal markdown links for strict mkdocs build ([#9](https://github.com/cordanaLLM/imago/issues/9)) ([c6c4968](https://github.com/cordanaLLM/imago/commit/c6c4968b43cc09de5607caa94677a0097d28da6f))
+* **engine:** synchronize flavor catalog, support truenas cloudinit, port mock sandbox, and add systems benchmarks ([#29](https://github.com/cordanaLLM/imago/issues/29)) ([62e5533](https://github.com/cordanaLLM/imago/commit/62e5533b73556dfb378bae16286c09bfd51e7265))
+* **packer:** make the QEMU accelerator a variable so CI can emulate ([#40](https://github.com/cordanaLLM/imago/issues/40)) ([cd95117](https://github.com/cordanaLLM/imago/commit/cd95117ac7e44369f6100ad8301fbe72f71ef830))
+* **packer:** seal the build account in the shutdown command, which is the last act ([#42](https://github.com/cordanaLLM/imago/issues/42)) ([3c37d75](https://github.com/cordanaLLM/imago/commit/3c37d75f27c8c29264187f2eb42012563ed23719))
+* **precache:** pin preheated images to tags that exist, and fail when one cannot be cached ([#44](https://github.com/cordanaLLM/imago/issues/44)) ([16f964b](https://github.com/cordanaLLM/imago/commit/16f964b4dafadac2b1f0a662c7dcbb4b7bb29bee))
+* **provisioner:** seal the build account last, and install a cdebug that exists ([#41](https://github.com/cordanaLLM/imago/issues/41)) ([c748e35](https://github.com/cordanaLLM/imago/commit/c748e3557c4334622452184acb1e156733732125))
+
+
+### Performance Improvements
+
+* **base:** add fstrim timer, fast cloud-init, zram and virtio scheduling ([#15](https://github.com/cordanaLLM/imago/issues/15)) ([043ad8a](https://github.com/cordanaLLM/imago/commit/043ad8a1de823f7d97c858c8fa35dfa3e9150ae2))
+
 ## [Unreleased]
 
 ### Added
