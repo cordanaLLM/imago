@@ -95,13 +95,19 @@ jobs:
         # on real hardware keeps the kvm default.
         env:
           PKR_VAR_accelerator: tcg
+          # output_directory is "${var.output_dir}/${var.flavor}", and -only selects a
+          # build without setting the variable, so every flavor wrote into the default
+          # directory and overwrote the previous one.
+          PKR_VAR_flavor: ${{ matrix.flavor }}
         run: |
           cd packer
           packer init .
           packer build -only="${{ matrix.flavor }}.qemu.image" .
       - name: Compress Image with Zstandard
+        # The build runs inside packer/, so the artifacts land there rather than at the
+        # repository root where this step and the upload used to look for them.
         run: |
-          cd "output-images/${{ matrix.flavor }}"
+          cd "packer/output-images/${{ matrix.flavor }}"
           zstd -T0 -19 --rm ./*.qcow2
           sha256sum ./*.qcow2.zst > SHA256SUMS
       - name: Upload Release Artifacts
@@ -109,5 +115,5 @@ jobs:
         uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
         with:
           files: |
-            output-images/${{ matrix.flavor }}/*.qcow2.zst
-            output-images/${{ matrix.flavor }}/SHA256SUMS
+            packer/output-images/${{ matrix.flavor }}/*.qcow2.zst
+            packer/output-images/${{ matrix.flavor }}/SHA256SUMS
