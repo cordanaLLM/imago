@@ -95,6 +95,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Two preheated images were pinned to tags that do not exist: Flannel carried a `v`
+  prefix upstream dropped, and the AMD device plugin was pinned to a Kubernetes
+  version rather than one of its own. A failed preheat now fails the build, because
+  carrying those images is what the preheated flavors are for; warning and
+  continuing shipped a flavor that advertised a cached CNI and contained none.
+
 - The built image is found where it is written. Packer runs inside `packer/`, so the
   artifacts land there, while compression and upload looked at the repository root;
   and the flavor variable was never passed, so every flavor wrote into the default
