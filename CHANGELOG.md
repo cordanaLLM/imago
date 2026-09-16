@@ -95,6 +95,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The build account is sealed by the shutdown command rather than by a provisioner.
+  The shutdown authenticates with the build password, so locking that password
+  beforehand left the machine unable to power off and the build waiting for it.
+
 - Template cleanup seals the build account last instead of first. Revoking sudo at the
   start left every later step unable to run, so SSH hardening, the apt cache, the
   machine identity, host keys, logs and the free-space zeroing were all skipped while
