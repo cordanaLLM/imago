@@ -60,6 +60,12 @@
     "cdebug": "0.5.1",
     "enroot": "3.4.1"
   },
+  "kernel": {
+    "provider": "cordanaLLM/nucleus",
+    "contract": "imago.nucleus.kernel-artifact.v1",
+    "dispatch_event": "kernel_release_published",
+    "streams": {}
+  },
   "time": {
     "anycast_nts": "time.cloudflare.com",
     "stratum1_nts": [

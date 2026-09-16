@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "versions.json"
+      - "kernel/requirement.json"
   workflow_dispatch:
 
 permissions:
@@ -16,29 +16,50 @@ concurrency:
 
 jobs:
   dispatch:
-    name: Dispatch Requirements to nucleus
+    name: Dispatch Kernel Requirement to nucleus
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout Repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Parse Kernel & Driver Requirements
-        id: parse
+      - name: Setup Go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+        with:
+          go-version: "1.27.x"
+          check-latest: true
+
+      # The requirement is the Aegis-shaped aegis.p01-nucleus.kernel-requirement.v1
+      # document; an empty feature list or an unknown probe fails here, never upstream.
+      - name: Validate Kernel Requirement
+        run: go run ./cmd/imago kernel requirement validate kernel/requirement.json
+
+      - name: Build Dispatch Payload
+        id: payload
         run: |
-          python3 -c "
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib
           import json
-          with open('versions.json', 'r') as f:
-              data = json.load(f)
-          req = {
-              'drivers': data.get('drivers', {}),
-              'runtimes': data.get('runtimes', {}),
-              'kubernetes': data.get('kubernetes', {}).get('version', '')
+          import os
+
+          path = "kernel/requirement.json"
+          raw = open(path, "rb").read()
+          doc = json.loads(raw)
+          versions = json.load(open("versions.json", encoding="utf-8"))
+          payload = {
+              "source": "imago",
+              "schema": doc["schema"],
+              "correlation_id": doc["correlation-id"],
+              "requirement": {
+                  "path": path,
+                  "sha256": hashlib.sha256(raw).hexdigest(),
+                  "ref": os.environ["GITHUB_SHA"],
+              },
           }
-          with open('/tmp/payload.json', 'w') as out:
-              json.dump(req, out)
-          "
-          echo "has_payload=true" >> "$GITHUB_OUTPUT"
+          print("repository=" + versions["kernel"]["provider"])
+          print("payload=" + json.dumps(payload, separators=(",", ":")))
+          PY
 
       - name: Dispatch Event to nucleus
         if: env.KERNEL_FORGE_TOKEN != ''
@@ -47,6 +68,6 @@ jobs:
           KERNEL_FORGE_TOKEN: ${{ secrets.KERNEL_FORGE_TOKEN }}
         with:
           token: ${{ secrets.KERNEL_FORGE_TOKEN }}
-          repository: cordanaLLM/nucleus
+          repository: ${{ steps.payload.outputs.repository }}
           event-type: kernel_requirements_updated
-          client-payload: '{"source": "imago", "ref": "${{ github.sha }}"}'
+          client-payload: ${{ steps.payload.outputs.payload }}

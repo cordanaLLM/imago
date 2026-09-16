@@ -102,6 +102,30 @@ type Time struct {
 	FallbackPool string   `json:"fallback_pool"`
 }
 
+// KernelProvenance pins the kernel forge release a stream was verified from.
+type KernelProvenance struct {
+	Tag      string `json:"tag"`
+	Revision string `json:"revision"`
+	Bundle   string `json:"bundle"`
+}
+
+// KernelStream is one verified kernel stream pin. ArtifactDigest is the
+// sha256: digest of the release SHA256SUMS the artifacts were checked against.
+type KernelStream struct {
+	Version        string           `json:"version"`
+	ArtifactDigest string           `json:"artifact_digest"`
+	Provenance     KernelProvenance `json:"provenance"`
+}
+
+// Kernel pins the kernel artifact contract with the kernel forge
+// (cordanaLLM/nucleus). Streams is empty until a release has been verified.
+type Kernel struct {
+	Provider      string                  `json:"provider"`
+	Contract      string                  `json:"contract"`
+	DispatchEvent string                  `json:"dispatch_event,omitempty"`
+	Streams       map[string]KernelStream `json:"streams"`
+}
+
 // Manifest represents the complete versions.json specification.
 type Manifest struct {
 	Schema     string     `json:"$schema,omitempty"`
@@ -111,12 +135,18 @@ type Manifest struct {
 	K3s        K3s        `json:"k3s"`
 	Runtimes   Runtimes   `json:"runtimes"`
 	Tools      Tools      `json:"tools,omitempty"`
+	Kernel     *Kernel    `json:"kernel,omitempty"`
 	Time       Time       `json:"time"`
 }
 
 var (
-	semverRegex = regexp.MustCompile(`^[0-9]+\.[0-9]+(\.[0-9]+)?.*$`)
-	sha256Regex = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
+	semverRegex        = regexp.MustCompile(`^[0-9]+\.[0-9]+(\.[0-9]+)?.*$`)
+	sha256Regex        = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
+	repoSlugRegex      = regexp.MustCompile(`^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$`)
+	streamNameRegex    = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
+	kernelVersionRegex = regexp.MustCompile(`^[0-9][A-Za-z0-9._+-]{0,63}$`)
+	kernelDigestRegex  = regexp.MustCompile(`^sha256:[a-f0-9]{64}$`)
+	gitRevisionRegex   = regexp.MustCompile(`^[a-f0-9]{40}$`)
 )
 
 // Load reads and parses a versions.json file.
@@ -153,6 +183,9 @@ func (m *Manifest) Validate() error {
 		return err
 	}
 	if err := m.validateTools(); err != nil {
+		return err
+	}
+	if err := m.validateKernel(); err != nil {
 		return err
 	}
 	return m.validateTime()
@@ -218,6 +251,51 @@ func (m *Manifest) validateTime() error {
 	}
 	if len(m.Time.Stratum1NTS) == 0 {
 		return fmt.Errorf("time stratum1_nts mesh must contain at least one endpoint")
+	}
+	return nil
+}
+
+// validateKernel checks the optional kernel contract pin. The section may pin
+// zero streams (no kernel forge release verified yet) but never a partial one.
+func (m *Manifest) validateKernel() error {
+	if m.Kernel == nil {
+		return nil
+	}
+	if !repoSlugRegex.MatchString(m.Kernel.Provider) {
+		return fmt.Errorf("kernel provider must be an owner/repository slug, got %q", m.Kernel.Provider)
+	}
+	if m.Kernel.Contract == "" {
+		return fmt.Errorf("kernel contract must not be empty")
+	}
+	if m.Kernel.Streams == nil {
+		return fmt.Errorf("kernel streams must be an object (empty until a release is verified)")
+	}
+	for name, stream := range m.Kernel.Streams {
+		if err := validateKernelStream(name, stream); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateKernelStream(name string, s KernelStream) error {
+	if !streamNameRegex.MatchString(name) {
+		return fmt.Errorf("kernel stream name %q must be a lowercase token", name)
+	}
+	if !kernelVersionRegex.MatchString(s.Version) {
+		return fmt.Errorf("kernel stream %s version %q is not a bounded version token", name, s.Version)
+	}
+	if !kernelDigestRegex.MatchString(s.ArtifactDigest) {
+		return fmt.Errorf("kernel stream %s artifact_digest must be sha256:<64 hex>, got %q", name, s.ArtifactDigest)
+	}
+	if !strings.HasPrefix(s.Provenance.Tag, "v") || len(s.Provenance.Tag) < 2 {
+		return fmt.Errorf("kernel stream %s provenance tag %q must be a v-prefixed release tag", name, s.Provenance.Tag)
+	}
+	if !gitRevisionRegex.MatchString(s.Provenance.Revision) {
+		return fmt.Errorf("kernel stream %s provenance revision must be a 40-character commit hash", name)
+	}
+	if s.Provenance.Bundle == "" {
+		return fmt.Errorf("kernel stream %s provenance bundle must not be empty", name)
 	}
 	return nil
 }

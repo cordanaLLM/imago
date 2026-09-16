@@ -140,43 +140,84 @@ main "$@"
 
 ---
 
-## 4. Cross-Repository Bidirectional Synchronization Engine
+## 4. Cross-Repository Synchronization: Pinned Kernel Artifact Contract
 
-`nucleus` and `imago` communicate autonomously via GitHub Actions `repository_dispatch` and Renovate custom managers:
+`nucleus` and `imago` exchange two typed documents (ADR-0021). A `repository_dispatch` payload only names a release or a requirement revision; nothing enters an image build on the strength of the payload alone. `imago` verifies the release it was told about and pins the result in `versions.json`.
 
-### 4.1 Downstream Release Pipeline (`kernel-forge` -> `cloud-images`)
-Upon successful compilation, signing, and APT publishing in `publish-release.yml`:
-```yaml
-name: Publish Kernel Release
-on:
-  push:
-    tags: ['v*']
+### 4.1 Downstream Release Pipeline (`nucleus` -> `imago`)
 
-jobs:
-  dispatch-downstream:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Dispatch Release to imago
-        uses: peter-evans/repository-dispatch@26b39f2445243964d4c7385747e4b2144255d441 # v3.0.0
-        with:
-          token: ${{ secrets.DISPATCH_ACCESS_TOKEN }}
-          repository: cordanaLLM/imago
-          event-type: kernel_release_published
-          client-payload: >
-            {
-              "stream": "${{ matrix.stream }}",
-              "version": "${{ github.ref_name }}",
-              "architectures": ["x86_64", "arm64"],
-              "sha256": "${{ steps.checksum.outputs.hash }}"
-            }
+`publish-release.yml` in `nucleus` builds one stream, writes `SHA256SUMS` over every asset, signs it keylessly (`cosign sign-blob --bundle SHA256SUMS.bundle`), generates `kernel-<stream>.manifest.json`, uploads everything to the GitHub Release, and sends `repository_dispatch` type `kernel_release_published` with exactly:
+
+```json
+{"stream": "mainstream", "version": "7.2.4-lusoris1", "tag": "v7.2.4-lusoris1"}
 ```
 
-### 4.2 Upstream Demand Pipeline (`cloud-images` -> `kernel-forge`)
-When `imago` updates `versions.json` (e.g., driver updates or new flavor requirements):
-- `dispatch-kernel-requirements.yml` emits `kernel_requirements_updated`.
-- In `nucleus`, `verify-requirements.yml` automatically evaluates whether all `.config` trees contain the required symbols (`CONFIG_VIRTIO_NET=y`, `CONFIG_BBR3=m`, `CONFIG_PREEMPT_RT=y`, etc.).
+Release assets: `*.deb`, `linux-<stream>-<version>-uki.efi`, `kernel-<stream>.config` (the merged kconfig the build used), `kernel-<stream>.cdx.json`, `kernel-<stream>.spdx.json`, `SHA256SUMS`, `SHA256SUMS.bundle`, and `kernel-<stream>.manifest.json`. The manifest is written after `SHA256SUMS` is signed and is deliberately not listed in it.
+
+The manifest schema `imago.nucleus.kernel-artifact.v1` is owned by `imago` (`pkg/kernel`) and decoded strictly: unknown fields, trailing data, and documents above 1 MiB are rejected.
+
+```json
+{
+  "schema": "imago.nucleus.kernel-artifact.v1",
+  "provider": "cordanaLLM/nucleus",
+  "stream": "mainstream",
+  "version": "7.2.4-lusoris1",
+  "kernel": {
+    "release": "7.2.4-lusoris1",
+    "config_digest": "sha256:<64 hex of kernel-mainstream.config>"
+  },
+  "artifacts": [
+    {"name": "linux-image-7.2.4-lusoris1_x86_64.deb", "sha256": "<64 hex>", "size": 123456}
+  ],
+  "checksums": {"file": "SHA256SUMS", "sha256": "<64 hex>"},
+  "provenance": {
+    "repository": "cordanaLLM/nucleus",
+    "tag": "v7.2.4-lusoris1",
+    "revision": "<40 hex commit>",
+    "bundle": "SHA256SUMS.bundle",
+    "signer_identity": "https://github.com/cordanaLLM/nucleus/.github/workflows/publish-release.yml@refs/tags/v7.2.4-lusoris1"
+  }
+}
+```
+
+| Field | Bound |
+| :--- | :--- |
+| `provider`, `provenance.repository` | `owner/repository` slug; must equal `kernel.provider` in `versions.json` and each other |
+| `stream` | one of `bleeding`, `mainstream`, `lts`, `realtime` |
+| `version`, `kernel.release` | `^[0-9][A-Za-z0-9._+-]{0,63}$` |
+| `kernel.config_digest` | `sha256:` + 64 lowercase hex |
+| `artifacts` | 1..64 entries; unique safe basenames (no `/`, no `..`); 64-hex `sha256`; `0 <= size <= 512 MiB`; `SHA256SUMS` and the bundle may not be listed |
+| `checksums` | `file` is `SHA256SUMS`; `sha256` is 64 hex |
+| `provenance.tag` | `^v[0-9][A-Za-z0-9._-]{0,62}$` |
+| `provenance.revision` | 40 lowercase hex |
+| `provenance.bundle` | `SHA256SUMS.bundle` |
+| `provenance.signer_identity` | at most 512 characters, prefixed `https://github.com/<provider>/` |
+
+`sync-kernel-manifest.yml` in `imago` refuses a payload without `stream`, `version`, and `tag` (there is no default version), downloads the release with `gh release download`, and verifies in this order:
+
+1. **Cosign bundle**: `cosign verify-blob --bundle SHA256SUMS.bundle --certificate-identity-regexp '^https://github.com/cordanaLLM/nucleus/' --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS`. The identity prefix is derived from `kernel.provider` in `versions.json`. This is the only signature check in the pipeline.
+2. **SHA256SUMS digest**: `imago kernel artifact verify` recomputes the digest of `SHA256SUMS` (bounded at 1 MiB, at most 1024 lines) and compares it with `checksums.sha256`.
+3. **Per-artifact digests**: every listed artifact must appear in `SHA256SUMS` with the same digest, be a regular file, match its declared size, and hash to its declared SHA-256 (bounded read of 512 MiB per artifact). A missing file, a size mismatch, or a digest mismatch fails the run with a typed sentinel (`ErrMissingArtifact`, `ErrSizeMismatch`, `ErrDigestMismatch`); an unlisted extra file is reported but not fatal. The manifest must also match the payload (`--expect-stream`, `--expect-version`, `--expect-tag`) and the provider and contract pinned in `versions.json`, and `SHA256SUMS.bundle` must be present next to the artifacts.
+4. **versions.json pin**: only then is `kernel.streams.<stream>` written from the verification result (`version`, `artifact_digest` = `sha256:` digest of `SHA256SUMS`, `provenance.tag`, `provenance.revision`, `provenance.bundle`), validated against `versions.schema.json` and `imago manifest validate`, and proposed as a pull request that adds only `versions.json`.
+
+`kernel.streams` stays empty until the first `nucleus` release has passed this path; an image build consumes a kernel artifact only through a pinned stream.
+
+### 4.2 Upstream Demand Pipeline (`imago` -> `nucleus`)
+
+`imago` keeps its kernel requirement in [`kernel/requirement.json`](https://github.com/cordanaLLM/imago/blob/main/kernel/requirement.json) in the Aegis shape `aegis.p01-nucleus.kernel-requirement.v1`, the same document `cordanaLLM/Aegis-OS` sends to `nucleus` (its fixtures are vendored under `pkg/kernel/testdata/`). The decoder is strict: `correlation-id` (1..128 characters of `[A-Za-z0-9._-]`), 1..8 unique architecture tokens, `abi.minimum-release` as a dotted numeric release with optional bounded `target-release` or `module-abi`, and 1..512 features with unique `CONFIG_[A-Z0-9_]+` symbols, `state` in `built-in` or `module`, `probe` from the allow-list `kernel-config`, `lsm-list`, `btf-vmlinux`, `powercap`, `iommu-groups`, and a bounded `required-by` id (imago uses flavor tiers such as `FLAVOR-K8S-NODE`). An empty feature list is rejected explicitly (`ErrEmptyRequirement`) because it would let any kernel pass.
+
+`dispatch-kernel-requirements.yml` runs `imago kernel requirement validate kernel/requirement.json` and emits `kernel_requirements_updated` to the provider named in `versions.json` with:
+
+```json
+{
+  "source": "imago",
+  "schema": "aegis.p01-nucleus.kernel-requirement.v1",
+  "correlation_id": "imago-kernel-requirement-0001",
+  "requirement": {"path": "kernel/requirement.json", "sha256": "<64 hex>", "ref": "<40 hex commit>"}
+}
+```
+
+`nucleus` fetches the file at `ref`, checks its `sha256`, and evaluates every feature with the named probe. Its `verify-requirements.yml` still checks a fixed symbol list today; consuming the payload shape on the `nucleus` side is tracked there and does not weaken the downstream verification above.
 
 ---
 
