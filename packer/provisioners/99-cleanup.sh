@@ -6,10 +6,8 @@
 set -euo pipefail
 
 clean_cloud_init_and_auth() {
-  echo "==> Sanitizing cloud-init state and locking temporary build password..."
+  echo "==> Sanitizing cloud-init state..."
   sudo cloud-init clean --logs --seed || true
-  sudo passwd -l ubuntu || true
-  sudo rm -f /etc/sudoers.d/90-cloud-init-users || true
 
   echo "==> Enforcing PasswordAuthentication no on final snapshot sealing..."
   echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config.d/00-hardened-sshd.conf
@@ -56,12 +54,29 @@ zero_free_space() {
   sudo fstrim -av 2>/dev/null || true
 }
 
+# seal_build_credentials revokes the build account's authority and must run last.
+#
+# It used to run first, inside clean_cloud_init_and_auth. Removing
+# /etc/sudoers.d/90-cloud-init-users takes away the passwordless grant this script
+# depends on, and locking the password leaves no way to obtain it again, so every
+# later sudo failed with "sudo: A terminal is required to authenticate". The build
+# stopped there, and the work after that point -- SSH hardening, the apt cache, the
+# machine identity, host keys, logs and the free-space zeroing -- never ran at all.
+#
+# Nothing may call sudo after this function returns.
+seal_build_credentials() {
+  echo "==> Sealing the build account: locking its password and revoking sudo..."
+  sudo passwd -l ubuntu || true
+  sudo rm -f /etc/sudoers.d/90-cloud-init-users || true
+}
+
 main() {
   clean_cloud_init_and_auth
   clean_apt_cache
   clean_machine_identities
   clean_logs_and_histories
   zero_free_space
+  seal_build_credentials
   echo "==> 99-cleanup: Template cleanup complete."
 }
 

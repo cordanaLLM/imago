@@ -56,7 +56,7 @@ EOF
 }
 
 install_cdebug() {
-  local version="${CDEBUG_VERSION:-0.5.1}"
+  local version="${CDEBUG_VERSION:-0.0.19}"
   local arch
   arch=$(uname -m)
   case "${arch}" in
@@ -65,9 +65,13 @@ install_cdebug() {
     *) return 0 ;;
   esac
   echo "==> Installing cdebug v${version} for zero-footprint diagnostics..."
-  local url="https://github.com/iximiuz/cdebug/releases/download/v${version}/cdebug_${version}_linux_${arch}.tar.gz"
-  curl -fsSL --max-time 30 "${url}" | sudo tar -xz -C /usr/local/bin cdebug 2>/dev/null || true
-  sudo chmod 755 /usr/local/bin/cdebug 2>/dev/null || true
+  # The release asset carries no version in its name: cdebug_linux_amd64.tar.gz.
+  local url="https://github.com/iximiuz/cdebug/releases/download/v${version}/cdebug_linux_${arch}.tar.gz"
+  if ! curl -fsSL --max-time 30 "${url}" | sudo tar -xz -C /usr/local/bin cdebug; then
+    echo "==> cdebug ${version} could not be installed from ${url}" >&2
+    return 1
+  fi
+  sudo chmod 755 /usr/local/bin/cdebug
 }
 
 main() {
