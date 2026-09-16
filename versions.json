@@ -20,7 +20,7 @@
       "calico_cni": "docker.io/calico/cni:v3.32.2",
       "calico_node": "docker.io/calico/node:v3.32.2",
       "calico_controllers": "docker.io/calico/kube-controllers:v3.32.2",
-      "flannel": "docker.io/flannel/flannel:v0.28.9",
+      "flannel": "docker.io/flannel/flannel:0.28.9",
       "flannel_cni": "docker.io/flannel/flannel-cni-plugin:v1.6.2-flannel1"
     }
   },
@@ -31,7 +31,7 @@
     "amd": {
       "rocm_legacy_version": "7.14",
       "rocm_bleeding_version": "10.0",
-      "k8s_plugin": "rocm/k8s-device-plugin:v1.37.0"
+      "k8s_plugin": "rocm/k8s-device-plugin:1.31.0.11"
     },
     "nvidia": {
       "legacy_driver": "535",

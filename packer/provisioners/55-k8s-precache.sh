@@ -30,7 +30,7 @@ precache_by_profile() {
       images_to_pull+=("${coredns_img}" "${calico_cni}" "${calico_node}" "${calico_ctrl}" "${kubevip_img}" "${exporter_img}")
       ;;
     flannel)
-      local flannel_img="${IMG_FLANNEL:-docker.io/flannel/flannel:v0.28.9}"
+      local flannel_img="${IMG_FLANNEL:-docker.io/flannel/flannel:0.28.9}"
       local flannel_cni="${IMG_FLANNEL_CNI:-docker.io/flannel/flannel-cni-plugin:v1.6.2-flannel1}"
       images_to_pull+=("${coredns_img}" "${flannel_img}" "${flannel_cni}" "${kubevip_img}" "${exporter_img}")
       ;;
@@ -39,10 +39,27 @@ precache_by_profile() {
       ;;
   esac
 
+  # A preheated image is the whole reason these flavors exist, so a pull that fails
+  # fails the build. Warning and continuing produced an image that advertised a cached
+  # CNI and contained none, which is discovered on a cluster rather than here.
   for img in "${images_to_pull[@]}"; do
     echo "    Pulling: ${img}"
-    sudo ctr -n k8s.io images pull "${img}" || echo "    Warning: failed to pull ${img}, continuing..."
+    if ! sudo ctr -n k8s.io images pull "${img}"; then
+      echo "    Error: could not pull ${img}; this flavor is defined by carrying it." >&2
+      return 1
+    fi
   done
+}
+
+# pull_plugin caches one hardware plugin and refuses to continue without it, for the
+# same reason as the CNI images: a GPU flavor that does not carry its device plugin is
+# the one thing that flavor promises.
+pull_plugin() {
+  local image="$1"
+  if ! sudo ctr -n k8s.io images pull "${image}"; then
+    echo "    Error: could not pull ${image}; this flavor is defined by carrying it." >&2
+    return 1
+  fi
 }
 
 precache_hardware_plugins() {
@@ -53,17 +70,17 @@ precache_hardware_plugins() {
     *intel*)
       local intel_plugin="${IMG_INTEL_PLUGIN:-intel/intel-gpu-plugin:0.36.0}"
       echo "    Pulling Intel Device Plugin: ${intel_plugin}..."
-      sudo ctr -n k8s.io images pull "${intel_plugin}" || true
+      pull_plugin "${intel_plugin}"
       ;;
     *nvidia*)
       local nvidia_plugin="${IMG_NVIDIA_PLUGIN:-nvcr.io/nvidia/k8s-device-plugin:v0.20.0}"
       echo "    Pulling NVIDIA Device Plugin: ${nvidia_plugin}..."
-      sudo ctr -n k8s.io images pull "${nvidia_plugin}" || true
+      pull_plugin "${nvidia_plugin}"
       ;;
     *amd*)
-      local amd_plugin="${IMG_AMD_PLUGIN:-rocm/k8s-device-plugin:v1.37.0}"
+      local amd_plugin="${IMG_AMD_PLUGIN:-rocm/k8s-device-plugin:1.31.0.11}"
       echo "    Pulling AMD Device Plugin: ${amd_plugin}..."
-      sudo ctr -n k8s.io images pull "${amd_plugin}" || true
+      pull_plugin "${amd_plugin}"
       ;;
     *)
       echo "    No extra hardware daemonsets required for flavor '${flavor}'"
