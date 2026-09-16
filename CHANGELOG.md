@@ -94,6 +94,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).
 
 ### Fixed
+
+- The weekly image build installs `xorriso`, so Packer can author the `cidata`
+  ISO the cloud-init seed is delivered on. Without it every flavor failed in under
+  fifteen seconds with "could not find a supported CD ISO creation command", which
+  is why no image has ever been produced.
 - Catalog desynchronization in `pkg/flavors/flavors.go`: aligned 13 provisioner script references with `packer/builds.pkr.hcl` across AMD, NVIDIA, Podman, K3s, and homelab appliance tiers, eliminating silent failures in imageless host conversion.
 - Podman standard requirements inversion in `pkg/standards/standards.go`: ensured `podman-generic` enforces `podman`, `buildah`, `skopeo`, and `netavark` rather than Docker CE.
 - Local Packer build command path in `pkg/builder/builder.go`: updated target directory from `.` to `packer/` for seamless execution from repository root.
