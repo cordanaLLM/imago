@@ -95,6 +95,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The QEMU accelerator is a variable rather than a hardcoded `kvm`. A GitHub-hosted
+  runner has no `/dev/kvm`, so every build died with "Qemu failed to start" as soon
+  as it got past authoring the seed ISO; the workflow now emulates, while a build on
+  real hardware keeps `kvm` by default.
+
 - The weekly image build installs `xorriso`, so Packer can author the `cidata`
   ISO the cloud-init seed is delivered on. Without it every flavor failed in under
   fifteen seconds with "could not find a supported CD ISO creation command", which

@@ -1,7 +1,7 @@
 # QEMU / KVM Standalone Builder
 # Builds a portable QCOW2 image locally or in CI without external hypervisor dependencies.
 source "qemu" "image" {
-  accelerator            = "kvm"
+  accelerator            = var.accelerator
   headless               = true
   cpus                   = var.cpus
   memory                 = var.memory

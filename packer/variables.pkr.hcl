@@ -120,3 +120,18 @@ variable "vm_id" {
   default     = 9000
   description = "Base VM ID for Proxmox template"
 }
+
+variable "accelerator" {
+  type    = string
+  default = "kvm"
+  # kvm is right wherever /dev/kvm exists, which is every machine this fleet builds on
+  # for real. A GitHub-hosted runner has no nested virtualisation, so QEMU there refuses
+  # to start at all and reports only "Qemu failed to start"; CI passes "tcg" to emulate
+  # instead. Keeping the default at kvm means a local build is never silently slow.
+  description = "QEMU accelerator: kvm where /dev/kvm exists, tcg to emulate"
+
+  validation {
+    condition     = contains(["kvm", "tcg", "hvf", "whpx", "none"], var.accelerator)
+    error_message = "The accelerator must be one of kvm, tcg, hvf, whpx or none."
+  }
+}

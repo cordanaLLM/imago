@@ -89,6 +89,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 qemu-utils xorriso zstd
       - name: Build Image with Packer
+        # A GitHub-hosted runner has no nested virtualisation, so /dev/kvm does not
+        # exist and QEMU refuses to start, reporting only "Qemu failed to start".
+        # Emulation is slower but it is the only accelerator available here; a build
+        # on real hardware keeps the kvm default.
+        env:
+          PKR_VAR_accelerator: tcg
         run: |
           cd packer
           packer init .
