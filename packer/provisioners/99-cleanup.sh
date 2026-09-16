@@ -54,21 +54,11 @@ zero_free_space() {
   sudo fstrim -av 2>/dev/null || true
 }
 
-# seal_build_credentials revokes the build account's authority and must run last.
-#
-# It used to run first, inside clean_cloud_init_and_auth. Removing
-# /etc/sudoers.d/90-cloud-init-users takes away the passwordless grant this script
-# depends on, and locking the password leaves no way to obtain it again, so every
-# later sudo failed with "sudo: A terminal is required to authenticate". The build
-# stopped there, and the work after that point -- SSH hardening, the apt cache, the
-# machine identity, host keys, logs and the free-space zeroing -- never ran at all.
-#
-# Nothing may call sudo after this function returns.
-seal_build_credentials() {
-  echo "==> Sealing the build account: locking its password and revoking sudo..."
-  sudo passwd -l ubuntu || true
-  sudo rm -f /etc/sudoers.d/90-cloud-init-users || true
-}
+# The build account is not sealed here. Locking its password and removing its sudoers
+# grant is done by the builder's shutdown_command, which is the last privileged act of
+# the build: it authenticates with the build password, so sealing before it would make
+# the machine unable to power off, and there is nothing after it to seal from.
+# See shutdown_command in packer/sources.pkr.hcl.
 
 main() {
   clean_cloud_init_and_auth
@@ -76,7 +66,6 @@ main() {
   clean_machine_identities
   clean_logs_and_histories
   zero_free_space
-  seal_build_credentials
   echo "==> 99-cleanup: Template cleanup complete."
 }
 

@@ -20,7 +20,14 @@ source "qemu" "image" {
   ssh_password           = var.ssh_password
   ssh_timeout            = "15m"
   ssh_handshake_attempts = 100
-  shutdown_command       = "echo '${var.ssh_password}' | sudo -S shutdown -P now"
+  # The build account is sealed by the same privileged command that halts the machine,
+  # because those two acts cannot be separated. Sealing earlier revokes the authority
+  # this command needs: it authenticates with the build password, and locking that
+  # password makes the shutdown fail and the build time out waiting for a machine that
+  # never powers off. Sealing later is impossible, because nothing runs after shutdown.
+  # One sudo invocation therefore revokes the sudoers grant, locks the password, and
+  # powers off, in that order.
+  shutdown_command = "echo '${var.ssh_password}' | sudo -S sh -c 'rm -f /etc/sudoers.d/90-cloud-init-users; passwd -l ubuntu; shutdown -P now'"
 }
 
 # Proxmox VE Template Clone Builder
