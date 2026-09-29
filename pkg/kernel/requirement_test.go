@@ -54,7 +54,7 @@ func TestLoadRequirementAegisFixtures(t *testing.T) {
 	assert.Equal(t, []string{"x86-64"}, q.Architectures)
 	assert.Equal(t, "6.12", q.ABI.MinimumRelease)
 	assert.Equal(t, "7.3", q.ABI.TargetRelease)
-	assert.Len(t, q.Features, 13)
+	assert.Len(t, q.Features, 14)
 	assert.Equal(t, "CONFIG_PREEMPT_RT", q.Features[0].Symbol)
 
 	ref, err := kernel.LoadRequirement(filepath.Join("testdata", "aegis-kernel-requirement.reference.json"))
