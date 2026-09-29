@@ -234,7 +234,7 @@ func TestKernelRequirementValidateAegisFixture(t *testing.T) {
 	out, err := executeCommand("kernel", "requirement", "validate", fixture)
 	require.NoError(t, err)
 	assert.Contains(t, out, "Kernel requirement aegis-m18-kernel-requirement-0001 is valid")
-	assert.Contains(t, out, "Features: 13")
+	assert.Contains(t, out, "Features: 14")
 	assert.Contains(t, out, "CONFIG_DEBUG_INFO_BTF")
 }
 
