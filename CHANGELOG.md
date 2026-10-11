@@ -117,6 +117,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The documentation site deploys again. `.github/workflows/pages.yml` pinned
+  `actions/upload-pages-artifact` v3.0.1, which calls `actions/upload-artifact` by tag;
+  the repository admits only actions pinned to a full commit, inner actions included, so
+  the job was refused before its first step. The pin moves to v5.0.0, which pins its
+  inner action by commit. From v4.0.0 the action leaves dotfiles out of the artifact; the
+  built site contains none.
 - Provisioners fail when a step fails. 81 commands in 27 provisioners and scripts ended
   in `|| true`, so a package that did not install, a unit that could not be enabled or a
   module that was not configured left a build that reported success. The suppression is
