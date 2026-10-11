@@ -83,10 +83,10 @@ def run_preparation(cmd: list[str], bound_s: float, what: str) -> subprocess.Com
         return subprocess.run(cmd, capture_output=True, text=True, timeout=bound_s, check=False)
     except subprocess.TimeoutExpired:
         elapsed = time.monotonic() - started
-        pytest.skip(
+        raise pytest.skip.Exception(
             f"{what} did not finish within {bound_s:g} s on this host "
             f"(stopped after {elapsed:.1f} s); sshd -t was not run"
-        )
+        ) from None
 
 
 def start_container(name: str) -> None:
