@@ -179,7 +179,7 @@ jobs:
           pytest tests/test_manifest.py -v
 
       - name: Propose Kernel Pin PR
-        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c8cb932dcc # v7.0.8
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
         with:
           add-paths: versions.json
           branch: chore/sync-kernel-${{ steps.meta.outputs.stream }}

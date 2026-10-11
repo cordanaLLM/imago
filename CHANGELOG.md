@@ -138,6 +138,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a kernel module the build machine cannot load) test for that case and say so.
 - Every download in a provisioner and in CI carries a time limit, so a stalled mirror
   ends the build instead of holding it.
+- The two kernel contract workflows can start. `sync-kernel-manifest.yml` and
+  `dispatch-kernel-requirements.yml` each pinned an action to a commit that upstream
+  does not have, so every run ended before its first step. Both pins now name the
+  commit of the release in their comment.
 - `cdebug` is downloaded from the asset name its releases publish. The former URL
   carried the version in the file name, matched no asset, and the failure was discarded.
 - `hyperv-daemons` is installed only where the package index offers it; where it does

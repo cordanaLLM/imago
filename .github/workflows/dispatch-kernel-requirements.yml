@@ -63,7 +63,7 @@ jobs:
 
       - name: Dispatch Event to nucleus
         if: env.KERNEL_FORGE_TOKEN != ''
-        uses: peter-evans/repository-dispatch@26b39f2445243964d4c7385747e4b2144255d441 # v3.0.0
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
         env:
           KERNEL_FORGE_TOKEN: ${{ secrets.KERNEL_FORGE_TOKEN }}
         with:
