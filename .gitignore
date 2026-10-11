@@ -54,6 +54,9 @@ site/
 bin/
 /imago
 
+# Exit-0 receipt: every gate run rewrites it, so it is never tracked.
+/.standards-receipt.json
+
 # BEGIN praetor private artifacts (praetorctl adopt)
 /.workingdir/
 /.workingdir2/
