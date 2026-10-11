@@ -5,9 +5,12 @@
 // bounds, and maps it to an imago-side build request. Every rejection is an
 // *Error carrying the manifest's correlation identifier.
 //
-// The package stops at acceptance. Binding the accepted request to an executor
-// (mkosi/UKI image synthesis) is the next planning step; the Packer flavor
-// dispatcher in pkg/builder is not the target of this contract (ADR-0020).
+// The package covers both directions of the contract: it accepts the request,
+// and it emits and validates the result imago returns (result.go, ADR-0024).
+// Building, signing and booting the image stay outside. Binding the accepted
+// request to an executor (mkosi/UKI image synthesis) is the next planning
+// step; the Packer flavor dispatcher in pkg/builder is not the target of this
+// contract (ADR-0020).
 package aegis
 
 import (
@@ -117,8 +120,23 @@ func Decode(r io.Reader) (*ProductInput, error) {
 // Parse strictly decodes and validates one manifest held in memory: unknown
 // fields, trailing content, and inputs above MaxInputBytes are rejected.
 func Parse(data []byte) (*ProductInput, error) {
+	var p ProductInput
+	if err := strictDecode(data, "manifest", &p); err != nil {
+		return nil, err
+	}
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// strictDecode decodes exactly one JSON document from data into v. It refuses
+// an input above MaxInputBytes, an unknown field and trailing content; what
+// names the document in the trailing-content reason. Parse and ParseResult
+// share it, so a request and a result are decoded under the same rules.
+func strictDecode(data []byte, what string, v any) error {
 	if len(data) > MaxInputBytes {
-		return nil, &Error{
+		return &Error{
 			CorrelationID: MissingCorrelationID, Field: "input",
 			Reason: fmt.Sprintf("exceeds %d bytes", MaxInputBytes), Err: ErrInputTooLarge,
 		}
@@ -126,17 +144,13 @@ func Parse(data []byte) (*ProductInput, error) {
 	cid := probeCorrelationID(data)
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
-	var p ProductInput
-	if err := dec.Decode(&p); err != nil {
-		return nil, &Error{CorrelationID: cid, Field: "input", Reason: boundReason("strict decode: " + err.Error()), Err: fmt.Errorf("%w: %w", ErrDecode, err)}
+	if err := dec.Decode(v); err != nil {
+		return &Error{CorrelationID: cid, Field: "input", Reason: boundReason("strict decode: " + err.Error()), Err: fmt.Errorf("%w: %w", ErrDecode, err)}
 	}
 	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
-		return nil, &Error{CorrelationID: cid, Field: "input", Reason: "trailing content after the manifest", Err: ErrTrailingContent}
+		return &Error{CorrelationID: cid, Field: "input", Reason: "trailing content after the " + what, Err: ErrTrailingContent}
 	}
-	if err := p.Validate(); err != nil {
-		return nil, err
-	}
-	return &p, nil
+	return nil
 }
 
 // probeCorrelationID leniently extracts correlation-id from the first JSON

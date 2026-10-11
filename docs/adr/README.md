@@ -33,3 +33,4 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0021](0021-pinned-kernel-artifact-contract-with-nucleus.md) | Pinned Kernel Artifact Contract with cordanaLLM/nucleus | Accepted | 2026-09-15 |
 | [0022](0022-fail-closed-provisioners-and-declared-main-protection.md) | Fail-Closed Provisioners and a Declared Rule Set for `main` | Accepted | 2026-10-11 |
 | [0023](0023-eupl-1.2-licence-and-reuse-annotations.md) | EUPL-1.2 Licence and REUSE Annotations | Accepted | 2026-10-11 |
+| [0024](0024-product-result-emitter-and-signature-reference-form.md) | Product-Result Emitter and the Signature Reference Form | Accepted | 2026-10-11 |

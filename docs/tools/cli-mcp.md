@@ -192,6 +192,21 @@ imago aegis validate build/product-input.json --json
 
 The decoder rejects unknown fields, trailing content, and manifests above 1 MiB. Every rejection is a correlated error `aegis product-input <correlation-id>: <field>: <reason>` (`(missing)` when the manifest carries no correlation id) and exits non-zero. Contract bounds: `retries.max-attempts` 1..10, `retries.backoff-seconds` 0..3600, 1..256 unique packages, `revision` exactly 40 lowercase hex characters, definition paths relative and free of `..` segments. See [ADR-0020](../adr/0020-aegis-product-input-contract-acceptance.md) for the full contract and why the request is not a Packer flavor dispatch.
 
+```bash
+# Emit the product-result (imago.p01.product-result.v1) for an accepted request and a built image
+imago aegis result emit \
+  --request build/product-input.json \
+  --image out/aegis-os.raw \
+  --checksums out/SHA256SUMS \
+  --signature-ref https://github.com/cordanaLLM/imago/releases/download/aegis-m18-0001/SHA256SUMS.bundle \
+  --boot-evidence-ref https://github.com/cordanaLLM/imago/releases/download/aegis-m18-0001/boot-evidence.json
+
+# Strictly decode and validate a product-result; the acceptance check for a consumer
+imago aegis result validate out/product-result.json
+```
+
+`emit` computes the SHA-256 of the image file (at most 64 GiB, an empty file is refused), requires that `SHA256SUMS` lists that digest in a line `sha256sum` writes, and prints the result JSON and nothing else. It does not sign, does not run cosign and does not contact the network; all five flags are required. `signature-ref` has one admitted form: an `https://` URL without port, query, fragment or percent-encoding whose last path segment is `SHA256SUMS.bundle`, the keyless cosign bundle over the checksum file published beside it. `validate` refuses unknown fields, trailing content and inputs above 1 MiB, then applies the same field rules. [ADR-0024](../adr/0024-product-result-emitter-and-signature-reference-form.md) states the form, the verification command and the signer a consumer accepts. No executor builds the image yet, so no real result exists (issue #46).
+
 ### 2.12 Kernel Requirement and Artifact Contract (`kernel`)
 
 ```bash

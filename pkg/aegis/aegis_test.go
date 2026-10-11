@@ -395,7 +395,7 @@ func validResult() aegis.Result {
 		Schema:          aegis.ResultSchema,
 		CorrelationID:   fixtureCID,
 		ImageDigest:     aegis.DigestPrefix + strings.Repeat("ab", 32),
-		SignatureRef:    "sigstore://rekor.example.com/entries/0001",
+		SignatureRef:    "https://github.com/cordanaLLM/imago/releases/download/aegis-m18-0001/SHA256SUMS.bundle",
 		BootEvidenceRef: "evidence/boot/aegis-m18-product-input-0001.json",
 	}
 }
@@ -432,9 +432,24 @@ func TestNegativeResult(t *testing.T) {
 
 func TestBoundaryResultReferenceLength(t *testing.T) {
 	r := validResult()
-	r.SignatureRef = strings.Repeat("s", aegis.MaxReferenceLen)
+	r.BootEvidenceRef = strings.Repeat("b", aegis.MaxReferenceLen)
 	require.NoError(t, r.Validate())
 
-	r.SignatureRef = strings.Repeat("s", aegis.MaxReferenceLen+1)
+	r.BootEvidenceRef = strings.Repeat("b", aegis.MaxReferenceLen+1)
+	requireRejected(t, r.Validate(), fixtureCID, "boot-evidence-ref", aegis.ErrOutOfBounds)
+
+	r = validResult()
+	padLen := aegis.MaxReferenceLen - len("https://github.com/") - len("/SHA256SUMS.bundle")
+	r.SignatureRef = "https://github.com/" + strings.Repeat("a", padLen) + "/SHA256SUMS.bundle"
+	require.NoError(t, r.Validate())
+
+	r.SignatureRef = "https://github.com/" + strings.Repeat("a", padLen+1) + "/SHA256SUMS.bundle"
 	requireRejected(t, r.Validate(), fixtureCID, "signature-ref", aegis.ErrOutOfBounds)
+
+	r = validResult()
+	r.SignatureRef = "https://" + strings.Repeat("h", aegis.MaxSignatureHostLen) + "/SHA256SUMS.bundle"
+	require.NoError(t, r.Validate())
+
+	r.SignatureRef = "https://" + strings.Repeat("h", aegis.MaxSignatureHostLen+1) + "/SHA256SUMS.bundle"
+	requireRejected(t, r.Validate(), fixtureCID, "signature-ref", aegis.ErrInvalidField)
 }

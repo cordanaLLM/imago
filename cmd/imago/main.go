@@ -597,7 +597,7 @@ func runPlanRoute(w io.Writer, planPath, routingPath string, jsonOutput, readyOn
 func newAegisCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "aegis",
-		Short: "Accept Aegis product-input manifests (aegis.p01.product-input.v1) as build requests",
+		Short: "Accept Aegis product-input manifests (aegis.p01.product-input.v1) and emit product results (imago.p01.product-result.v1)",
 	}
 
 	var jsonOutput bool
@@ -611,8 +611,106 @@ func newAegisCmd() *cobra.Command {
 	}
 	validateCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output the mapped build request as JSON")
 
-	cmd.AddCommand(validateCmd)
+	cmd.AddCommand(validateCmd, newAegisResultCmd())
 	return cmd
+}
+
+// aegisEmitTimeout bounds one emit run: the read of a request, of a checksum
+// file and of an image of at most aegis.MaxImageBytes.
+const aegisEmitTimeout = 30 * time.Minute
+
+// newAegisResultCmd groups the commands of the returned half of the contract.
+func newAegisResultCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "result",
+		Short: "Emit and validate Aegis product-result documents (imago.p01.product-result.v1)",
+	}
+	cmd.AddCommand(newAegisResultEmitCmd(), newAegisResultValidateCmd())
+	return cmd
+}
+
+// newAegisResultEmitCmd builds `aegis result emit`. Every flag is required: a
+// result with a guessed field would be a false statement about a build.
+func newAegisResultEmitCmd() *cobra.Command {
+	var reqPath string
+	var art aegis.Artifact
+	cmd := &cobra.Command{
+		Use:   "emit",
+		Short: "Emit the product-result for an accepted request and a built, signed image",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runAegisResultEmit(cmd.Context(), cmd.OutOrStdout(), reqPath, art)
+		},
+	}
+	flags := cmd.Flags()
+	flags.StringVar(&reqPath, "request", "", "Path to the accepted product-input manifest")
+	flags.StringVar(&art.ImagePath, "image", "", "Path to the built image file; its SHA-256 becomes image-digest")
+	flags.StringVar(&art.ChecksumsPath, "checksums", "", "Path to the SHA256SUMS file that lists the image")
+	flags.StringVar(&art.SignatureRef, "signature-ref", "", "HTTPS URL of the cosign bundle "+aegis.SignatureBundleFile+" over the checksum file")
+	flags.StringVar(&art.BootEvidenceRef, "boot-evidence-ref", "", "Reference to the boot evidence of the image")
+
+	var errs []error
+	for _, name := range []string{"request", "image", "checksums", "signature-ref", "boot-evidence-ref"} {
+		errs = append(errs, cmd.MarkFlagRequired(name))
+	}
+	// MarkFlagRequired fails only for a flag name that is not defined above.
+	// The command then refuses to run instead of running without the check.
+	if err := errors.Join(errs...); err != nil {
+		cmd.RunE = func(*cobra.Command, []string) error { return err }
+	}
+	return cmd
+}
+
+// runAegisResultEmit accepts the request, emits the result for the artifact and
+// writes the result JSON and nothing else to w. A rejection is returned
+// unchanged so the correlated error reaches the caller.
+func runAegisResultEmit(ctx context.Context, w io.Writer, reqPath string, art aegis.Artifact) error {
+	input, err := aegis.Load(reqPath)
+	if err != nil {
+		return err
+	}
+	req, err := input.BuildRequest()
+	if err != nil {
+		return err
+	}
+	emitCtx, cancel := context.WithTimeout(ctx, aegisEmitTimeout)
+	defer cancel()
+	res, err := aegis.Emit(emitCtx, req, art)
+	if err != nil {
+		return err
+	}
+	return aegis.WriteResult(w, res)
+}
+
+// newAegisResultValidateCmd builds `aegis result validate`, the acceptance
+// check a consumer runs with the pinned binary.
+func newAegisResultValidateCmd() *cobra.Command {
+	var jsonOutput bool
+	cmd := &cobra.Command{
+		Use:   "validate <path>",
+		Short: "Strictly decode and validate an Aegis product-result document",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runAegisResultValidate(cmd.OutOrStdout(), args[0], jsonOutput)
+		},
+	}
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output the validated product-result as JSON")
+	return cmd
+}
+
+// runAegisResultValidate loads the result and prints its fields. A rejection
+// is returned unchanged so the correlated error reaches the caller.
+func runAegisResultValidate(w io.Writer, path string, jsonOutput bool) error {
+	res, err := aegis.LoadResult(path)
+	if err != nil {
+		return err
+	}
+	if jsonOutput {
+		return aegis.WriteResult(w, *res)
+	}
+	_, err = fmt.Fprintf(w, "✓ Aegis product-result %s accepted (%s).\n  Image digest: %s\n  Signature ref: %s\n  Boot evidence ref: %s\n",
+		res.CorrelationID, aegis.ResultSchema, res.ImageDigest, res.SignatureRef, res.BootEvidenceRef)
+	return err
 }
 
 // runAegisValidate loads the manifest and prints the mapped request. A
