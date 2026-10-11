@@ -157,6 +157,7 @@ To keep maintenance low and usability high, flavors are partitioned into 7 disti
 - [Packer](https://developer.hashicorp.com/packer/install) $\ge$ 1.9.0
 - [QEMU](https://www.qemu.org/) with KVM support (`qemu-system-x86_64`)
 - ShellCheck, Shfmt, and Yamllint
+- Codespell and Ruff at the versions of the lint lock: `pip install --require-hashes -r .github/requirements/lint.txt`
 
 ### Build Locally (Standalone QEMU)
 

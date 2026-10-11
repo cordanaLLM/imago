@@ -148,7 +148,7 @@ Autonomous agents should utilize specialized project skills under `.agents/skill
 | :--- | :--- | :--- |
 | **Build OS Image** | [`.agents/skills/build-image/SKILL.md`](.agents/skills/build-image/SKILL.md) | Build image flavor via Packer QEMU or Proxmox |
 | **Test Image & Config** | [`.agents/skills/test-image/SKILL.md`](.agents/skills/test-image/SKILL.md) | Run automated pytest verification suite |
-| **Lint Entire Repo** | [`.agents/skills/lint-all/SKILL.md`](.agents/skills/lint-all/SKILL.md) | Run Packer validate, ShellCheck, Yamllint, shfmt |
+| **Lint Entire Repo** | [`.agents/skills/lint-all/SKILL.md`](.agents/skills/lint-all/SKILL.md) | Run Packer validate, ShellCheck, Yamllint, Codespell, Ruff |
 | **Format All Files** | [`.agents/skills/format-all/SKILL.md`](.agents/skills/format-all/SKILL.md) | Format shell (`shfmt`), Packer (`packer fmt`), YAML |
 | **Add New Flavor** | [`.agents/skills/add-flavor/SKILL.md`](.agents/skills/add-flavor/SKILL.md) | Add flavor to manifest, HCL, tests, and docs |
 | **Draft Commit Message** | [`.agents/skills/dev-llm-commitmsg/SKILL.md`](.agents/skills/dev-llm-commitmsg/SKILL.md) | Conventional Commits drafting |
@@ -214,7 +214,7 @@ Quick verification commands (run the targeted ones while developing, all before 
 
 ```bash
 make fmt-check                  # Verify Packer HCL formatting
-make lint                       # packer validate, shellcheck, actionlint, yamllint, codespell
+make lint                       # packer validate, shellcheck, actionlint, yamllint, codespell, ruff
 make test-go                    # Go unit tests (golusoris core composition)
 make test                       # Go + Pytest verification suites
 make verify-all                 # Praetor gate: compile-context --verify, audit, build, tests

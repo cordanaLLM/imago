@@ -9,6 +9,7 @@ Unit and integration tests for repository automation scripts:
 
 from __future__ import annotations
 
+import importlib.util
 import io
 import json
 import subprocess
@@ -20,7 +21,6 @@ import pytest
 
 import scripts.manage_aistudio_agents as manage_agents
 import scripts.orchestrate_fanout as orchestrate
-
 
 # ---------------------------------------------------------------------------
 # Tests for scripts/manage_aistudio_agents.py
@@ -138,6 +138,20 @@ class TestManageAIStudioAgents:
         captured = capsys.readouterr()
         assert "Registering agent-1 on Google AI Studio..." in captured.out
 
+    def test_register_without_the_genai_library_prints_the_notice(self, monkeypatch, capsys):
+        """A missing google-genai library is reported; no registration is attempted."""
+        monkeypatch.setenv("GEMINI_API_KEY", "test-key-mock")
+        payloads = [{"id": "agent-1", "base_agent": "antigravity", "agent_config": {}, "tools": []}]
+
+        # A None entry makes the import machinery raise ImportError for that name.
+        with patch.dict(sys.modules, {"google": MagicMock(), "google.genai": None}):
+            manage_agents.register_agents(payloads, dry_run=False)
+
+        captured = capsys.readouterr()
+        assert "google-genai library not installed" in captured.out
+        assert "Registering agent-1" not in captured.out
+        assert "API interaction error" not in captured.err
+
 
 # ---------------------------------------------------------------------------
 # Tests for scripts/orchestrate_fanout.py
@@ -239,8 +253,6 @@ class TestGuardPrivacyHook:
     @pytest.fixture(autouse=True)
     def import_guard_privacy(self):
         hook_path = Path(__file__).resolve().parent.parent / ".agents" / "hooks-scripts" / "guard_privacy.py"
-        import importlib.util
-
         spec = importlib.util.spec_from_file_location("guard_privacy", hook_path)
         self.guard = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.guard)
@@ -266,14 +278,14 @@ class TestGuardPrivacyHook:
     @pytest.mark.parametrize(
         "benign_ip",
         [
-            "192.0.2.1",       # RFC 5737 TEST-NET-1
-            "198.51.100.25",   # RFC 5737 TEST-NET-2
-            "203.0.113.10",    # RFC 5737 TEST-NET-3
-            "1.1.1.1",         # Cloudflare Public
-            "8.8.8.8",         # Google Public
-            "192.170.1.1",     # Outside 192.168.0.0/16
-            "172.15.0.1",      # Below 172.16.0.0/12
-            "172.32.0.1",      # Above 172.31.255.255
+            "192.0.2.1",  # RFC 5737 TEST-NET-1
+            "198.51.100.25",  # RFC 5737 TEST-NET-2
+            "203.0.113.10",  # RFC 5737 TEST-NET-3
+            "1.1.1.1",  # Cloudflare Public
+            "8.8.8.8",  # Google Public
+            "192.170.1.1",  # Outside 192.168.0.0/16
+            "172.15.0.1",  # Below 172.16.0.0/12
+            "172.32.0.1",  # Above 172.31.255.255
         ],
     )
     def test_benign_ips_allowed(self, benign_ip: str):

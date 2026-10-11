@@ -17,15 +17,15 @@ validation, bounded loops, and zero-leak privacy sanitization.
 from __future__ import annotations
 
 import contextlib
+import http.client
 import json
 import os
-from pathlib import Path
 import re
 import sys
 import time
-from typing import Any
-import http.client
 import urllib.parse
+from pathlib import Path
+from typing import Any
 
 HINDSIGHT_URL = os.environ.get("HINDSIGHT_URL", "http://127.0.0.1:8888").rstrip("/")
 HINDSIGHT_TENANT = os.environ.get("HINDSIGHT_TENANT", "default")
@@ -84,9 +84,7 @@ def append_local_fact(content: str, context: str, bank_id: str) -> dict[str, Any
     return entry
 
 
-def http_api(
-    method: str, path: str, body: dict[str, Any] | None = None
-) -> tuple[int, Any]:
+def http_api(method: str, path: str, body: dict[str, Any] | None = None) -> tuple[int, Any]:
     """Dispatch HTTP request to Hindsight API endpoint using http.client (immune to dynamic urllib SSRF)."""
     url = f"{HINDSIGHT_URL}{path}"
     parsed = urllib.parse.urlparse(url)
@@ -136,9 +134,7 @@ def flush_local_pending(bank_id: str) -> int:
     return synced
 
 
-def tool_hindsight_retain(
-    content: str, context: str = "", bank_id: str = DEFAULT_BANK
-) -> str:
+def tool_hindsight_retain(content: str, context: str = "", bank_id: str = DEFAULT_BANK) -> str:
     """Retain memory into Hindsight or offline buffer."""
     clean_content = sanitize_privacy(content.strip())
     clean_context = sanitize_privacy(context.strip())
@@ -161,9 +157,7 @@ def tool_hindsight_retain(
     )
 
 
-def tool_hindsight_recall(
-    query: str, top_k: int = 5, bank_id: str = DEFAULT_BANK
-) -> str:
+def tool_hindsight_recall(query: str, top_k: int = 5, bank_id: str = DEFAULT_BANK) -> str:
     """Recall relevant facts from Hindsight or offline buffer."""
     clean_query = sanitize_privacy(query.strip())
     k = max(1, min(20, int(top_k)))
@@ -183,7 +177,9 @@ def tool_hindsight_recall(
         return "\n".join(lines)
 
     local_entries = read_local_buffer()
-    matched = [e for e in local_entries if e.get("bank_id") == bank_id and clean_query.lower() in e.get("content", "").lower()]
+    matched = [
+        e for e in local_entries if e.get("bank_id") == bank_id and clean_query.lower() in e.get("content", "").lower()
+    ]
     if matched:
         lines = [f"[Hindsight Offline Buffer] Found {len(matched[:k])} locally buffered facts in '{bank_id}':"]
         for idx, item in enumerate(matched[:k], 1):
@@ -236,55 +232,57 @@ def tool_hindsight_list_banks() -> str:
     return f"Unable to list banks (upstream unreachable at {HINDSIGHT_URL}). Default bank: '{DEFAULT_BANK}'."
 
 
+def bank_id_property() -> dict[str, Any]:
+    """Return the schema of the `bank_id` argument that three tools share."""
+    return {"type": "string", "description": "Target memory bank identifier.", "default": DEFAULT_BANK}
+
+
+def tool_definition(
+    name: str, description: str, properties: dict[str, Any], required: tuple[str, ...] = ()
+) -> dict[str, Any]:
+    """Build one MCP tool definition; `required` appears only when it names an argument."""
+    schema: dict[str, Any] = {"type": "object", "properties": properties}
+    if required:
+        schema["required"] = list(required)
+    return {"name": name, "description": description, "inputSchema": schema}
+
+
 def get_tool_definitions() -> list[dict[str, Any]]:
     """Return JSON-RPC tool definitions for MCP protocol."""
+    recall_properties = {
+        "query": {"type": "string", "description": "Semantic search query or topic to recall."},
+        "top_k": {"type": "integer", "description": "Maximum number of memories to return (1-20).", "default": 5},
+        "bank_id": bank_id_property(),
+    }
+    retain_properties = {
+        "content": {"type": "string", "description": "Fact or knowledge statement to retain."},
+        "context": {"type": "string", "description": "Optional background rationale, file path, or issue reference."},
+        "bank_id": bank_id_property(),
+    }
     return [
-        {
-            "name": "hindsight_recall",
-            "description": "Recall relevant persistent memories, past engineering decisions, and lessons learned.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "Semantic search query or topic to recall."},
-                    "top_k": {"type": "integer", "description": "Maximum number of memories to return (1-20).", "default": 5},
-                    "bank_id": {"type": "string", "description": "Target memory bank identifier.", "default": DEFAULT_BANK},
-                },
-                "required": ["query"],
-            },
-        },
-        {
-            "name": "hindsight_retain",
-            "description": "Retain a durable fact, architecture decision, bug root cause, or constraint into persistent memory.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "content": {"type": "string", "description": "Fact or knowledge statement to retain."},
-                    "context": {"type": "string", "description": "Optional background rationale, file path, or issue reference."},
-                    "bank_id": {"type": "string", "description": "Target memory bank identifier.", "default": DEFAULT_BANK},
-                },
-                "required": ["content"],
-            },
-        },
-        {
-            "name": "hindsight_reflect",
-            "description": "Trigger observation reflection and mental model distillation for a memory bank.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "bank_id": {"type": "string", "description": "Target memory bank identifier.", "default": DEFAULT_BANK},
-                },
-            },
-        },
-        {
-            "name": "hindsight_status",
-            "description": "Check the connection status of the Hindsight memory backend and local cache.",
-            "inputSchema": {"type": "object", "properties": {}},
-        },
-        {
-            "name": "hindsight_list_banks",
-            "description": "List all active memory banks in the Hindsight tenant.",
-            "inputSchema": {"type": "object", "properties": {}},
-        },
+        tool_definition(
+            "hindsight_recall",
+            "Recall relevant persistent memories, past engineering decisions, and lessons learned.",
+            recall_properties,
+            ("query",),
+        ),
+        tool_definition(
+            "hindsight_retain",
+            "Retain a durable fact, architecture decision, bug root cause, or constraint into persistent memory.",
+            retain_properties,
+            ("content",),
+        ),
+        tool_definition(
+            "hindsight_reflect",
+            "Trigger observation reflection and mental model distillation for a memory bank.",
+            {"bank_id": bank_id_property()},
+        ),
+        tool_definition(
+            "hindsight_status",
+            "Check the connection status of the Hindsight memory backend and local cache.",
+            {},
+        ),
+        tool_definition("hindsight_list_banks", "List all active memory banks in the Hindsight tenant.", {}),
     ]
 
 

@@ -7,6 +7,7 @@ with kernel sysctl provisioner declarations.
 """
 
 from pathlib import Path
+
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -70,6 +71,4 @@ class TestComplianceIntegrity:
         for param, spec in profile["kernel-param"].items():
             expected_val = str(spec.get("value"))
             pattern = f"{param} = {expected_val}"
-            assert pattern in sysctl_text, (
-                f"Declared compliance parameter '{pattern}' not found in 20-kernel-sysctl.sh"
-            )
+            assert pattern in sysctl_text, f"Declared compliance parameter '{pattern}' not found in 20-kernel-sysctl.sh"

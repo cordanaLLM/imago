@@ -8,10 +8,10 @@ Enforces NASA/JPL Power of 10 rules:
 Enforces license headers, shebangs, strict mode, and ShellCheck cleanliness.
 """
 
-from pathlib import Path
 import os
 import re
 import subprocess
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
@@ -58,20 +58,14 @@ class TestProvisionersIntegrity:
         """Verify copyright header 'Copyright 2026 Lusoris' in all scripts."""
         for script in get_provisioner_scripts():
             content = script.read_text(encoding="utf-8")
-            assert "Copyright 2026 Lusoris" in content, (
-                f"Missing 'Copyright 2026 Lusoris' header in {script.name}"
-            )
+            assert "Copyright 2026 Lusoris" in content, f"Missing 'Copyright 2026 Lusoris' header in {script.name}"
 
     def test_main_entrypoint(self) -> None:
         """Verify standard main() definition and main \"$@\" invocation."""
         for script in get_provisioner_scripts():
             content = script.read_text(encoding="utf-8")
-            assert "main()" in content or "main ()" in content, (
-                f"Missing 'main()' definition in {script.name}"
-            )
-            assert 'main "$@"' in content, (
-                f"Missing 'main \"$@\"' invocation in {script.name}"
-            )
+            assert "main()" in content or "main ()" in content, f"Missing 'main()' definition in {script.name}"
+            assert 'main "$@"' in content, f"Missing 'main \"$@\"' invocation in {script.name}"
 
     def test_power_of_ten_function_length(self) -> None:
         """Verify no function exceeds 60 lines (NASA/JPL Holzmann Rule 4)."""

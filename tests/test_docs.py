@@ -5,8 +5,9 @@ ADR index synchrony, absence of placeholder emails, and CHANGELOG structure.
 Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked assertions.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
+
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -18,7 +19,9 @@ CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
 
 class MkDocsLoader(yaml.SafeLoader):
     """Custom YAML loader ignoring python-specific mkdocs tags."""
+
     pass
+
 
 MkDocsLoader.add_multi_constructor("tag:yaml.org,2002:python/", lambda loader, suffix, node: None)
 
@@ -70,9 +73,7 @@ class TestDocsIntegrity:
         index_content = readme.read_text(encoding="utf-8")
 
         for adr in ADR_DIR.glob("0*.md"):
-            assert adr.name in index_content, (
-                f"ADR {adr.name} is missing from the table in docs/adr/README.md"
-            )
+            assert adr.name in index_content, f"ADR {adr.name} is missing from the table in docs/adr/README.md"
 
     def test_no_placeholder_emails(self) -> None:
         """Verify documentation contains no fake or placeholder contact email addresses."""
@@ -130,9 +131,7 @@ class TestDocsIntegrity:
                 total_diagrams += 1
                 block = match.group(1).strip()
                 lines = [
-                    line.strip()
-                    for line in block.splitlines()
-                    if line.strip() and not line.strip().startswith("%%")
+                    line.strip() for line in block.splitlines() if line.strip() and not line.strip().startswith("%%")
                 ]
                 assert len(lines) > 0, f"Empty mermaid block in {md_file.relative_to(REPO_ROOT)}"
 
@@ -148,6 +147,4 @@ class TestDocsIntegrity:
                     f"Unbalanced square brackets in {md_file.relative_to(REPO_ROOT)}"
                 )
 
-        assert total_diagrams >= 5, (
-            f"Expected at least 5 mermaid diagrams in repository, found {total_diagrams}"
-        )
+        assert total_diagrams >= 5, f"Expected at least 5 mermaid diagrams in repository, found {total_diagrams}"

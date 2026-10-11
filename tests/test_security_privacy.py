@@ -9,9 +9,9 @@ Enforces zero-leak invariant:
 Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked assertions.
 """
 
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -65,7 +65,6 @@ class TestSecurityPrivacyIntegrity:
         darwin_path_pattern = re.compile(r"/Users/[a-zA-Z0-9_-]+")
 
         for path in publishable_files():
-
             content = path.read_text(encoding="utf-8", errors="ignore")
             m_linux = user_path_pattern.search(content)
             assert not m_linux, (

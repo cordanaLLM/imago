@@ -10,7 +10,6 @@ before any file write operation executes.
 import json
 import re
 import sys
-from typing import Optional
 
 # RFC 1918 private IPv4 patterns
 RFC1918_PATTERNS = [
@@ -26,7 +25,7 @@ WORKSTATION_PATH_PATTERNS = [
 ]
 
 
-def inspect_payload(text: str) -> Optional[str]:
+def inspect_payload(text: str) -> str | None:
     """Return the violation found in text, or None when the payload is clean."""
     for pattern in RFC1918_PATTERNS:
         match = pattern.search(text)

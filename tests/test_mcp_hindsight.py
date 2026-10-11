@@ -14,9 +14,9 @@ from __future__ import annotations
 import http.client
 import importlib.util
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -88,6 +88,20 @@ class TestHindsightMCP:
             "hindsight_list_banks",
         }
         assert expected.issubset(tool_names), f"Missing tools: {expected - tool_names}"
+
+    def test_json_rpc_tools_list_schemas(self) -> None:
+        """Each tool declares its required arguments; a tool without one carries no `required` key."""
+        res = call_mcp_server({"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}})
+        schemas = {t["name"]: t["inputSchema"] for t in res["result"]["tools"]}
+
+        assert schemas["hindsight_recall"]["required"] == ["query"]
+        assert schemas["hindsight_retain"]["required"] == ["content"]
+        for name in ("hindsight_reflect", "hindsight_status", "hindsight_list_banks"):
+            assert "required" not in schemas[name], f"{name} declares a required argument"
+        assert schemas["hindsight_status"] == {"type": "object", "properties": {}}
+        with_bank = [name for name, schema in schemas.items() if "bank_id" in schema["properties"]]
+        assert sorted(with_bank) == ["hindsight_recall", "hindsight_reflect", "hindsight_retain"]
+        assert all(s["type"] == "object" for s in schemas.values())
 
     def test_zero_leak_privacy_sanitization(self) -> None:
         """Verify RFC 1918 IPs and workstation home paths are redacted on retain."""

@@ -7,10 +7,10 @@ Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked asser
 """
 
 import json
-from pathlib import Path
 import os
 import re
 import subprocess
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKER_DIR = REPO_ROOT / "packer"
@@ -105,9 +105,7 @@ class TestGovernanceIntegrity:
         from that entry, which then has to be the version the VERSION file states.
         """
         config = json.loads((REPO_ROOT / "release-please-config.json").read_text(encoding="utf-8"))
-        manifest = json.loads(
-            (REPO_ROOT / ".release-please-manifest.json").read_text(encoding="utf-8")
-        )
+        manifest = json.loads((REPO_ROOT / ".release-please-manifest.json").read_text(encoding="utf-8"))
         released = manifest.get(".")
         if released is None:
             first = config["packages"]["."].get("initial-version", "")
@@ -116,9 +114,7 @@ class TestGovernanceIntegrity:
             )
             return
         version = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
-        assert released == version, (
-            f"The manifest says {released} was released, VERSION says {version}"
-        )
+        assert released == version, f"The manifest says {released} was released, VERSION says {version}"
 
     def test_cli_version_constant_follows_the_version_file(self) -> None:
         """Verify the version the CLI advertises is the released one and stays so.
@@ -131,9 +127,7 @@ class TestGovernanceIntegrity:
         match = re.search(r"^const version = \"([^\"]+)\"(.*)$", source, re.MULTILINE)
         assert match, "cmd/imago/main.go must declare the version constant"
         version = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
-        assert match.group(1) == version, (
-            f"The CLI advertises {match.group(1)}, VERSION says {version}"
-        )
+        assert match.group(1) == version, f"The CLI advertises {match.group(1)}, VERSION says {version}"
         assert "x-release-please-version" in match.group(2), (
             "Without the marker on its line the release tool leaves the constant unchanged"
         )
@@ -256,9 +250,7 @@ class TestGovernanceIntegrity:
             assert relative[: -len(".txt")] + ".in" in command, f"{relative}: header names another input"
             assert f"--output-file={relative}" in command, f"{relative}: --output-file must use '='"
             versions = [option for option in command if option.startswith("--python-version")]
-            assert versions and all("=" in option for option in versions), (
-                f"{relative}: --python-version must use '='"
-            )
+            assert versions and all("=" in option for option in versions), f"{relative}: --python-version must use '='"
 
     def test_audit_repository_health_script_executable(self) -> None:
         """Verify audit-repository-health.sh is present and executable."""

@@ -5,10 +5,11 @@ hardware driver matrix, container tags, and network time servers.
 Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked assertions.
 """
 
-from pathlib import Path
 import json
-import jsonschema
 import re
+from pathlib import Path
+
+import jsonschema
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = REPO_ROOT / "versions.json"
@@ -170,4 +171,3 @@ class TestKernelContractPin:
             pass
         else:
             raise AssertionError("schema accepted a non-sha256 artifact_digest")
-

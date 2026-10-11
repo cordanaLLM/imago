@@ -29,7 +29,7 @@ fmt: ## Format Packer HCL configurations
 fmt-check: ## Verify Packer HCL formatting
 	@cd packer && $(PACKER) fmt -check .
 
-lint: fmt-check lint-workflows lint-manifest ## Run packer validate, shellcheck, actionlint, yamllint, and codespell
+lint: fmt-check lint-workflows lint-manifest ## Run packer validate, shellcheck, actionlint, yamllint, codespell, and ruff
 	@echo "==> Validating Packer configuration..."
 	@cd packer && $(PACKER) validate .
 	@echo "==> Running ShellCheck on provisioner scripts..."
@@ -40,6 +40,9 @@ lint: fmt-check lint-workflows lint-manifest ## Run packer validate, shellcheck,
 	fi
 	@echo "==> Running Codespell..."
 	@codespell
+	@echo "==> Running Ruff (lint and format check)..."
+	@ruff check .
+	@ruff format --check .
 	@echo "==> All lint checks passed successfully."
 
 lint-workflows: ## Run actionlint on GitHub Actions workflows

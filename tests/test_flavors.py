@@ -5,8 +5,8 @@ and documentation synchronization across all 44 production flavors.
 Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked assertions.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKER_DIR = REPO_ROOT / "packer"
@@ -77,7 +77,9 @@ class TestFlavorsIntegrity:
 
     def test_naming_convention(self) -> None:
         """Verify all flavor targets conform to the canonical naming regex."""
-        pattern = re.compile(r"^(base|docker|podman|k8s-node|k3s-agent|k3s-server|cloudnative|ai-infer|appliance)-[a-z0-9-]+$")
+        pattern = re.compile(
+            r"^(base|docker|podman|k8s-node|k3s-agent|k3s-server|cloudnative|ai-infer|appliance)-[a-z0-9-]+$"
+        )
         for flavor in EXPECTED_FLAVORS:
             assert pattern.match(flavor), f"Flavor '{flavor}' violates naming convention"
 
@@ -95,7 +97,7 @@ class TestFlavorsIntegrity:
             target = f"build-{flavor}:"
             # Allow common k8s-node short aliases (build-k8s-*)
             short_k8s = target.replace("build-k8s-node-", "build-k8s-")
-            assert (target in makefile_content or short_k8s in makefile_content), (
+            assert target in makefile_content or short_k8s in makefile_content, (
                 f"Missing Makefile target for flavor: {flavor}"
             )
 
@@ -110,7 +112,9 @@ class TestFlavorsIntegrity:
     def test_pipeline_chain_invariants(self) -> None:
         """Verify all build blocks start with 00-base-strip and terminate with 99-cleanup."""
         content = BUILDS_PKR.read_text(encoding="utf-8")
-        build_blocks = re.findall(r'build\s*\{[^}]*name\s*=\s*"([^"]+)"[^}]*scripts\s*=\s*\[(.*?)\]', content, re.DOTALL)
+        build_blocks = re.findall(
+            r'build\s*\{[^}]*name\s*=\s*"([^"]+)"[^}]*scripts\s*=\s*\[(.*?)\]', content, re.DOTALL
+        )
         assert len(build_blocks) >= 44, "Failed to parse build blocks from builds.pkr.hcl"
 
         for name, scripts_raw in build_blocks:
@@ -124,9 +128,7 @@ class TestFlavorsIntegrity:
         content = BUILDS_PKR.read_text(encoding="utf-8")
         provisioner_files = (PACKER_DIR / "provisioners").glob("*.sh")
         for p_file in provisioner_files:
-            assert p_file.name in content, (
-                f"Provisioner script {p_file.name} is not referenced in builds.pkr.hcl"
-            )
+            assert p_file.name in content, f"Provisioner script {p_file.name} is not referenced in builds.pkr.hcl"
 
     def test_go_catalog_provisioners_synchrony(self) -> None:
         """Verify every provisioner in pkg/flavors/flavors.go exists in packer/provisioners/."""
@@ -134,13 +136,12 @@ class TestFlavorsIntegrity:
         assert go_file.is_file(), "pkg/flavors/flavors.go must exist"
         go_content = go_file.read_text(encoding="utf-8")
 
-        matches = re.findall(r'Provisioners:\s*\[\]string\{([^}]+)\}', go_content)
+        matches = re.findall(r"Provisioners:\s*\[\]string\{([^}]+)\}", go_content)
         all_go_provisioners = set()
         for m in matches:
-            scripts = [s.strip().strip('"') for s in m.split(',') if s.strip()]
+            scripts = [s.strip().strip('"') for s in m.split(",") if s.strip()]
             all_go_provisioners.update(scripts)
 
         actual_provisioners = {p.name for p in (PACKER_DIR / "provisioners").glob("*.sh")}
         diff = all_go_provisioners - actual_provisioners
         assert not diff, f"Provisioner scripts in Go catalog not found in packer/provisioners/: {diff}"
-

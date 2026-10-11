@@ -5,9 +5,9 @@ type safety, description completeness, and source builder declarations.
 Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked assertions.
 """
 
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKER_DIR = REPO_ROOT / "packer"
@@ -56,6 +56,6 @@ class TestPackerIntegrity:
         assert VERSIONS_FILE.exists(), "packer/versions.pkr.hcl is missing"
         content = VERSIONS_FILE.read_text(encoding="utf-8")
 
-        assert 'required_version' in content, "Missing required_version in versions.pkr.hcl"
-        assert 'qemu' in content, "Missing qemu plugin declaration in versions.pkr.hcl"
-        assert 'proxmox' in content, "Missing proxmox plugin declaration in versions.pkr.hcl"
+        assert "required_version" in content, "Missing required_version in versions.pkr.hcl"
+        assert "qemu" in content, "Missing qemu plugin declaration in versions.pkr.hcl"
+        assert "proxmox" in content, "Missing proxmox plugin declaration in versions.pkr.hcl"

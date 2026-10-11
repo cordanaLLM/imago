@@ -34,7 +34,7 @@ Gerard J. Holzmann's [_The Power of 10: Rules for Developing Safety-Critical Cod
 | **P10-7** | Every return code is checked. | All shell provisioners strictly enforce `set -euo pipefail`. Any discarded exit code must be handled explicitly. | CI gate (`test_provisioners_executable_and_strict`) |
 | **P10-8** | Deterministic & auditable generation. | Single source of truth in `versions.json`. Images build deterministically via standalone QEMU/KVM without external runtime mutations. | CI gate + Packer validate |
 | **P10-9** | Explicit data flow. | Variables pass from `versions.json` $\to$ Packer variables $\to$ shell environment variables. No hidden dynamic state or ad-hoc downloading. | Review gate + Pytest SSOT checks |
-| **P10-10** | Strict toolchain merge floor. | Zero warnings across Packer validate, ShellCheck, Yamllint, shfmt, Codespell, and Pytest. | CI gate (`required-checks` aggregator) |
+| **P10-10** | Strict toolchain merge floor. | Zero warnings across Packer validate, ShellCheck, Yamllint, shfmt, Codespell, Ruff, and Pytest. | CI gate (`required-checks` aggregator) |
 
 ---
 
