@@ -1,5 +1,5 @@
 # Copyright 2026 Lusoris
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """
 Automated verification suite for declarative dynamic compliance profile (tests/compliance/goss.yaml).
 Asserts syntax validity, CIS Level 2 / NIST SP 800-53 control mappings, and synchrony

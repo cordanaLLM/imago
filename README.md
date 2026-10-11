@@ -45,7 +45,7 @@ private scratch-link policy.
 [![Hypervisors](https://img.shields.io/badge/Hypervisors-Proxmox%20%7C%20Unraid%20%7C%20ESXi%20%7C%20KVM-orange?style=flat-square)](docs/platforms/proxmox.md)
 [![Open Standards](https://img.shields.io/badge/Open%20Standards-CDI%20%7C%20OCI%20%7C%20CNI%20%7C%20CSI-purple?style=flat-square)](docs/principles.md)
 [![Documentation](https://img.shields.io/badge/Docs-MkDocs%20Material-teal?logo=materialformkdocs&logoColor=white&style=flat-square)](https://cordanallm.github.io/imago)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-EUPL--1.2-blue.svg?style=flat-square)](LICENSE)
 
 <br/>
 
@@ -208,4 +208,14 @@ make build-ai-infer-nvidia     # AI inference appliance (vLLM / NUMA tuning)
 
 - **Security Advisories**: To report security vulnerabilities, open a [GitHub Private Security Advisory](https://github.com/cordanaLLM/imago/security/advisories/new).
 - **Engineering Principles**: All changes must satisfy [Engineering Principles](docs/principles.md) and [Rule Crosswalk](docs/repository-rule-crosswalk.md).
-- **License**: [Apache 2.0](LICENSE) — Copyright &copy; 2026 The Lusoris Authors.
+- **License**: [EUPL-1.2](LICENSE) — Copyright &copy; 2026 The Lusoris Authors. The [License](#license) section says from which revision on.
+
+## License
+
+imago is licensed under the [European Union Public Licence 1.2](LICENSE) (`EUPL-1.2`).
+
+- **From which revision on**: every revision after commit [`44a6bfa`](https://github.com/cordanaLLM/imago/commit/44a6bfa239ee33ef209e3f25035905b1bc0716c5) is EUPL-1.2, and so is every release.
+- **Earlier revisions**: every revision up to and including `44a6bfa` was published under Apache-2.0 and stays available under it. No release was tagged in that time, and the repository carried no `NOTICE` file.
+- **Per-file information**: [`REUSE.toml`](REUSE.toml) names the licence and the copyright holder of every file, and [`LICENSES/`](LICENSES/) holds each licence text. Bundled third-party files keep their MIT licence.
+
+[ADR-0023](docs/adr/0023-eupl-1.2-licence-and-reuse-annotations.md) records the decision.

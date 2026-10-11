@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2026 Lusoris
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """
 Multi-Agent Fan-Out & Git Worktree Orchestrator for lusoris-cloud-images.
 Enforces Rule 11 (Worktree Hygiene) by fanning out specialized background agents

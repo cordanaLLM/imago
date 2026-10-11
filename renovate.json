@@ -99,7 +99,8 @@
         "tools/figures/serve.mjs",
         "tools/figures/README.md",
         ".devcontainer/devcontainer.json",
-        ".devcontainer/Dockerfile.praetor"
+        ".devcontainer/Dockerfile.praetor",
+        ".github/workflows/reuse.yml"
       ],
       "enabled": false
     }

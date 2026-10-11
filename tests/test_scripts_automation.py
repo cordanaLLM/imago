@@ -1,5 +1,5 @@
 # Copyright 2026 Lusoris
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """
 Unit and integration tests for repository automation scripts:
 - scripts/manage_aistudio_agents.py

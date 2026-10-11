@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- REUSE licence gate: the `REUSE lint` workflow (`.github/workflows/reuse.yml`) and the `reuse-lint` pre-commit job run `reuse lint`; the engine audit checks the order of the `REUSE.toml` annotations and that `LICENSE` holds the declared licence text. `.github/rulesets/main.json` declares `REUSE lint` as the tenth required check. `CONTRIBUTING.md` says how a third-party file is annotated.
 - Go native fuzz targets for the three strict JSON parsers: `FuzzParse` in `pkg/aegis`, `FuzzParseRequirement` and `FuzzParseArtifactManifest` in `pkg/kernel`. Each asserts that a rejection returns no value and that an accepted document validates and survives an encode and parse round trip; `FuzzParse` also holds the typed error and the bounded correlation id. The seed corpora run in every `go test`, and `make fuzz` fuzzes each target for `FUZZTIME` (default 30s).
 - Aegis product-input acceptance (ADR-0020): `pkg/aegis` decodes `aegis.p01.product-input.v1` strictly (unknown fields, trailing content, and inputs above 1 MiB rejected), validates every field against documented bounds (retries 1..10 attempts and 0..3600 s backoff, 1..256 unique packages, 40-hex revision, relative definition paths), maps it to a typed build request with a symmetric `Result` type, and reports correlated errors; `imago aegis validate <path> [--json]` exposes it.
 - Pinned kernel artifact contract with `cordanaLLM/nucleus` (ADR-0021): `pkg/kernel` strictly decodes the Aegis `aegis.p01-nucleus.kernel-requirement.v1` payload (fixtures vendored from `cordanallm/Aegis-OS@5148ab2` under `pkg/kernel/testdata/`, empty feature lists rejected with `ErrEmptyRequirement`) and the `imago.nucleus.kernel-artifact.v1` manifest, and `kernel.Verify` recomputes the `SHA256SUMS` digest, every artifact digest and size, and the presence of the cosign bundle under bounded reads.
@@ -90,6 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
 
 ### Changed
+- `scripts/tunnel_hindsight.py` starts `kubectl port-forward` at most 7200 times and then stops with exit status 1. It restarted without a bound before.
+- The licence changes from Apache-2.0 to the European Union Public Licence 1.2 (`EUPL-1.2`) for every revision after commit `44a6bfa` and for every release (ADR-0023). Every revision up to and including `44a6bfa` stays available under Apache-2.0; no release was tagged under it. `LICENSE` holds the EUPL-1.2 text, `REUSE.toml` and `LICENSES/` carry the per-file licence information, the ten source headers that named Apache-2.0 carry an SPDX identifier, and the README has a License section.
 
 - `.github/milestones.json` follows the milestones on the forge. It listed three monthly
   milestones (`v2026.04.0` to `v2026.06.0`) that never existed there; it now copies the four

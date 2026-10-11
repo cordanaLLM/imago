@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2026 Lusoris Authors
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """Hindsight semantic-memory Model Context Protocol (MCP) server bridge.
 
 Exposes self-hosted Hindsight memory (from lusoris/k8s) as standard MCP tools:

@@ -409,3 +409,5 @@ python scripts/tunnel_hindsight.py --check
 # Start tunnel supervisor daemon
 python scripts/tunnel_hindsight.py
 ```
+
+The supervisor starts `kubectl port-forward` again whenever it ends. After 7200 starts it stops with exit status 1; with the 5 s pause after each ended port-forward that is ten hours at the earliest.

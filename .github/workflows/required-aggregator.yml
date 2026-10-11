@@ -1,6 +1,6 @@
 # Aggregating status check. It waits for every other check on the commit and fails if
 # one failed. The rule set in .github/rulesets/main.json requires it by name, next to
-# eight checks it also waits for.
+# nine checks it also waits for.
 
 name: required-aggregator
 on:

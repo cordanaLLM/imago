@@ -65,6 +65,9 @@
             "context": "required-checks"
           },
           {
+            "context": "REUSE lint"
+          },
+          {
             "context": "Detect Security Scan Paths"
           },
           {

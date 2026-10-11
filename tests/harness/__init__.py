@@ -1,3 +1,3 @@
 # Copyright 2026 Lusoris
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """Test harness package for mock execution and sandbox environments."""

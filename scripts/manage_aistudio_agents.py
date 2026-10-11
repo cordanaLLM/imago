@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2026 Lusoris
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """
 Automated Agent Fleet Manager for Google AI Studio & Antigravity Managed Agents.
 Declaratively registers, synchronizes, and audits custom agents defined under .agents/managed-agents/.
