@@ -80,8 +80,8 @@ jobs:
           - docker-generic
           - k8s-node-generic
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: hashicorp/setup-packer@1aa358be5cf73883762b302a3a03abd66e75b232 # v3.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789 # v3.4.0
         with:
           version: "1.11.2"
       - name: Install QEMU, ISO Authoring and Zstd
@@ -112,7 +112,7 @@ jobs:
           sha256sum ./*.qcow2.zst > SHA256SUMS
       - name: Upload Release Artifacts
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             packer/output-images/${{ matrix.flavor }}/*.qcow2.zst
