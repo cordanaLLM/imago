@@ -141,6 +141,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking**: `sync-kernel-manifest.yml` refuses a `kernel_release_published` payload without `stream`, `version`, and `tag` (the default-version fallback is removed), downloads the nucleus release, verifies the keyless cosign bundle over `SHA256SUMS`, runs `imago kernel artifact verify` against the payload and the `versions.json` contract pin, and only then proposes the `kernel.streams.<stream>` pin (version, `artifact_digest`, provenance) as a pull request that adds only `versions.json`.
 - `dispatch-kernel-requirements.yml` validates `kernel/requirement.json` and dispatches its path, `sha256`, and commit to the provider named in `versions.json` instead of the unread drivers/runtimes/kubernetes triple; it triggers on changes to the requirement file.
 - `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).
+- The repository has one private state folder, `.workingdir/`, the one the Praetor engine
+  reads. The second folder is retired: its ignore rules and its scanner exclusions are
+  removed, and the Hindsight local buffer moves to `.workingdir/memory/`.
+- Linked worktrees live outside the checkout, in the workstation's central `worktrees/`
+  folder, named `imago-<topic>`. `scripts/orchestrate_fanout.py` creates its agent
+  worktrees there as `imago-agent-<role>`; `IMAGO_WORKTREES_DIR` names another folder.
 
 ### Removed
 

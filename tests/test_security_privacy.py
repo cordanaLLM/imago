@@ -17,7 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 GITIGNORE_PATH = REPO_ROOT / ".gitignore"
 
-IGNORED_SCAN_PARTS = {".git", ".pytest_cache", "__pycache__", ".workingdir2", "tests", "bin", "site"}
+IGNORED_SCAN_PARTS = {".git", ".pytest_cache", "__pycache__", ".workingdir", "tests", "bin", "site"}
 
 
 def publishable_files() -> list[Path]:

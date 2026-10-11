@@ -227,7 +227,7 @@ imago plan route --ready        # Ranked ready set of the planning graph
 3. **Select & Run Local Checks**: Run targeted verification during development (`packer fmt`, `pytest -k ...`), and run full gates (`make lint`, `make test`) before pushing or creating a pull request.
 4. **Update Changelog & Records**: Update `CHANGELOG.md` for notable changes. Add an ADR under `docs/adr/` when an architecture, flavor, or policy decision changes durably.
 5. **Conventional Commits**: Draft clear, descriptive commit messages adhering strictly to Conventional Commits (`type(scope): subject`).
-6. **Worktree Hygiene**: Keep auxiliary Git worktrees under the ignored `.workingdir2/worktrees/` directory instead of creating repository siblings.
+6. **Worktree Hygiene**: Keep auxiliary Git worktrees outside checkout, in workstation's central `worktrees/` folder beside organisation folders, named `imago-<topic>`; never nested in checkout, never under `.workingdir/`.
 7. **Prose Integrity**: Project-authored documentation and comments must carry high-density technical information rather than generated-sounding filler.
 
 ---
@@ -244,7 +244,7 @@ imago plan route --ready        # Ranked ready set of the planning graph
 8. **Every non-trivial architectural or policy decision ships an ADR** under [`docs/adr/`](docs/adr/) before or alongside the code.
 9. **Power of 10 compliance**: Shell functions $\le$ 60 lines, `set -euo pipefail`, bounded loops, zero linter warnings.
 10. **Privacy & Zero-Leak invariant**: Zero private RFC 1918 IPs, zero `/home/*` workstation paths.
-11. **Worktree discipline**: Background coding agents run in isolated git worktrees (`.workingdir2/worktrees/`) or dedicated branches; never execute concurrent tasks in the main worktree.
+11. **Worktree discipline**: Background coding agents run in isolated git worktrees (central `worktrees/` folder, `imago-<topic>`) or dedicated branches; never execute concurrent tasks in the main worktree.
 12. **All documentation in English**: Commit messages, code comments, and documentation must be in neutral, professional English.
 13. **Interaction style — ask only on real forks**: Act on unambiguous work directly. When a genuine fork arises (destructive trade-off, target ambiguity), ask concise, structured questions.
 14. **No placeholder contact emails**: Never provide made-up or placeholder emails; route security reports and discussions exclusively to GitHub native surfaces (`/security/advisories/new`, `/discussions`).

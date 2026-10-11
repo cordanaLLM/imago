@@ -329,7 +329,7 @@ flowchart TD
         Agent["AI Coding Agent<br/>(Antigravity / Claude / Cursor)"]:::agent
         Config[".mcp.json / .agents/mcp_config.json"]:::bridge
         Bridge["Hindsight MCP Bridge<br/>(scripts/hindsight_mcp_server.py)"]:::bridge
-        LocalBuffer[".workingdir2/memory/hindsight-local-buffer.json<br/>(Offline Resilience Buffer)"]:::storage
+        LocalBuffer[".workingdir/memory/hindsight-local-buffer.json<br/>(Offline Resilience Buffer)"]:::storage
         Tunnel["Tunnel Supervisor<br/>(scripts/tunnel_hindsight.py)"]:::bridge
     end
 
