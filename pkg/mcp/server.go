@@ -224,7 +224,7 @@ func registerTrackerTools(s *coremcp.Server) {
 		return jsonResult(epics)
 	})
 	s.AddTool(tool("get_milestones",
-		"List open release milestones and due dates",
+		"List release milestones with state and due date",
 		`{"type":"object"}`,
 	), func(_ context.Context, _ *coremcp.CallToolRequest) (*coremcp.CallToolResult, error) {
 		ms, err := tracker.LoadMilestones(filepath.Join(".github", "milestones.json"))

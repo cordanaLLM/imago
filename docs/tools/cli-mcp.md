@@ -151,7 +151,7 @@ imago standards get k8s-node-cilium
 # List tracked recurring operational epics
 imago epics list
 
-# List open release milestones and due dates
+# List release milestones with state and due date
 imago milestones list
 ```
 
@@ -249,7 +249,7 @@ imago mcp --transport=http --addr=:8899
 | **`generate_cloudinit`** | `flavor`, `hostname`, `platform` | Generate hardened cloud-init YAML user-data |
 | **`get_standards`** | `flavor_id` (string) | Query machine-readable CIS/BSI hardening requirements |
 | **`list_epics`** | None | List recurring operational and architectural epics |
-| **`get_milestones`** | None | List active release milestones |
+| **`get_milestones`** | None | List release milestones with state and due date |
 | **`trigger_build`** | `flavor`, `backend`, `dry_run`, `confirmed` | Dispatch build to local or remote CI backends (supports staging) |
 | **`apply_flavor`** | `flavor_id`, `dry_run` | Generate in-place host provisioning bash script |
 | **`inspect_compliance`** | None | Inspect declarative CIS/NIST compliance profile |

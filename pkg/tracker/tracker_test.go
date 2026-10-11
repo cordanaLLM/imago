@@ -4,6 +4,7 @@ package tracker_test
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,13 +35,26 @@ func TestLoadActualMilestones(t *testing.T) {
 
 	milestones, err := tracker.LoadMilestones(msPath)
 	require.NoError(t, err)
-	assert.NotEmpty(t, milestones)
+	require.NotEmpty(t, milestones)
 
+	// The file copies the forge milestones, so it carries closed ones and
+	// milestones without a due date. A pull request needs an open one.
+	open := 0
+	titles := make(map[string]bool, len(milestones))
 	for _, m := range milestones {
 		assert.NotEmpty(t, m.Title)
-		assert.Equal(t, "open", m.State)
-		assert.NotEmpty(t, m.DueOn)
+		assert.Falsef(t, titles[m.Title], "milestone %q is listed twice", m.Title)
+		titles[m.Title] = true
+		assert.Containsf(t, []string{"open", "closed"}, m.State, "milestone %q has an unknown state", m.Title)
+		if m.State == "open" {
+			open++
+		}
+		if m.DueOn != "" {
+			_, err := time.Parse(time.RFC3339, m.DueOn)
+			assert.NoErrorf(t, err, "milestone %q has a due date that is not RFC 3339", m.Title)
+		}
 	}
+	assert.Positive(t, open, "no open milestone: no pull request could pass the milestone gate")
 }
 
 func TestValidatePRMetadata(t *testing.T) {

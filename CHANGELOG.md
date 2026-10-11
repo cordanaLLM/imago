@@ -91,6 +91,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `.github/milestones.json` follows the milestones on the forge. It listed three monthly
+  milestones (`v2026.04.0` to `v2026.06.0`) that never existed there; it now copies the four
+  forge milestones with title, state, due date and description. The file therefore carries
+  closed milestones and one without a due date, and `imago milestones list` and the
+  `get_milestones` MCP tool are described as listing milestones with their state.
 - Every workflow installs its Python tools from a hash lock with
   `pip install --require-hashes`. The inputs and the locks compiled from them with
   `uv pip compile --generate-hashes --universal` live under `.github/requirements/`
@@ -150,6 +155,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The `[tool.codespell]` block in `pyproject.toml`. codespell reads `.codespellrc` after
+  `pyproject.toml`, and both set the same two keys, so the block had no effect: a typo
+  planted in a path only the block skipped was still reported. `.codespellrc` stays the one
+  spell-check configuration.
 - Generated files of agent clients and editors the project does not use. `.standards.yaml`
   now selects `agent_clients: [claude, codex, gemini]` and
   `editors: [universal, vscode, antigravity]`, so the engine compiles and verifies those

@@ -3,22 +3,28 @@
   "version": "1.0.0",
   "milestones": [
     {
-      "title": "v2026.04.0",
+      "title": "1.0 — First release",
       "state": "open",
-      "due_on": "2026-04-07T00:00:00Z",
-      "description": "April 2026 Monthly Stable Release Milestone - Universal Architecture & Imageless Engine"
+      "due_on": null,
+      "description": "Initial production release supporting 30 Ubuntu 26.04 flavors across Base, Docker, Podman, Kubernetes, and AI Inference."
     },
     {
-      "title": "v2026.05.0",
+      "title": "v1.1.0 - Multi-Hypervisor & Bare-Metal Hardening",
       "state": "open",
-      "due_on": "2026-05-05T00:00:00Z",
-      "description": "May 2026 Monthly Stable Release Milestone - Hardware Survey Synchronization"
+      "due_on": "2026-10-30T00:00:00Z",
+      "description": "Direct disk streaming installer, native Unraid virtiofs auto-mount, VMware ESXi 8.x validation, and iPXE netboot."
     },
     {
-      "title": "v2026.06.0",
-      "state": "open",
-      "due_on": "2026-06-02T00:00:00Z",
-      "description": "June 2026 Monthly Stable Release Milestone - Kubernetes 1.38 & Top500 Alignment"
+      "title": "v1.2.0 - Blackwell Fabric & Multi-Vendor Inference",
+      "state": "closed",
+      "due_on": "2026-11-29T00:00:00Z",
+      "description": "NVIDIA Blackwell B200 / RTX 5090 NVLink fabric tuning, AMD Instinct MI300 ROCm 10 optimization, and automated vLLM benchmarks."
+    },
+    {
+      "title": "v1.3.0 - Aegis & Nucleus Fleet Contracts",
+      "state": "closed",
+      "due_on": "2026-12-17T00:00:00Z",
+      "description": "Pinned producer contracts with the connected Aegis-OS stack: the aegis.p01.product-input.v1 build request and the imago.nucleus.kernel-artifact.v1 kernel artifact manifest, verified by digest and provenance before consumption. Tracks planning milestones ms-aegis and ms-nucleus."
     }
   ]
 }

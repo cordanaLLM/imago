@@ -410,7 +410,7 @@ func newMilestonesCmd() *cobra.Command {
 	var file string
 	listCmd := &cobra.Command{
 		Use:   "list",
-		Short: "List all open milestones",
+		Short: "List release milestones with state and due date",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			p := file
 			if p == "" {
