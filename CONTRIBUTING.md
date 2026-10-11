@@ -31,8 +31,10 @@ This project follows **Trunk-Based Development** with protected `main` branch. D
    make lint
    make test         # or make test-all for benchmarks and full coverage
    pre-commit run --all-files
+   make verify-all
    ```
 
+   The Git hooks and `make verify-all` run the Praetor engine at the commit that `PRAETOR_REF` names in `.github/workflows/ci.yml`, not the `praetorctl` on your `PATH`. The launcher `.config/lefthook/engine.sh` installs that commit with `go install` on first use, into `${XDG_CACHE_HOME:-$HOME/.cache}/praetor/engine/<commit>`, and fails with the command to run when it cannot. To run the same engine by hand, call `sh .config/lefthook/engine.sh audit`; `make praetor-engine-path` prints the binary in use.
 4. **Commit with Conventional Commits**:
 
    ```bash

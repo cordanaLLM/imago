@@ -15,6 +15,9 @@ concurrency:
 
 env:
   PACKER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Praetor engine commit the local hooks and `make verify-all` run. Read by
+  # .config/lefthook/engine.sh on the workstation; no job in this workflow uses it.
+  PRAETOR_REF: 4ae6247c57d2fb06e33b7e94979411de5f4ed98a
 
 jobs:
   changes:
