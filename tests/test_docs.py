@@ -81,7 +81,8 @@ class TestDocsIntegrity:
             re.IGNORECASE,
         )
         for md_file in REPO_ROOT.rglob("*.md"):
-            if ".workingdir2" in md_file.parts or ".pytest_cache" in md_file.parts:
+            parts = md_file.relative_to(REPO_ROOT).parts
+            if ".workingdir2" in parts or ".pytest_cache" in parts:
                 continue
             content = md_file.read_text(encoding="utf-8", errors="ignore")
             match = placeholder_pattern.search(content)
@@ -118,7 +119,8 @@ class TestDocsIntegrity:
         md_files = [
             f
             for f in REPO_ROOT.rglob("*.md")
-            if ".workingdir2" not in f.parts and ".pytest_cache" not in f.parts
+            if ".workingdir2" not in f.relative_to(REPO_ROOT).parts
+            and ".pytest_cache" not in f.relative_to(REPO_ROOT).parts
         ]
         total_diagrams = 0
 
