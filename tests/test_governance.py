@@ -6,6 +6,7 @@ and required CI/CD workflows.
 Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked assertions.
 """
 
+import json
 from pathlib import Path
 import os
 import re
@@ -72,6 +73,65 @@ class TestGovernanceIntegrity:
         version_str = version_path.read_text(encoding="utf-8").strip()
         assert re.match(r"^\d+\.\d+\.\d+$", version_str), (
             f"VERSION '{version_str}' does not conform to semver format (X.Y.Z)"
+        )
+
+    def test_release_configuration_names_the_package_and_its_version_file(self) -> None:
+        """Verify the release tool releases `imago` and writes the version to VERSION.
+
+        The `simple` release type writes `version.txt` unless `version-file` names another
+        file; a file listed under `extra-files` is rewritten only where it carries a marker,
+        so a bare VERSION listed there is never updated.
+        """
+        config = json.loads((REPO_ROOT / "release-please-config.json").read_text(encoding="utf-8"))
+        package = config["packages"]["."]
+        assert package["release-type"] == "simple"
+        assert package["package-name"] == "imago", "The released package is named imago"
+        assert package.get("version-file") == "VERSION", "VERSION must be the version file"
+        assert "VERSION" not in package.get("extra-files", []), (
+            "VERSION carries no marker, so listing it under extra-files updates nothing"
+        )
+
+    def test_release_manifest_agrees_with_version_or_declares_the_first_one(self) -> None:
+        """Verify the manifest holds the released version, or the first version is declared.
+
+        Without a manifest entry the release tool takes `initial-version`; with one it bumps
+        from that entry, which then has to be the version the VERSION file states.
+        """
+        config = json.loads((REPO_ROOT / "release-please-config.json").read_text(encoding="utf-8"))
+        manifest = json.loads(
+            (REPO_ROOT / ".release-please-manifest.json").read_text(encoding="utf-8")
+        )
+        released = manifest.get(".")
+        if released is None:
+            first = config["packages"]["."].get("initial-version", "")
+            assert re.match(r"^\d+\.\d+\.\d+$", first), (
+                "No version is released yet, so initial-version must state the first one"
+            )
+            return
+        version = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        assert released == version, (
+            f"The manifest says {released} was released, VERSION says {version}"
+        )
+
+    def test_cli_version_constant_follows_the_version_file(self) -> None:
+        """Verify the version the CLI advertises is the released one and stays so.
+
+        The constant is a second copy of VERSION. The release tool rewrites it only when
+        the file is listed under `extra-files` and the line carries the marker.
+        """
+        config = json.loads((REPO_ROOT / "release-please-config.json").read_text(encoding="utf-8"))
+        source = (REPO_ROOT / "cmd" / "imago" / "main.go").read_text(encoding="utf-8")
+        match = re.search(r"^const version = \"([^\"]+)\"(.*)$", source, re.MULTILINE)
+        assert match, "cmd/imago/main.go must declare the version constant"
+        version = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        assert match.group(1) == version, (
+            f"The CLI advertises {match.group(1)}, VERSION says {version}"
+        )
+        assert "x-release-please-version" in match.group(2), (
+            "Without the marker on its line the release tool leaves the constant unchanged"
+        )
+        assert "cmd/imago/main.go" in config["packages"]["."].get("extra-files", []), (
+            "The release tool rewrites the constant only in a file listed under extra-files"
         )
 
     def test_license_terms_and_copyright(self) -> None:
