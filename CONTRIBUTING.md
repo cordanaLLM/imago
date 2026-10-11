@@ -34,6 +34,8 @@ This project follows **Trunk-Based Development** with protected `main` branch. D
    make verify-all
    ```
 
+   `make test` runs the seed corpus of every Go fuzz target (`FuzzParse` in `pkg/aegis`, `FuzzParseRequirement` and `FuzzParseArtifactManifest` in `pkg/kernel`) as ordinary cases. After a change to one of these parsers, also run `make fuzz`: it fuzzes each target in turn for `FUZZTIME` (default `30s`, for example `make fuzz FUZZTIME=5m`). When a run fails, Go writes the failing input to `testdata/fuzz/<target>/` in the package; commit that file with the fix so the input stays a regression case.
+
    The Git hooks and `make verify-all` run the Praetor engine at the commit that `PRAETOR_REF` names in `.github/workflows/ci.yml`, not the `praetorctl` on your `PATH`. The launcher `.config/lefthook/engine.sh` installs that commit with `go install` on first use, into `${XDG_CACHE_HOME:-$HOME/.cache}/praetor/engine/<commit>`, and fails with the command to run when it cannot. To run the same engine by hand, call `sh .config/lefthook/engine.sh audit`; `make praetor-engine-path` prints the binary in use.
 4. **Commit with Conventional Commits**:
 

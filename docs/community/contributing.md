@@ -6,3 +6,4 @@ Please review our [Contributing Guidelines](https://github.com/cordanaLLM/imago/
 - The Single Source of Truth (`versions.json`) requirements.
 - NASA/JPL Power of 10 compliance for shell provisioners.
 - Running local quality gates (`make fmt-check`, `make lint`, `make test`, `make docs-lint`, `pre-commit run --all-files`), and `make verify-all` before a pull request.
+- Fuzzing the Go parsers with `make fuzz` after a change to `pkg/aegis` or `pkg/kernel`.
