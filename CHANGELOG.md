@@ -155,6 +155,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The rejection text of `pkg/aegis` is bounded. `Error.Reason` was documented as not
+  echoing unbounded input, but a reason built from decoder or I/O error text repeated
+  caller-controlled text at full length: a manifest with a 5000-byte unknown field name
+  gave a 5037-byte reason. `boundReason` in `pkg/aegis/errors.go` cuts such a reason to
+  the new exported bound `MaxReasonLen` (256 bytes) and ends it with ` (truncated)`.
+  The cause in `Error.Err` is unchanged. `FuzzParse` holds the bound for every input.
 - The Hindsight MCP server no longer hides every error raised while it closes a failed
   connection. `http_api` in `scripts/hindsight_mcp_server.py` wrapped the close in a bare
   `except Exception: pass`; it now suppresses only `OSError`, the error a socket close

@@ -26,6 +26,7 @@ func FuzzParse(f *testing.F) {
 	f.Add([]byte(`{"correlation-id":"fuzz-seed-0001","unknown":1}`))
 	f.Add([]byte(`{"correlation-id":"not a token"}`))
 	f.Add([]byte(`{"correlation-id":"` + strings.Repeat("x", aegis.MaxCorrelationIDLen+1) + `"}`))
+	f.Add([]byte(`{"correlation-id":"fuzz-seed-0002","` + strings.Repeat("u", 2*aegis.MaxReasonLen) + `":1}`))
 	f.Add([]byte(`{"schema":`))
 	f.Add([]byte(`[]`))
 	f.Add([]byte{})
@@ -40,7 +41,8 @@ func FuzzParse(f *testing.F) {
 }
 
 // checkRejection holds the documented shape of a refusal: no value, an *Error,
-// and a correlation id that is a bounded token or one of the two placeholders.
+// a correlation id that is a bounded token or one of the two placeholders, and
+// a reason no longer than MaxReasonLen.
 func checkRejection(t *testing.T, p *aegis.ProductInput, err error) {
 	t.Helper()
 	if p != nil {
@@ -55,6 +57,9 @@ func checkRejection(t *testing.T, p *aegis.ProductInput, err error) {
 	}
 	if len(aerr.CorrelationID) > aegis.MaxCorrelationIDLen {
 		t.Fatalf("rejection echoes a correlation id of %d bytes", len(aerr.CorrelationID))
+	}
+	if len(aerr.Reason) > aegis.MaxReasonLen {
+		t.Fatalf("rejection reason is %d bytes, bound %d", len(aerr.Reason), aegis.MaxReasonLen)
 	}
 }
 
