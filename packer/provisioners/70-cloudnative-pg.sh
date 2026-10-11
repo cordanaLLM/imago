@@ -21,14 +21,18 @@ fs.file-max = 2097152
 kernel.sched_migration_cost_ns = 5000000
 EOF
 
-  sudo sysctl --system || true
+  if ! sudo sysctl --system; then
+    echo "    sysctl --system returned non-zero; at least one configured key was not applied in the build environment." >&2
+  fi
 }
 
 configure_postgresql_hugepages() {
   echo "==> Setting transparent hugepages policy for database shared buffers..."
   # Set madvise to allow PostgreSQL to allocate hugepages explicitly when configured
   if [ -d /sys/kernel/mm/transparent_hugepage ]; then
-    echo "madvise" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled >/dev/null || true
+    if ! echo "madvise" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled >/dev/null; then
+      echo "    transparent_hugepage/enabled was not writable in the build environment." >&2
+    fi
   fi
 
   # Ensure security limits allow large memory locks

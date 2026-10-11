@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-AGENTS_DIR = REPO_ROOT / ".agents" / "agents"
+AGENTS_DIR = REPO_ROOT / ".agents" / "managed-agents"
 HOOKS_JSON = REPO_ROOT / ".agents" / "hooks.json"
 GUARD_PRIVACY_SCRIPT = REPO_ROOT / ".agents" / "hooks-scripts" / "guard_privacy.py"
 

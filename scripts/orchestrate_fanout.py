@@ -47,8 +47,7 @@ def spawn_agent_worktree(role: str, branch_name: str) -> Path:
         # If branch already exists, checkout without -b
         res = run_cmd(["git", "worktree", "add", str(target_path), branch_name])
         if res.returncode != 0:
-            print(f"Failed to create worktree: {res.stderr}", file=sys.stderr)
-            sys.exit(1)
+            raise RuntimeError(f"Failed to create worktree: {res.stderr}")
 
     print(f"  [OK] Agent '{role}' assigned worktree: {target_path}")
     return target_path
@@ -86,7 +85,11 @@ def main() -> None:
     if args.subcommand == "list":
         list_worktrees()
     elif args.subcommand == "spawn":
-        spawn_agent_worktree(args.role, args.branch)
+        try:
+            spawn_agent_worktree(args.role, args.branch)
+        except RuntimeError as err:
+            print(err, file=sys.stderr)
+            sys.exit(1)
     elif args.subcommand == "prune":
         remove_agent_worktree(args.role)
 

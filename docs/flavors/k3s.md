@@ -21,14 +21,17 @@ Unlike enterprise `k8s-node-*` flavors requiring $\ge$ 2GB of RAM for the contro
 ## Edge & Homelab Architecture
 
 ### 1. Minimal Footprint & Fast Discovery
+
 - **Idle Memory**: Operates reliably on 1GB–2GB RAM edge nodes without memory starvation.
 - **ZRAM Swap Guard**: Integrated with ZRAM compressed memory swap (`zstd`, 25% RAM), preventing hard OOM kills on memory-dense homelab containers.
 - **Fast Boot**: Cloud-init fast boot discovers `NoCloud` or `ConfigDrive` datasources in $< 2$ seconds.
 
 ### 2. Container Device Interface (CDI) Ready
+
 All GPU-accelerated agent flavors (`k3s-agent-intel`, `k3s-agent-amd`, `k3s-agent-nvidia`) pre-create `/etc/cdi` specification directories, allowing containers to access hardware accelerators declaratively without proprietary runtime wrappers.
 
 ### 3. Declarative Registries & Mirroring
+
 Pre-configures `/etc/rancher/k3s/registries.yaml` with registry mirror fallbacks, allowing seamless offline caching against local pull-through mirrors (such as Harbor or Spegel) to prevent Docker Hub rate-limits.
 
 ---
@@ -36,6 +39,7 @@ Pre-configures `/etc/rancher/k3s/registries.yaml` with registry mirror fallbacks
 ## Cloud-Init Bootstrap Examples
 
 ### Worker Node (`k3s-agent-*`)
+
 To join a K3s cluster, provide the cluster URL and token in your cloud-init `user-data`:
 
 ```yaml
@@ -53,6 +57,7 @@ runcmd:
 ```
 
 ### Standalone Server (`k3s-server-generic`)
+
 To boot a self-contained single-node cluster with local storage:
 
 ```yaml

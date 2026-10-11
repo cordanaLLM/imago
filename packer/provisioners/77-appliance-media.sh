@@ -16,7 +16,7 @@ install_dual_vendor_vaapi() {
     libva2
 
   # Ensure consistent render and video group membership
-  sudo usermod -aG render,video ubuntu || true
+  sudo usermod -aG render,video ubuntu
 }
 
 install_nas_storage_clients() {

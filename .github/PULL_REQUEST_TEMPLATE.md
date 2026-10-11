@@ -1,7 +1,9 @@
+<!-- markdownlint-disable MD041 -- fragment rendered under the pull request title -->
 ## Description
 <!-- Provide a concise description of the changes introduced by this PR. -->
 
 ## Changes Checklist
+
 - [ ] **Single Source of Truth**: All versions updated via `versions.json` (no hardcoded versions in shell scripts).
 - [ ] **NASA/JPL Power of 10**: All shell script functions are <= 60 lines and enforce `set -euo pipefail`.
 - [ ] **ShellCheck & Linters**: `make lint` passes locally with zero warnings.
@@ -11,5 +13,6 @@
 - [ ] **Docs & Code Synchrony**: Documentation updated (`README.md`, `ONBOARDING.md`, `docs/`) in the exact same commit.
 
 ## Related Issues / Epics
+
 Fixes #
 Ref #

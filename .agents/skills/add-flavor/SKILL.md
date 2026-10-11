@@ -7,13 +7,13 @@ references:
 
 # Add Flavor Skill
 
-Follow this end-to-end workflow when creating a new OS image flavor in `lusoris-cloud-images`.
+Follow this end-to-end workflow when creating new OS image flavor in `lusoris-cloud-images`.
 
 ## Invariants to Preserve
 1. **Single Source of Truth**: All versions, container tags, and driver branches must be defined in `versions.json`. Never hardcode strings in templates or provisioners.
 2. **NASA/JPL Power of 10**: Any new shell provisioner scripts must enforce `set -euo pipefail`, have functions $\le$ 60 lines, check all return codes, and pass ShellCheck.
-3. **Docs & Code Synchrony**: The new flavor must be documented in `docs/` and `README.md` in the exact same commit/PR.
-4. **Trunk-Based PR Flow**: Develop on a dedicated `feat/<flavor-name>` branch and open a PR.
+3. **Docs & Code Synchrony**: New flavor must be documented in `docs/` and `README.md` in exact same commit/PR.
+4. **Trunk-Based PR Flow**: Develop on dedicated `feat/<flavor-name>` branch and open PR.
 
 ## Procedure
 

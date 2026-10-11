@@ -61,11 +61,18 @@ net.ipv4.conf.all.send_redirects = 0
 net.ipv4.icmp_echo_ignore_broadcasts = 1
 EOF
 
+  load_container_modules
+}
+
+load_container_modules() {
   printf 'overlay\nbr_netfilter\ntcp_bbr\n' | sudo tee /etc/modules-load.d/container-runtime.conf
   echo 'options overlay metacopy=on redirect_dir=on' | sudo tee /etc/modprobe.d/overlay.conf
-  sudo modprobe overlay 2>/dev/null || true
-  sudo modprobe br_netfilter 2>/dev/null || true
-  sudo modprobe tcp_bbr 2>/dev/null || true
+  local module
+  for module in overlay br_netfilter tcp_bbr; do
+    if ! sudo modprobe "${module}"; then
+      echo "    Module ${module} did not load in the build environment; it stays listed in modules-load.d." >&2
+    fi
+  done
 }
 
 configure_kernel_cmdline() {
@@ -92,7 +99,7 @@ configure_kernel_cmdline() {
 
   if [ -f /etc/default/grub ]; then
     sudo sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"${cmdline_base} ${extra_params}\"|" /etc/default/grub
-    sudo update-grub 2>/dev/null || true
+    sudo update-grub
   fi
 }
 
@@ -110,9 +117,9 @@ install hfs /bin/true
 install hfsplus /bin/true
 EOF
 
-  sudo sed -i '/\sswap\s/d' /etc/fstab || true
-  sudo swapoff -a 2>/dev/null || true
-  sudo systemctl mask swap.target 2>/dev/null || true
+  sudo sed -i '/\sswap\s/d' /etc/fstab
+  sudo swapoff -a
+  sudo systemctl mask swap.target
 
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unattended-upgrades
   cat <<'EOF' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades

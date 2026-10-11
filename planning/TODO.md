@@ -14,6 +14,7 @@ Unsupported in this proposal:
 - step execution and completion evidence
 
 <a id="todo-746f646f2d72656e616d652d6d6f64756c65"></a>
+
 - [ ] `todo-rename-module` — **Rename the Go module and CLI to imago** (`step-rename-module`)
   - Roadmap: [`roadmap-rename-module`](ROADMAP.md#roadmap-726f61646d61702d72656e616d652d6d6f64756c65); milestone: [`ms-identity`](MILESTONES.md#milestone-6d732d6964656e74697479)
   - Requirements: `req-identity`; dependencies: none

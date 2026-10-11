@@ -5,7 +5,7 @@
 # Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked returns.
 set -euo pipefail
 
-CDEBUG_VERSION="${CDEBUG_VERSION:-0.5.1}"
+CDEBUG_VERSION="${CDEBUG_VERSION:-0.0.19}"
 
 install_podman_packages() {
   echo "==> Installing Podman, Buildah, Skopeo, Netavark, and crun on Ubuntu 26.04..."
@@ -18,7 +18,7 @@ install_podman_packages() {
     netavark \
     aardvark-dns \
     slirp4netns \
-    uidmap || true
+    uidmap
 }
 
 configure_quadlet_and_rootless() {
@@ -33,11 +33,11 @@ configure_quadlet_and_rootless() {
     echo "ubuntu:100000:65536" | sudo tee -a /etc/subgid
   fi
 
-  sudo chown -R ubuntu:ubuntu /home/ubuntu/.config 2>/dev/null || true
+  sudo chown -R ubuntu:ubuntu /home/ubuntu/.config
 }
 
 install_cdebug() {
-  local version="${CDEBUG_VERSION:-0.5.1}"
+  local version="${CDEBUG_VERSION:-0.0.19}"
   local arch
   arch=$(uname -m)
   case "${arch}" in
@@ -46,9 +46,13 @@ install_cdebug() {
     *) return 0 ;;
   esac
   echo "==> Installing cdebug v${version} for zero-footprint diagnostics..."
-  local url="https://github.com/iximiuz/cdebug/releases/download/v${version}/cdebug_${version}_linux_${arch}.tar.gz"
-  curl -fsSL --max-time 30 "${url}" | sudo tar -xz -C /usr/local/bin cdebug 2>/dev/null || true
-  sudo chmod 755 /usr/local/bin/cdebug 2>/dev/null || true
+  # The release asset carries no version in its name: cdebug_linux_amd64.tar.gz.
+  local url="https://github.com/iximiuz/cdebug/releases/download/v${version}/cdebug_linux_${arch}.tar.gz"
+  if ! curl -fsSL --max-time 30 "${url}" | sudo tar -xz -C /usr/local/bin cdebug; then
+    echo "==> cdebug ${version} could not be installed from ${url}" >&2
+    return 1
+  fi
+  sudo chmod 755 /usr/local/bin/cdebug
 }
 
 main() {

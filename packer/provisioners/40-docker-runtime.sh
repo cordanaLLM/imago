@@ -10,7 +10,7 @@ DISTRO_RELEASE="${DISTRO_RELEASE:-resolute}"
 setup_docker_repository() {
   echo "==> Configuring official Docker apt repository on Ubuntu ${DISTRO_RELEASE}..."
   sudo mkdir -p -m 755 /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
+  curl -fsSL --max-time 30 https://download.docker.com/linux/ubuntu/gpg |
     sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
 
   local arch
@@ -28,7 +28,7 @@ install_docker_packages() {
     docker-ce-cli \
     containerd.io \
     docker-buildx-plugin \
-    docker-compose-plugin || true
+    docker-compose-plugin
 }
 
 configure_docker_daemon() {
@@ -50,9 +50,9 @@ configure_docker_daemon() {
 }
 EOF
 
-  sudo usermod -aG docker ubuntu || true
+  sudo usermod -aG docker ubuntu
   sudo systemctl daemon-reload
-  sudo systemctl enable docker.service 2>/dev/null || true
+  sudo systemctl enable docker.service
 }
 
 install_cdebug() {

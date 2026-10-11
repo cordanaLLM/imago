@@ -12,7 +12,9 @@ install_chrony() {
 
 configure_global_sources() {
   echo "==> Configuring resilient multi-tier NTS and Stratum-1 sources..."
-  sudo find /etc/chrony/sources.d -maxdepth 1 -type f -name 'ubuntu*.sources' -delete 2>/dev/null || true
+  if [ -d /etc/chrony/sources.d ]; then
+    sudo find /etc/chrony/sources.d -maxdepth 1 -type f -name 'ubuntu*.sources' -delete
+  fi
 
   if [ -f /etc/chrony/chrony.conf ]; then
     sudo sed -Ei 's|^[[:space:]]*sourcedir[[:space:]]+/run/chrony-dhcp[[:space:]]*$|# sourcedir /run/chrony-dhcp  # Disabled: enforce authoritative NTS sources only.|' /etc/chrony/chrony.conf

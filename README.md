@@ -1,6 +1,32 @@
 # imago
 
-[![HISS-16 Adopted](https://img.shields.io/badge/Standards-HISS--16%20Adopted%20(6%20baselined)-yellow)](AGENTS.md)
+<!-- praetor:readme-governance:start -->
+[![HISS Adopted][praetor-hiss-badge]][praetor-hiss-agents]
+[![Documentation Governance][praetor-docs-badge]][praetor-docs-runs]
+
+Praetor manages this repository's declared governance policy. This managed
+block records adoption state; it is not a verification certificate.
+
+**Verification**: `make verify-all` runs the repository's configured
+verification cascade.
+
+**HISS Audit**: `praetorctl audit` enforces policy, generated-surface
+integrity, and the debt ratchet.
+
+**Context Sync**: `praetorctl compile-context --verify` verifies every
+generated agent context against `AGENTS.md`.
+
+**Documentation**: `make docs-lint` enforces locked Markdown style and the
+private scratch-link policy.
+
+**Debt Baseline**: `.standards-baseline.json` anchors the debt ratchet at
+1 recorded infraction; audit forbids growth.
+
+[praetor-hiss-badge]: https://img.shields.io/badge/Standards-HISS%20Adopted%20(1%20baselined)-yellow
+[praetor-hiss-agents]: https://github.com/cordanaLLM/imago/blob/HEAD/AGENTS.md
+[praetor-docs-badge]: https://github.com/cordanaLLM/imago/actions/workflows/praetor-docs.yml/badge.svg
+[praetor-docs-runs]: https://github.com/cordanaLLM/imago/actions/workflows/praetor-docs.yml
+<!-- praetor:readme-governance:end -->
 
 <div align="center">
 
@@ -108,7 +134,7 @@ flowchart TD
 
 ## Workload Tier Summary (44 Flavors)
 
-To keep maintenance low and usability high, flavors are partitioned into 7 distinct tiers. 
+To keep maintenance low and usability high, flavors are partitioned into 7 distinct tiers.
 
 | Tier | Flavors | Hardware Acceleration | Key Runtime Components | Documentation |
 | :--- | :---: | :--- | :--- | :--- |
@@ -183,14 +209,3 @@ make build-ai-infer-nvidia     # AI inference appliance (vLLM / NUMA tuning)
 - **Security Advisories**: To report security vulnerabilities, open a [GitHub Private Security Advisory](https://github.com/cordanaLLM/imago/security/advisories/new).
 - **Engineering Principles**: All changes must satisfy [Engineering Principles](docs/principles.md) and [Rule Crosswalk](docs/repository-rule-crosswalk.md).
 - **License**: [Apache 2.0](LICENSE) — Copyright &copy; 2026 The Lusoris Authors.
-
-## Standards & Governance
-
-This repository conforms to High-Integrity Systems Standards (HISS-16)
-and modernized NASA JPL Power-of-10 rules.
-
-| Gate | Command | Description |
-| :--- | :--- | :--- |
-| **Verification** | `make verify-all` | Runs full audit, test suite, and context integrity check |
-| **HISS Audit** | `standardsctl audit` | Enforces zero technical debt regression against baseline |
-| **Context Sync** | `standardsctl compile-context` | Transpiles canonical `AGENTS.md` to all AI targets |

@@ -133,7 +133,6 @@ This catalog segments all **44 production-ready flavors** into 7 clear workload 
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`appliance-vision-nvr`** | Frigate NVR, Scrypted | Intel GPU + Coral TPU | `generic` | Coral Edge TPU (`gasket-dkms`, udev), Intel QuickSync (`iHD`), CDI spec, Docker CE | `make build-appliance-vision-nvr` |
 | **`appliance-gateway-dns`** | AdGuard Home, Pi-hole | VirtIO / Low-Power CPU | `generic` | Port 53 stub disabled (`DNSStubListener=no`), WireGuard, IP forward (< 150MB RAM) | `make build-appliance-gateway-dns` |
-| **`appliance-media-server`**| Jellyfin, Plex, Tdarr | Intel + AMD GPU + NAS | `baremetal` | Intel QuickSync + AMD Mesa VA-API, `nfs-common`, `cifs-utils`, 4096KB readahead | `make build-appliance-media-server` |
+| **`appliance-media-server`** | Jellyfin, Plex, Tdarr | Intel + AMD GPU + NAS | `baremetal` | Intel QuickSync + AMD Mesa VA-API, `nfs-common`, `cifs-utils`, 4096KB readahead | `make build-appliance-media-server` |
 | **`appliance-ci-runner`** | Self-Hosted CI Runner | Multi-Core CPU / DinD | `generic` | QEMU ARM64/ARMv7 binfmt, Docker Buildx, `git-lfs`, 4GB tmpfs `/tmp` | `make build-appliance-ci-runner` |
-| **`appliance-game-server`**| SteamCMD, Pterodactyl | High Clock CPU | `generic` | 32-bit `i386` glibc, `steamcmd`, 16MB UDP socket buffer tuning, 1M file limits | `make build-appliance-game-server` |
-
+| **`appliance-game-server`** | SteamCMD, Pterodactyl | High Clock CPU | `generic` | 32-bit `i386` glibc, `steamcmd`, 16MB UDP socket buffer tuning, 1M file limits | `make build-appliance-game-server` |

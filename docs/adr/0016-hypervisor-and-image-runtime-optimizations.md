@@ -22,15 +22,19 @@ Accepted
 We establish an enterprise image optimization architecture across 6 core technical dimensions:
 
 ### 1. Boot Acceleration & Instant Rootfs Expansion
+
 - **Native `systemd-growfs`**: Transition from Python-dependent `cloud-init-growpart` to `systemd-growfs-root.service`, expanding virtual disks in initramfs in $< 5\text{ms}$.
 - **Unified Kernel Images (UKI) Roadmap**: Prepare EFI stub direct booting for UEFI/QEMU microVMs, bundling kernel + initramfs + cmdline into a signed binary to bypass GRUB stage latency ($200\text{--}300\text{ms}$ reduction).
 - **Entropy Binding (`virtio-rng`)**: Ensure `virtio-rng` is explicitly bound at boot to prevent entropy stalls during SSH host key generation.
 
 ### 2. High-Performance Storage & Multi-Format Delivery
+
 - **QCOW2 Optimization**: Packer post-processors convert base images using:
+
   ```bash
   qemu-img convert -O qcow2 -o cluster_size=1M,lazy_refcounts=on,extended_l2=on input.raw output.qcow2
   ```
+
 - **Matrix Delivery Pipeline**: Release artifacts are generated in 5 standard formats:
   - `.qcow2.zst`: Proxmox VE, OpenStack, KVM.
   - `.raw.zst`: Bare-metal streaming (`lusoris-install-to-disk`), Firecracker, Cloud-Hypervisor.
@@ -39,19 +43,24 @@ We establish an enterprise image optimization architecture across 6 core technic
   - `.rootfs.tar.zst`: Incus / LXD Linux system containers.
 
 ### 3. Memory Virtualization, Density & HugePages
+
 - **Host KSM Deduplication**: Guest kernels configure cooperative memory naming and madvise hints, facilitating Kernel Samepage Merging on host hypervisors.
 - **HugePages Tuning (2MB / 1GB)**: Database (`cloudnative-pg`), AI inference (`ai-infer-*`), and DPDK/Cilium flavors configure pre-reserved HugePage pools to eliminate TLB cache misses.
 - **Cooperative Ballooning**: `virtio_balloon.deflate_on_oom=1` is enforced to ensure the hypervisor yields memory during memory spikes.
 
 ### 4. High-Throughput Virtualized Networking
+
 - **VirtIO Multiqueue Auto-Scaling**: A udev rule automatically configures network queues matching the virtual CPU count:
+
   ```udev
   ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*|en*", RUN+="/sbin/ethtool -L %k combined $(nproc)"
   ```
+
 - **TCP Window & Buffer Auto-Tuning**: `net.ipv4.tcp_rmem` and `net.ipv4.tcp_wmem` are tuned to 16MB ceilings for intra-cluster replication.
 - **eBPF Hardening**: `net.core.bpf_jit_harden=2` and `bpf_jit_enable=1` maintain wire-speed packet filtering for Cilium while mitigating speculative side-channel vulnerabilities.
 
 ### 5. Supply Chain Provenance & Immutability
+
 - **Syft SBOM Generation**: Every release artifact generates a machine-readable CycloneDX / SPDX Software Bill of Materials.
 - **Cosign / Sigstore Attestation**: Published image checksums and OCI container artifacts are cryptographically signed.
 - **A/B Rollback Safety**: Appliance flavors support dual-partition atomic updates via `systemd-sysupdate`.
@@ -59,11 +68,12 @@ We establish an enterprise image optimization architecture across 6 core technic
 ## Consequences
 
 ### Positive
+
 - **Cold Boot Agility**: Sub-second boot times enable agile auto-scaling and responsive microVM lifecycles.
 - **Measurable I/O Gain**: 1MB cluster sizing and multiqueue networking resolve traditional virtualization storage and network bottlenecks.
 - **Multi-Hypervisor Parity**: Eliminates manual conversion steps for Proxmox, VMware, Unraid, and Hyper-V administrators.
 - **Full Supply Chain Compliance**: Conforms to SLSA Level 3 and OpenSSF security recommendations.
 
 ### Negative / Neutral
-- Generating 5 image formats increases release matrix build duration in GitHub Actions.
 
+- Generating 5 image formats increases release matrix build duration in GitHub Actions.

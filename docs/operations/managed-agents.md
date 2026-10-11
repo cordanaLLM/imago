@@ -21,7 +21,7 @@ flowchart TD
         Dropdown --> Interactions
     end
 
-    subgraph AgentFleet["2. Specialized Agent Fleet (.agents/agents/)"]
+    subgraph AgentFleet["2. Specialized Agent Fleet (.agents/managed-agents/)"]
         direction TB
         A1["infra-forge<br/><small>Packer HCL2 · QEMU/Proxmox · GPU Driver Stacks</small>"]:::agents
         A2["security-compliance<br/><small>CIS L2 · DISA STIG · NIST SP 800-53 · Goss</small>"]:::agents
@@ -87,6 +87,7 @@ python scripts/manage_aistudio_agents.py register
 ```
 
 Once registered:
+
 1. Open [Google AI Studio](https://aistudio.google.com).
 2. Navigate to the **Playground** tab and switch the toggle to **Agents**.
 3. Open the **Agents dropdown**: all 6 specialized `lusoris-*` agents appear ready for execution with pre-mounted sources and tool configurations.

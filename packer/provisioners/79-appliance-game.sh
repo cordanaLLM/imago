@@ -18,8 +18,8 @@ enable_i386_multiarch_runtime() {
   sudo apt-get update
 
   # Accept Steam license non-interactively
-  echo steam steam/question select "I AGREE" | sudo debconf-set-selections || true
-  echo steam steam/license note '' | sudo debconf-set-selections || true
+  echo steam steam/question select "I AGREE" | sudo debconf-set-selections
+  echo steam steam/license note '' | sudo debconf-set-selections
 
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     lib32gcc-s1 \
@@ -27,7 +27,7 @@ enable_i386_multiarch_runtime() {
     libc6:i386 \
     libsdl2-2.0-0:i386 \
     libcurl4:i386 \
-    steamcmd || true
+    steamcmd
 
   # Symlink steamcmd to canonical system PATH
   if [ -f /usr/games/steamcmd ] && [ ! -f /usr/local/bin/steamcmd ]; then

@@ -141,3 +141,44 @@ class TestProvisionersExecution:
         assert res_arm64.returncode == 0
         dpkg_cmds_arm64 = res_arm64.find_commands("dpkg")
         assert not any("--add-architecture i386" in cmd for cmd in dpkg_cmds_arm64)
+
+
+class TestProvisionersFailClosed:
+    """A provisioner step that fails must fail the build instead of being swallowed."""
+
+    @pytest.mark.parametrize(
+        ("script_name", "failing_command"),
+        [
+            ("00-base-strip.sh", "apt-mark"),
+            ("32-gpu-amd-rocm.sh", "usermod"),
+            ("40-docker-runtime.sh", "usermod"),
+            ("75-appliance-vision.sh", "usermod"),
+            ("79-appliance-game.sh", "debconf-set-selections"),
+        ],
+    )
+    def test_failed_step_fails_the_script(
+        self, tmp_path: Path, require_bash, script_name: str, failing_command: str
+    ) -> None:
+        sandbox = MockSandbox(tmp_path)
+        res = sandbox.run_script(
+            PROVISIONERS_DIR / script_name, env_vars={"MOCK_FAIL": failing_command}
+        )
+        assert res.returncode != 0, f"{script_name} ignored a failed {failing_command}"
+        assert res.has_command(failing_command), f"{failing_command} was never reached"
+
+    def test_group_membership_is_requested(self, tmp_path: Path, require_bash) -> None:
+        """The mocked usermod records the call, so it never reaches the host's real usermod."""
+        sandbox = MockSandbox(tmp_path)
+        res = sandbox.run_script(PROVISIONERS_DIR / "40-docker-runtime.sh")
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+        assert "usermod -aG docker ubuntu" in res.commands_log
+
+    def test_unloadable_module_is_reported_not_fatal(self, tmp_path: Path, require_bash) -> None:
+        """Boundary: a module the build kernel cannot load is reported and the build goes on."""
+        sandbox = MockSandbox(tmp_path)
+        res = sandbox.run_script(
+            PROVISIONERS_DIR / "20-kernel-sysctl.sh",
+            env_vars={"KERNEL_PROFILE": "ai-infer", "MOCK_FAIL": "modprobe"},
+        )
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+        assert "Module overlay did not load" in res.stderr

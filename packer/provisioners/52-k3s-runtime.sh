@@ -64,10 +64,10 @@ EOF
 
   # Keep service stopped until cloud-init provisions credentials/token on first boot
   if systemctl list-unit-files | grep -q "k3s-agent.service"; then
-    sudo systemctl disable k3s-agent.service || true
+    sudo systemctl disable k3s-agent.service
   fi
   if systemctl list-unit-files | grep -q "k3s.service"; then
-    sudo systemctl disable k3s.service || true
+    sudo systemctl disable k3s.service
   fi
 }
 

@@ -69,7 +69,7 @@ flowchart TD
 ---
 
 ## Chrony Policy (`/etc/chrony/conf.d/global-policy.conf`)
+
 - `authselectmode mix`: Prefers cryptographically authenticated NTS sources, gracefully falling back to standard NTP if NTS is unreachable.
 - `makestep 1.0 3`: Steps the system clock if offset is greater than 1 second in the first 3 clock updates.
 - `minsources 3`: Mandates at least 3 active sources for consensus before steering time.
-

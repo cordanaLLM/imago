@@ -14,6 +14,7 @@ Unsupported in this proposal:
 - step execution and completion evidence
 
 <a id="milestone-6d732d6964656e74697479"></a>
+
 ## ms\-identity
 
 **Identity and module path** — The Go module, CLI, MCP server, documentation, tests and CI refer to cordanaLLM/imago and the imago binary.
@@ -37,6 +38,7 @@ Linked steps:
 - [`step-rename-docs`](ROADMAP.md#roadmap-726f61646d61702d72656e616d652d646f6373) / TODO [`todo-rename-docs`](TODO.md#todo-746f646f2d72656e616d652d646f6373)
 
 <a id="milestone-6d732d676f6c75736f726973"></a>
+
 ## ms\-golusoris
 
 **Golusoris core composition** — The CLI, logger, clock and MCP transport are provided by golusoris core and the remaining demand is declared in .needs.yaml.
@@ -62,6 +64,7 @@ Linked steps:
 - [`step-needs-manifest`](ROADMAP.md#roadmap-726f61646d61702d6e656564732d6d616e6966657374) / TODO [`todo-needs-manifest`](TODO.md#todo-746f646f2d6e656564732d6d616e6966657374)
 
 <a id="milestone-6d732d706c616e6e696e67"></a>
+
 ## ms\-planning
 
 **Routed planning graph** — planning/ holds the compiled praetor draft, the routing overlay, and imago plan route returns the ranked ready set.
@@ -86,6 +89,7 @@ Linked steps:
 - [`step-epics-projection`](ROADMAP.md#roadmap-726f61646d61702d65706963732d70726f6a656374696f6e) / TODO [`todo-epics-projection`](TODO.md#todo-746f646f2d65706963732d70726f6a656374696f6e)
 
 <a id="milestone-6d732d70726165746f72"></a>
+
 ## ms\-praetor
 
 **Praetor governance adopted** — The repository carries .standards.yaml, .standards.lock, a recorded HISS baseline, compiled vendor context, lefthook gates and make verify\-all.
@@ -111,6 +115,7 @@ Linked steps:
 - [`step-lefthook-verify`](ROADMAP.md#roadmap-726f61646d61702d6c656674686f6f6b2d766572696679) / TODO [`todo-lefthook-verify`](TODO.md#todo-746f646f2d6c656674686f6f6b2d766572696679)
 
 <a id="milestone-6d732d617070"></a>
+
 ## ms\-app
 
 **Application hardening after gates** — Legacy HISS infractions and defects surfaced by the gates are fixed and the baseline ratchets to zero.
@@ -133,6 +138,7 @@ Linked steps:
 - [`step-app-hardening`](ROADMAP.md#roadmap-726f61646d61702d6170702d68617264656e696e67) / TODO [`todo-app-hardening`](TODO.md#todo-746f646f2d6170702d68617264656e696e67)
 
 <a id="milestone-6d732d617263686574797065"></a>
+
 ## ms\-archetype
 
 **os\-image archetype upstream** — praetor ships an os\-image archetype and this repository declares it instead of gitops\-infra.
@@ -157,6 +163,7 @@ Linked steps:
 - [`step-archetype-switch`](ROADMAP.md#roadmap-726f61646d61702d6172636865747970652d737769746368) / TODO [`todo-archetype-switch`](TODO.md#todo-746f646f2d6172636865747970652d737769746368)
 
 <a id="milestone-6d732d7472616e73666572"></a>
+
 ## ms\-transfer
 
 **Repository transferred to cordanaLLM/imago** — github.com/cordanaLLM/imago resolves, mirrors and release automation point at it, and the fleet topology lists it.
@@ -166,7 +173,7 @@ Dependencies: `ms-golusoris`, `ms-praetor`
 ### Acceptance proposal
 
 - Positive:
-  - git ls\-remote \-\-heads https://github.com/cordanaLLM/imago.git returns main.
+  - git ls\-remote \-\-heads <https://github.com/cordanaLLM/imago.git> returns main.
 
 - Negative:
   - release\-please and Renovate do not open PRs against the old identity.
@@ -180,6 +187,7 @@ Linked steps:
 - [`step-redirects`](ROADMAP.md#roadmap-726f61646d61702d726564697265637473) / TODO [`todo-redirects`](TODO.md#todo-746f646f2d726564697265637473)
 
 <a id="milestone-6d732d6165676973"></a>
+
 ## ms\-aegis
 
 **Aegis product\-input contract pinned** — One local request/result pair against the Aegis M18 schema is retained with positive, negative and boundary results.
@@ -203,6 +211,7 @@ Linked steps:
 - [`step-aegis-pair`](ROADMAP.md#roadmap-726f61646d61702d61656769732d70616972) / TODO [`todo-aegis-pair`](TODO.md#todo-746f646f2d61656769732d70616972)
 
 <a id="milestone-6d732d6e75636c657573"></a>
+
 ## ms\-nucleus
 
 **Nucleus kernel contract** — Kernel artifacts from lusoris\-kernel\-forge \(future cordanaLLM/nucleus\) are consumed through a pinned requirement and artifact digest contract.
@@ -223,4 +232,3 @@ Dependencies: `ms-transfer`
 Linked steps:
 
 - [`step-nucleus-contract`](ROADMAP.md#roadmap-726f61646d61702d6e75636c6575732d636f6e7472616374) / TODO [`todo-nucleus-contract`](TODO.md#todo-746f646f2d6e75636c6575732d636f6e7472616374)
-

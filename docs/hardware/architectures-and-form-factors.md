@@ -50,13 +50,16 @@ flowchart TD
 ## 2. x86_64 Architecture (`amd64`)
 
 ### 2.1 Microarchitecture Baselines
+
 All Lusoris x86_64 images target the `x86-64-v3` microarchitecture baseline:
+
 - **Mandatory Extensions**: AVX, AVX2, BMI1, BMI2, F16C, FMA, LZCNT, MOVBE, OSXSAVE.
 - **Optional Extensions Enabled at Runtime**:
   - AVX-512 (`avx512f`, `avx512dq`, `avx512cd`, `avx512bw`, `avx512vl`) on Intel Skylake-SP/Ice Lake/Sapphire Rapids and AMD Zen 4/Zen 5.
   - Intel AMX (Advanced Matrix Extensions - `amx_tile`, `amx_int8`, `amx_bf16`) on Intel Sapphire Rapids / Emerald Rapids / Granite Rapids.
 
 ### 2.2 Hypervisor and Bare-Metal Form Factors
+
 1. **Virtualization Hosts**: Proxmox VE (KVM), Unraid (KVM), VMware ESXi, QEMU.
    - CPU Type: `host` or `x86-64-v3` with `aes`, `ssse3`, `sse4.1`, `sse4.2`.
    - Virtualization Features: Nested virtualization enabled (`kvm_intel.nested=1` / `kvm_amd.nested=1`).
@@ -75,6 +78,7 @@ ARM64 platforms span single-board edge computers, workstation translation enviro
 ### 3.1 Single-Board Computers (SBCs)
 
 #### Raspberry Pi 5 & Compute Module 5 (CM5)
+
 - **SoC**: Broadcom BCM2712 (Quad-core ARM Cortex-A76 @ 2.4 GHz).
 - **Firmware Contract**: Raspberry Pi EEPROM bootloader loading U-Boot or direct kernel via `config.txt`.
 - **Boot Storage Priority**:
@@ -86,6 +90,7 @@ ARM64 platforms span single-board edge computers, workstation translation enviro
 - **Kernel Drivers**: `linux-image-raspi`, `device-tree-compiler`, `raspi-firmware`.
 
 #### Rockchip RK3588 / RK3588S
+
 - **Target Boards**: Orange Pi 5 Plus, Radxa Rock 5B, FriendlyElec NanoPC-T6.
 - **SoC**: 4x Cortex-A76 @ 2.4 GHz + 4x Cortex-A55 @ 1.8 GHz.
 - **NPU Subsystem**: 6 TOPS triple-core Neural Processing Unit (RKNPU2).
@@ -93,6 +98,7 @@ ARM64 platforms span single-board edge computers, workstation translation enviro
 - **Storage Subsystem**: PCIe 3.0 4-lane NVMe SSD boot support via SPI flash U-Boot.
 
 ### 3.2 Workstation Translation: Apple Silicon (M1–M4)
+
 - **Virtualization Framework**: Apple Virtualization.framework (Hypervisor.framework backend).
 - **Runners**: UTM, OrbStack, Lima, Colima.
 - **Binary Translation**: Rosetta 2 for Linux (`binfmt_misc` registration of `/run/rosetta/rosetta` for transparent x86_64 ELF execution).
@@ -100,6 +106,7 @@ ARM64 platforms span single-board edge computers, workstation translation enviro
 - **Memory Optimization**: 16KB kernel page size compatibility with standard 4KB userland via thunking.
 
 ### 3.3 Datacenter ARM64 Silicon
+
 - **Ampere Altra & Altra Max**: Neoverse N1 (80/128 cores), standard SBSA (Server Base System Architecture) Level 4 compliance, UEFI/EDK2 boot.
 - **NVIDIA Grace CPU & Grace Hopper Superchip (GH200) / Grace Blackwell (GB200)**:
   - Interconnect: 900 GB/s NVLink-C2C bidirectional coherent bus between CPU and H100/B200 GPU.
@@ -112,6 +119,7 @@ ARM64 platforms span single-board edge computers, workstation translation enviro
 The `riscv64` architecture represents the open, royalty-free edge tier for next-generation sovereign infrastructure.
 
 ### 4.1 Specification Baseline
+
 - **Instruction Set Extensions**: `rv64gc` (`rv64imafdc`):
   - `I`: Base integer instructions (64-bit).
   - `M`: Standard integer multiplication and division.
@@ -121,8 +129,10 @@ The `riscv64` architecture represents the open, royalty-free edge tier for next-
 - **Vector Extension**: `V` (RVV 1.0) enabled on compatible cores (e.g., XuanTie C908/C920, SpacemiT K1).
 
 ### 4.2 Boot Architecture & SBI
+
 RISC-V systems adhere to the RISC-V Boot and Firmware Architecture:
-```
+
+```text
 +-------------------------------------------------------------+
 |                     Linux Kernel (S-Mode)                   |
 +-------------------------------------------------------------+
@@ -133,11 +143,13 @@ RISC-V systems adhere to the RISC-V Boot and Firmware Architecture:
 |                       Hardware / Core                       |
 +-------------------------------------------------------------+
 ```
+
 1. **OpenSBI**: Runs in Machine Mode (M-mode), providing timer interrupts, inter-processor interrupts (IPI), and hart state management (HSM).
 2. **U-Boot**: Runs in Supervisor Mode (S-mode), providing standard Extensible Firmware Interface (EFI) stub loading.
 3. **Linux Kernel**: Booted via standard EFI stub directly from NVMe or SD card.
 
 ### 4.3 Target Hardware Platforms
+
 - **QEMU virt board**: `qemu-system-riscv64 -machine virt -bios default -kernel Image`.
 - **StarFive VisionFive 2**: StarFive JH7110 SoC (Quad-core SiFive U74 @ 1.5 GHz, Imagination BXE-4-32 GPU).
 - **Milk-V Mars / Pioneer**: Micro-ATX 64-core RISC-V developer workstation (Sophgo SG2042).
@@ -148,7 +160,7 @@ RISC-V systems adhere to the RISC-V Boot and Firmware Architecture:
 
 All architectures adhere to the declarative disk layout standard:
 
-```
+```text
 +-------------------+-----------------+---------------------------------+
 | ESP (EFI System)  | Boot Partition  | Root Partition (ext4/btrfs/zfs) |
 | /boot/efi (512MB) | /boot (1GB)     | / (Remaining Space)             |

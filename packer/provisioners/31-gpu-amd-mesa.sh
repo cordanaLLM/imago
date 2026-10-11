@@ -19,7 +19,7 @@ install_amd_mesa_drivers() {
 
 configure_amd_permissions_and_cdi() {
   echo "==> Configuring udev rules and AMD Container Device Interface (CDI)..."
-  sudo usermod -aG render,video ubuntu || true
+  sudo usermod -aG render,video ubuntu
 
   cat <<'EOF' | sudo tee /etc/udev/rules.d/60-amd-gpu.rules
 KERNEL=="card*", SUBSYSTEM=="drm", GROUP="video", MODE="0660"

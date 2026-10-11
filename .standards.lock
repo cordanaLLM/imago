@@ -1,18 +1,22 @@
+---
 version: 1
-pinned_version: v1.0.0
-digest: sha256:52224a6da9330c5d983feddb9d51227578f18a54c02a1040d0665416c7f94128
-generated_at: ""
+pinned_version: v0.0.0+catalog.33773a292166
+digest: sha256:66642009104fd63e4c5a9f42249af4ad0122f40f59a3cdd13f93292247a05278
 profiles:
-    - id: os-image
-      version: v1.0.0
-      digest: sha256:236ba3a1bb7dcdde43e86a46cb49dd935ef8070ecd39584045510df842ff136f
+  - id: os-image
+    version: v0.0.0+catalog.33773a292166
+    digest:
+      sha256:a12fad5cad3ba7c779ff9ec7430df26dad2c600fd06a7f1b36dc4612b480e3ce
 facets:
-    - id: security:high
-      version: v1.0.0
-      digest: sha256:34de9dc4fe2b7da48c152c2e7457891ebc41ace8e671fd1db0f49e1fafcb567f
-    - id: agent:sandboxed
-      version: v1.0.0
-      digest: sha256:1a89a7a93d8f054d03edd203bb15006431468641d59ac61999b1997fa0a3233f
-    - id: docs:seo-portal
-      version: v1.0.0
-      digest: sha256:3381e1b7ab5cfb1029fa1b96cd84c7d3d5a890bc2d1f340a7b4e8b5bf61e2256
+  - id: security:high
+    version: v0.0.0+catalog.33773a292166
+    digest:
+      sha256:9bd59f0725d472b1516ba74556feada0e3868f4642bc08dd2d67a2cc26e87778
+  - id: agent:sandboxed
+    version: v0.0.0+catalog.33773a292166
+    digest:
+      sha256:bc87486dea71e54d20549d6054dcf290d3d700e37b304cbdb6d6c1a2def895f2
+  - id: docs:seo-portal
+    version: v0.0.0+catalog.33773a292166
+    digest:
+      sha256:145722c161ed8e436369d573c2b736fe7f579b8a1e33a85119e3b10268563428

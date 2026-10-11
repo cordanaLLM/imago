@@ -19,4 +19,3 @@ scp image*.vmdk root@esxi-host.example.com:/vmfs/volumes/datastore1/my-vm/
 # 3. Clone to thin-provisioned ESXi VMDK
 vmkfstools -i /vmfs/volumes/datastore1/my-vm/image.vmdk -d thin /vmfs/volumes/datastore1/my-vm/disk.vmdk
 ```
-

@@ -44,6 +44,8 @@ flowchart LR
 
 ## Interactive Flavor Explorer
 
+<!-- markdownlint-disable MD046 -- indented blocks below are pymdownx.tabbed tab bodies, not code -->
+
 === "Tier 1: Base Cloud (8)"
 
     Minimal, hardened OS images with coexisting hypervisor agents (`qemu-guest-agent`, `open-vm-tools`), cryptographically verified Network Time Security (NTS), and GPU driver runtimes.

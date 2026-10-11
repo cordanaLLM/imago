@@ -19,6 +19,7 @@ The **Discoverable Partitions Specification (DPS)**, standardized by `systemd`, 
 | **Root (`/`)** | Ext4 / Btrfs | `riscv64` | `7250A7D8-9A40-42E4-B4D0-CE1535D16420` |
 
 ### 1.2 Operational Benefits
+
 - Partition images can be cloned, resized, or attached as secondary disks without fstab UUID collision conflicts.
 - Cloud-init disk expansion (`growpart`) functions deterministically across all virtualization platforms.
 
@@ -28,7 +29,7 @@ The **Discoverable Partitions Specification (DPS)**, standardized by `systemd`, 
 
 A **Unified Kernel Image (UKI)** packages the UEFI boot stub, Linux kernel binary, initramfs image, microcode bundles, and kernel command line into a single, self-contained PE/COFF EFI executable.
 
-```
+```text
 +-----------------------------------------------------------------------------+
 |                           UNIFIED KERNEL IMAGE (.efi)                       |
 +-----------------------------------------------------------------------------+
@@ -41,7 +42,8 @@ A **Unified Kernel Image (UKI)** packages the UEFI boot stub, Linux kernel binar
 +-----------------------------------------------------------------------------+
 ```
 
-### Invariants:
+### Invariants
+
 - Tamper-Proof: Because the command line is embedded in the signed EFI binary, malicious modification of kernel parameters at runtime is prevented.
 - Atomic Updates: UKI updates involve writing a single `.efi` file into `/boot/efi/EFI/Linux/`, preventing broken states from interrupted kernel/initramfs file copies.
 
@@ -78,6 +80,7 @@ devices:
 ```
 
 Containers request hardware with standard CLI or Kubernetes arguments:
+
 ```bash
 docker run --device vendor.com/device=gpu0 my-ai-container
 ```
@@ -87,6 +90,7 @@ docker run --device vendor.com/device=gpu0 my-ai-container
 ## 5. VirtIO 1.3 Specification Compliance
 
 Lusoris images enforce compliance with the OASIS VirtIO 1.3 standard across all hypervisors:
+
 - **`virtio-net`**: Multiqueue support enabled (`ethtool -L eth0 combined 4`), checksum offloading, TSO/LRO.
 - **`virtio-blk` / `virtio-scsi`**: Multi-queue I/O with `mq-deadline` scheduler.
 - **`virtio-fs`**: High-performance host directory sharing for Unraid, macOS UTM, and developer workstations.
@@ -97,12 +101,16 @@ Lusoris images enforce compliance with the OASIS VirtIO 1.3 standard across all 
 ## 6. Supply Chain Security and European Sovereignty Compliance
 
 ### 6.1 EU Cyber Resilience Act (CRA — Regulation EU 2024/2847)
+
 Lusoris images comply with the essential cybersecurity requirements established by the EU Cyber Resilience Act:
+
 - **Security by Default**: Zero open unauthenticated ports, root login via SSH disabled, password authentication disabled in favor of Ed25519 cryptographic keys.
 - **Automatic Vulnerability Ledger**: Weekly automated CVE scans via Trivy and Grype with automated alerts on Critical/High disclosures.
 
 ### 6.2 Software Bill of Materials (SBOM) & Provenance (SLSA Level 3)
+
 Every published image artifact includes:
+
 - **SPDX 3.0 & CycloneDX 1.6 SBOM**: Machine-readable inventory of all deb packages, kernel modules, and container runtime components.
 - **Sigstore Cosign Attestations**: Cryptographically signed SHA256 checksums, enabling zero-trust supply chain validation prior to VM deployment.
 - **Hardware-Rooted Attestation**: Optional TPM 2.0 measured boot logging via `systemd-cryptenroll` and PCR sealing.

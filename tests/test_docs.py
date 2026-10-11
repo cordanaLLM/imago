@@ -24,16 +24,17 @@ MkDocsLoader.add_multi_constructor("tag:yaml.org,2002:python/", lambda loader, s
 
 
 def extract_nav_paths(node):
-    """Recursively collect all target documentation file paths from mkdocs nav."""
+    """Collect all target documentation file paths from mkdocs nav, in document order."""
     paths = []
-    if isinstance(node, dict):
-        for val in node.values():
-            paths.extend(extract_nav_paths(val))
-    elif isinstance(node, list):
-        for item in node:
-            paths.extend(extract_nav_paths(item))
-    elif isinstance(node, str) and node.endswith(".md"):
-        paths.append(node)
+    pending = [node]
+    while pending:
+        current = pending.pop()
+        if isinstance(current, dict):
+            pending.extend(reversed(list(current.values())))
+        elif isinstance(current, list):
+            pending.extend(reversed(current))
+        elif isinstance(current, str) and current.endswith(".md"):
+            paths.append(current)
     return paths
 
 

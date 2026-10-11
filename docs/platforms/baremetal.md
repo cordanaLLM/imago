@@ -13,6 +13,7 @@ curl -fsSL https://releases.lusoris.org/lusoris-base-generic.raw.zst | \
 ```
 
 Or using the built-in helper utility:
+
 ```bash
 lusoris-install-to-disk https://releases.lusoris.org/lusoris-base-generic.raw.zst /dev/nvme0n1
 ```
@@ -72,10 +73,10 @@ When flashing a 20GB `.raw.zst` image onto a 1TB, 2TB, or larger physical drive,
 ## 4. iPXE Netboot Chainloading
 
 Example iPXE configuration snippet for network booting:
+
 ```ipxe
 #!ipxe
 kernel https://releases.lusoris.org/netboot/vmlinuz ip=dhcp root=/dev/ram0 ds=nocloud;s=http://ipxe.example.com/cloud-init/
 initrd https://releases.lusoris.org/netboot/initrd.img
 boot
 ```
-

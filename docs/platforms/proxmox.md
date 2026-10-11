@@ -29,6 +29,7 @@ rm -f /tmp/image.qcow2
 ## Automated Packer Proxmox Clone
 
 Define a `proxmox.pkrvars.hcl` file:
+
 ```hcl
 proxmox_url          = "https://pve.example.com:8006/api2/json"
 proxmox_token_id     = "packer@pve!automation"
@@ -39,6 +40,7 @@ vm_id                = 9000
 ```
 
 Build directly to Proxmox:
+
 ```bash
 cd packer
 packer build -var-file=proxmox.pkrvars.hcl -only="base-intel.proxmox-clone.template" .
@@ -55,4 +57,3 @@ Every `lusoris-cloud-images` template includes out-of-the-box performance and st
 - **VirtIO Storage Scheduling**: Udev rules automatically apply the `mq-deadline` multi-queue scheduler to `vd[a-z]` and VirtIO-SCSI disks, balancing low latency with fair queue dispatching.
 - **ZRAM Compressed Memory Guard**: In-memory `zstd` compressed swap absorbs sudden allocation spikes without disk thrashing, protecting low-memory VMs from abrupt OOM kills.
 - **QEMU Guest Agent**: Pre-installed and enabled with systemd dormant guards, ensuring clean shutdown signals, IP reporting, and seamless freeze/thaw during Proxmox backups.
-

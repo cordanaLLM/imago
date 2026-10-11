@@ -22,10 +22,12 @@ An architectural audit of high-leverage open-source patterns—specifically the 
 We adopt a two-part architectural standard across agent skills and the Go MCP server:
 
 ### 1. Three-Layer Progressive Disclosure for Agent Skills (`.agents/skills/`)
+
 All skills in `.agents/skills/` are refactored into three strictly isolated information layers:
 
 - **Layer 1: Metadata (Always Loaded)**:
   Clean YAML frontmatter containing only `name`, `description`, and declared `references`. Used for rapid skill discovery and routing with zero prompt bloat:
+
   ```yaml
   ---
   name: build-image
@@ -34,6 +36,7 @@ All skills in `.agents/skills/` are refactored into three strictly isolated info
     - references/flavor-matrix.md
   ---
   ```
+
 - **Layer 2: Instruction (On-Demand Workflow)**:
   Concise, action-oriented execution procedures and usage examples in `SKILL.md`. Kept under 50 lines to maximize cognitive focus.
 - **Layer 3: Resources & Deep References (Conditional Loading)**:
@@ -42,7 +45,9 @@ All skills in `.agents/skills/` are refactored into three strictly isolated info
 Enforced by automated verification in `tests/test_agents_fleet.py` (`test_skills_progressive_disclosure_structure`).
 
 ### 2. Two-Phase Staged Write Guardrails in Go MCP Server (`pkg/mcp`)
+
 In `pkg/mcp/staging.go` and `pkg/mcp/server.go`:
+
 - Any mutating or external dispatch tool (`trigger_build`, `apply_flavor`) executes under a **fail-closed staging guardrail**:
   - If invoked without `confirmed=true` or `dry_run=true`, the tool does not mutate state.
   - A thread-safe `Stager` registers a `StagedAction` with a unique ID (`act-<hex>`), timestamp, and formatted preview card.
@@ -54,11 +59,12 @@ In `pkg/mcp/staging.go` and `pkg/mcp/server.go`:
 ## Consequences
 
 ### Positive
+
 - **Context Preservation**: Reduces skill discovery overhead by over 70%, keeping context windows lean for complex coding and debugging trajectories.
 - **Accidental Build Prevention**: Guarantees zero unintentional builds or host-altering scripts are dispatched without deliberate confirmation.
 - **Holzmann Power of 10 & Go Concurrency Safety**: All staging operations are protected by `sync.RWMutex` with clean, bounded lifecycles.
 - **Zero Breaking Changes**: Existing scripts can pass `confirmed: true` or `dry_run: true` to bypass staging seamlessly.
 
 ### Negative / Neutral
-- Multi-turn interactive workflows require an extra confirmation step (`confirm_action`) for mutating operations unless `confirmed: true` is passed upfront.
 
+- Multi-turn interactive workflows require an extra confirmation step (`confirm_action`) for mutating operations unless `confirmed: true` is passed upfront.

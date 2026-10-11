@@ -81,17 +81,32 @@ with open('${ROOT_DIR}/versions.schema.json') as sf, open('${ROOT_DIR}/versions.
   echo "    ✓ versions.json schema valid."
 }
 
+# count_matching_lines prints how many lines of a file match a pattern. grep -c exits 1
+# when the count is zero, which is a valid answer here; only a status above 1 is an error.
+count_matching_lines() {
+  local pattern="$1"
+  local file="$2"
+  local count
+  local status=0
+  count=$(grep -c "${pattern}" "${file}") || status=$?
+  if [ "${status}" -gt 1 ]; then
+    echo "    Error: cannot read ${file}" >&2
+    return 1
+  fi
+  echo "${count}"
+}
+
 audit_flavor_synchrony() {
   echo "==> [5/7] Auditing 44-flavor synchrony across repository..."
   local hcl_builds
-  hcl_builds=$(grep -c 'name    = "' "${ROOT_DIR}/packer/builds.pkr.hcl" || true)
+  hcl_builds=$(count_matching_lines 'name    = "' "${ROOT_DIR}/packer/builds.pkr.hcl")
   if [ "${hcl_builds}" -ne 44 ]; then
     echo "    Error: packer/builds.pkr.hcl contains ${hcl_builds} builds (expected 44)!"
     return 1
   fi
 
   local rm_flavors
-  rm_flavors=$(grep -c '^[[:space:]]*- base-\|^[[:space:]]*- docker-\|^[[:space:]]*- podman-\|^[[:space:]]*- k8s-\|^[[:space:]]*- k3s-\|^[[:space:]]*- cloudnative-\|^[[:space:]]*- ai-infer-\|^[[:space:]]*- appliance-' "${ROOT_DIR}/.github/workflows/release-matrix.yml" || true)
+  rm_flavors=$(count_matching_lines '^[[:space:]]*- base-\|^[[:space:]]*- docker-\|^[[:space:]]*- podman-\|^[[:space:]]*- k8s-\|^[[:space:]]*- k3s-\|^[[:space:]]*- cloudnative-\|^[[:space:]]*- ai-infer-\|^[[:space:]]*- appliance-' "${ROOT_DIR}/.github/workflows/release-matrix.yml")
   # 44 in workflow_dispatch + 2 in test matrix = 46 matches
   if [ "${rm_flavors}" -lt 44 ]; then
     echo "    Error: release-matrix.yml has fewer than 44 flavor options!"

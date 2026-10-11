@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -461,6 +462,10 @@ func newLintCmd() *cobra.Command {
 	}
 }
 
+// auditScriptTimeout bounds the repository health audit, which reads the tree and runs
+// local linters only; a run that exceeds it is stuck, not slow.
+const auditScriptTimeout = 5 * time.Minute
+
 func newAuditCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "audit",
@@ -471,7 +476,9 @@ func newAuditCmd() *cobra.Command {
 				return fmt.Errorf("audit script %s not found: %w", scriptPath, err)
 			}
 			// Literal script path: the audit runner is a fixed repository asset, not user input.
-			c := exec.Command("bash", "scripts/audit-repository-health.sh")
+			ctx, cancel := context.WithTimeout(cmd.Context(), auditScriptTimeout)
+			defer cancel()
+			c := exec.CommandContext(ctx, "bash", "scripts/audit-repository-health.sh")
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			return c.Run()

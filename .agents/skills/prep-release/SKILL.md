@@ -5,11 +5,11 @@ description: Validate repository readiness, manifests, and quality gates prior t
 
 # Prepare Release Checklist
 
-Execute this checklist before merging a release pull request or cutting a new tag.
+Execute this checklist before merging release pull request or cutting new tag.
 
 ## Pre-Release Verification
 1. **Manifest Integrity**:
-   Verify that `versions.json` is valid JSON and conforms to the expected schema:
+   Verify that `versions.json` is valid JSON and conforms to expected schema:
    ```bash
    pytest tests/test_config.py::TestConfigIntegrity::test_versions_json_schema
    ```
@@ -32,8 +32,8 @@ Execute this checklist before merging a release pull request or cutting a new ta
    mkdocs build --strict
    ```
 
-5. **Release Please Status**:
-   Check open release PR created by the Release Please action:
+5. **`release-please` Status**:
+   Check open release PR created by `release-please` action:
    ```bash
    gh pr list --label "autorelease: pending"
    ```

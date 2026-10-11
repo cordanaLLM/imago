@@ -27,7 +27,7 @@ packer build -only="<flavor-id>.qemu.image" .
 
 ## Progressive Disclosure & Reference Tables
 
-For complete flavor IDs, hardware requirements, and target flags across all 44 flavors in the 7 workload tiers, consult the Layer 3 reference:
+For complete flavor IDs, hardware requirements, and target flags across all 44 flavors in 7 workload tiers, consult Layer 3 reference:
 - [`references/flavor-matrix.md`](references/flavor-matrix.md)
 
 ## Execution Invariants

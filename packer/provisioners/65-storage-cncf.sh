@@ -28,8 +28,8 @@ EOF
 
 configure_storage_services() {
   echo "==> Configuring multipath and iSCSI services..."
-  sudo systemctl enable iscsid.service || true
-  sudo systemctl enable multipathd.service || true
+  sudo systemctl enable iscsid.service
+  sudo systemctl enable multipathd.service
 
   # Set default multipath configuration if absent
   if [ ! -f /etc/multipath.conf ]; then

@@ -47,9 +47,20 @@ site/
 .agyfleet/
 .claude/*
 !.claude/agents/
+!.claude/settings.json
+!.claude/skills/
 
 # Go build binaries
 bin/
 /imago
 
+# Exit-0 receipt: every gate run rewrites it, so it is never tracked.
+/.standards-receipt.json
+
+# BEGIN praetor private artifacts (praetorctl adopt)
 /.workingdir/
+/.workingdir2/
+/.standards/worktrees/
+/.agents/mcp_config.json
+/.standards/cache/
+# END praetor private artifacts
