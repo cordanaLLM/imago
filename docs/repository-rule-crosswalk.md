@@ -46,10 +46,10 @@ Across the reference repositories, the stable architectural pattern is:
 | **Material for MkDocs Portal** | **Adopted** | `mkdocs build --strict` deploying to GitHub Pages via [`pages.yml`](https://github.com/cordanaLLM/imago/blob/main/.github/workflows/pages.yml) |
 | **Privacy & Zero-Leak Invariant** | **Adopted** | Strict prohibition on RFC 1918 IPs and `/home/*` paths (`test_no_private_ips_or_user_paths`) |
 | **Supply-Chain & SAST Scans** | **Adopted** | OpenSSF Scorecard v2.4.4, Semgrep SAST, Trivy CVE filesystem scan, Gitleaks |
-| **Worktree Discipline** | **Adopted** | Isolated branch/worktree execution under `.workingdir2/worktrees/`; never run parallel agents in main |
+| **Worktree Discipline** | **Adopted** | Isolated branch/worktree execution in the workstation's central `worktrees/` folder outside the checkout; never run parallel agents in main |
 | **Working Sequence & Prose Bar** | **Adopted** | Standardized 7-step working sequence and technical information density in `AGENTS.md` |
 | **Schema-Validated SSOT** | **Adopted** | Declarative `versions.schema.json` dynamically enforcing `versions.json` integrity |
-| **Local Audit Ledger** | **Adopted** | `.workingdir2/AUDIT_RESULTS_2026-09-10.md` tracking merge train and audit evidence |
+| **Local Audit Ledger** | **Adopted** | `.workingdir/AUDIT_RESULTS_2026-09-10.md` tracking merge train and audit evidence |
 | **Interactive Question Style** | **Adopted** | Prefer structured popup questions on real forks; act on unambiguous work |
 | **Go 1.27 Engineering Contract** | **Adopted** from `golusoris/*` | Functions $\le 60$ statements, small interfaces, `stdoutRedirect` JSON-RPC framing, `slog` to stderr |
 | **Fine-Grained Path-Filtered CI** | **Adopted** | `dorny/paths-filter` splitting `packer`, `shell`, `go`, `python`, `docs`, `workflows` into conditional jobs |

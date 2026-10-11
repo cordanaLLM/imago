@@ -3,7 +3,7 @@
 # docs/principles.md: short functions, explicit bounds, no unused state.
 target-version = "py312"
 line-length = 120
-extend-exclude = ["site", "output-images", "packer_cache", ".workingdir", ".workingdir2"]
+extend-exclude = ["site", "output-images", "packer_cache", ".workingdir"]
 
 [lint]
 select = ["E", "F", "W", "I", "B", "UP", "PL"]

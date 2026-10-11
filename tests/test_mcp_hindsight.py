@@ -25,7 +25,7 @@ ROOT_MCP_JSON = REPO_ROOT / ".mcp.json"
 WORKSPACE_MCP_JSON = REPO_ROOT / ".agents" / "mcp_config.json"
 SERVER_SCRIPT = REPO_ROOT / "scripts" / "hindsight_mcp_server.py"
 TUNNEL_SCRIPT = REPO_ROOT / "scripts" / "tunnel_hindsight.py"
-LOCAL_CACHE_FILE = REPO_ROOT / ".workingdir2" / "memory" / "hindsight-local-buffer.json"
+LOCAL_CACHE_FILE = REPO_ROOT / ".workingdir" / "memory" / "hindsight-local-buffer.json"
 
 
 def call_mcp_server(request_payload: dict) -> dict:

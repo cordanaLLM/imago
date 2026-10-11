@@ -33,7 +33,7 @@ DEFAULT_BANK = os.environ.get("HINDSIGHT_BANK", "lusoris-cloud-images")
 REQUEST_TIMEOUT = int(os.environ.get("HINDSIGHT_TIMEOUT", "15"))
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-LOCAL_CACHE_DIR = REPO_ROOT / ".workingdir2" / "memory"
+LOCAL_CACHE_DIR = REPO_ROOT / ".workingdir" / "memory"
 LOCAL_CACHE_FILE = LOCAL_CACHE_DIR / "hindsight-local-buffer.json"
 
 RFC1918_PATTERN = re.compile(

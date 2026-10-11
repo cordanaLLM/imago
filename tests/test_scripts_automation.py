@@ -147,10 +147,27 @@ class TestManageAIStudioAgents:
 class TestOrchestrateFanout:
     """Test suite for git worktree fan-out orchestration."""
 
+    def test_worktrees_dir_default_is_outside_the_checkout(self):
+        root = Path("/srv/dev/organisation/imago")
+        assert orchestrate.worktrees_dir(root, None) == Path("/srv/dev/worktrees")
+        assert orchestrate.worktrees_dir(root, "") == Path("/srv/dev/worktrees")
+
+    def test_worktrees_dir_override_wins(self):
+        root = Path("/srv/dev/organisation/imago")
+        assert orchestrate.worktrees_dir(root, "/srv/elsewhere") == Path("/srv/elsewhere")
+
+    def test_configured_worktrees_dir_is_never_inside_the_checkout(self):
+        assert orchestrate.REPO_ROOT not in orchestrate.WORKTREES_DIR.parents
+        assert orchestrate.WORKTREES_DIR != orchestrate.REPO_ROOT
+
+    def test_worktree_name_carries_the_repository(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr(orchestrate, "WORKTREES_DIR", tmp_path)
+        assert orchestrate.worktree_path("docs") == tmp_path / "imago-agent-docs"
+
     def test_spawn_worktree_already_exists(self, tmp_path: Path, monkeypatch, capsys):
         monkeypatch.setattr(orchestrate, "WORKTREES_DIR", tmp_path)
         role = "infra"
-        existing = tmp_path / f"agent-{role}"
+        existing = tmp_path / f"imago-agent-{role}"
         existing.mkdir(parents=True)
 
         res = orchestrate.spawn_agent_worktree(role, "feat/test")
@@ -165,7 +182,7 @@ class TestOrchestrateFanout:
         mock_res = subprocess.CompletedProcess(args=["git"], returncode=0, stdout="", stderr="")
         with patch.object(orchestrate, "run_cmd", return_value=mock_res) as mock_run:
             res = orchestrate.spawn_agent_worktree(role, "feat/security-branch")
-            assert res == tmp_path / f"agent-{role}"
+            assert res == tmp_path / f"imago-agent-{role}"
             mock_run.assert_called_once()
             assert "feat/security-branch" in mock_run.call_args[0][0]
 
@@ -178,7 +195,7 @@ class TestOrchestrateFanout:
 
         with patch.object(orchestrate, "run_cmd", side_effect=[fail_res, succ_res]) as mock_run:
             res = orchestrate.spawn_agent_worktree(role, "feat/docs-branch")
-            assert res == tmp_path / f"agent-{role}"
+            assert res == tmp_path / f"imago-agent-{role}"
             assert mock_run.call_count == 2
 
     def test_remove_worktree_not_found(self, tmp_path: Path, monkeypatch, capsys):
@@ -190,7 +207,7 @@ class TestOrchestrateFanout:
     def test_remove_worktree_success(self, tmp_path: Path, monkeypatch, capsys):
         monkeypatch.setattr(orchestrate, "WORKTREES_DIR", tmp_path)
         role = "test"
-        target = tmp_path / f"agent-{role}"
+        target = tmp_path / f"imago-agent-{role}"
         target.mkdir()
 
         mock_res = subprocess.CompletedProcess(args=["git"], returncode=0, stdout="", stderr="")

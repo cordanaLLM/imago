@@ -4,18 +4,42 @@
 """
 Multi-Agent Fan-Out & Git Worktree Orchestrator for lusoris-cloud-images.
 Enforces Rule 11 (Worktree Hygiene) by fanning out specialized background agents
-into isolated git worktrees under .workingdir2/worktrees/.
+into isolated git worktrees outside the checkout: the workstation's central
+worktrees folder, two levels above the main checkout, or the folder that
+IMAGO_WORKTREES_DIR names. Run it from the main checkout.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-WORKTREES_DIR = REPO_ROOT / ".workingdir2" / "worktrees"
+REPOSITORY = "imago"
+WORKTREES_ENV = "IMAGO_WORKTREES_DIR"
+
+
+def worktrees_dir(repo_root: Path, override: str | None) -> Path:
+    """Return the folder that holds the agent worktrees.
+
+    The default is the worktrees folder beside the organisation folders, two
+    levels above the main checkout. A nested worktree is read by scans that do
+    not honour ignore rules, so the folder is never inside the checkout.
+    """
+    if override:
+        return Path(override)
+    return repo_root.parent.parent / "worktrees"
+
+
+def worktree_path(role: str) -> Path:
+    """Return the worktree of one agent role; the name carries the repository."""
+    return WORKTREES_DIR / f"{REPOSITORY}-agent-{role}"
+
+
+WORKTREES_DIR = worktrees_dir(REPO_ROOT, os.environ.get(WORKTREES_ENV))
 
 
 def run_cmd(cmd: list[str]) -> subprocess.CompletedProcess[str]:
@@ -35,7 +59,7 @@ def list_worktrees() -> None:
 
 def spawn_agent_worktree(role: str, branch_name: str) -> Path:
     WORKTREES_DIR.mkdir(parents=True, exist_ok=True)
-    target_path = WORKTREES_DIR / f"agent-{role}"
+    target_path = worktree_path(role)
 
     if target_path.exists():
         print(f"Worktree for agent '{role}' already exists at {target_path}")
@@ -54,7 +78,7 @@ def spawn_agent_worktree(role: str, branch_name: str) -> Path:
 
 
 def remove_agent_worktree(role: str) -> None:
-    target_path = WORKTREES_DIR / f"agent-{role}"
+    target_path = worktree_path(role)
     if not target_path.exists():
         print(f"Worktree for agent '{role}' not found.")
         return

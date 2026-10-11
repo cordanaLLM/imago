@@ -96,7 +96,7 @@ Once registered:
 
 ## 4. Multi-Agent Worktree Fan-Out Protocol
 
-To prevent Git index conflicts and uncoordinated file overwrites during multi-agent workflows, background coding agents operate in isolated Git worktrees under `.workingdir2/worktrees/` per **Hard Rule 11**:
+To prevent Git index conflicts and uncoordinated file overwrites during multi-agent workflows, background coding agents operate in isolated Git worktrees outside the checkout per **Hard Rule 11**. `scripts/orchestrate_fanout.py` creates them as `imago-agent-<role>` in the workstation's central `worktrees/` folder, two levels above the main checkout; the environment variable `IMAGO_WORKTREES_DIR` names another folder. Run it from the main checkout:
 
 ```bash
 # Spawn an isolated worktree for infra-forge

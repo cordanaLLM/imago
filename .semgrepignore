@@ -3,7 +3,6 @@ packer_cache/
 output-*/
 output-images/
 .workingdir/
-.workingdir2/
 site/
 coverage.out
 coverage

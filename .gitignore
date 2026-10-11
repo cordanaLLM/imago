@@ -43,7 +43,6 @@ site/
 
 # Fleet Agent & Worktree directories (fleet convention)
 .workingdir/
-.workingdir2/
 .agyfleet/
 .claude/*
 !.claude/agents/
@@ -59,7 +58,6 @@ bin/
 
 # BEGIN praetor private artifacts (praetorctl adopt)
 /.workingdir/
-/.workingdir2/
 /.standards/worktrees/
 /.agents/mcp_config.json
 /.standards/cache/
