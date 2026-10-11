@@ -16,6 +16,7 @@ validation, bounded loops, and zero-leak privacy sanitization.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -112,10 +113,9 @@ def http_api(
         return status, json.loads(raw) if raw.strip() else {}
     except Exception as exc:
         if conn:
-            try:
+            # The first error is the one reported; a socket that fails to close adds nothing.
+            with contextlib.suppress(OSError):
                 conn.close()
-            except Exception:
-                pass
         return 0, {"error": str(exc)[:300]}
 
 

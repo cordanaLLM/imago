@@ -7,7 +7,6 @@ non-root security postures, and platform-specific device/storage configurations.
 """
 
 from pathlib import Path
-import json
 import subprocess
 import pytest
 import yaml

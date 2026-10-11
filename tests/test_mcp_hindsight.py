@@ -11,10 +11,14 @@ Asserts:
 
 from __future__ import annotations
 
+import http.client
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
 import sys
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ROOT_MCP_JSON = REPO_ROOT / ".mcp.json"
@@ -132,3 +136,46 @@ class TestHindsightMCP:
         )
         assert "--check" in proc.stdout
         assert "--port" in proc.stdout
+
+
+class _FailingConnection:
+    """Connection whose request always fails and whose close raises what the test sets."""
+
+    close_error: BaseException | None = None
+
+    def __init__(self, host: str, port: int, timeout: int) -> None:
+        self.target = (host, port, timeout)
+
+    def request(self, method: str, path: str, body: bytes | None, headers: dict) -> None:
+        raise ConnectionRefusedError("request refused")
+
+    def close(self) -> None:
+        if self.close_error is not None:
+            raise self.close_error
+
+
+class TestHttpApiCleanup:
+    """http_api reports the request error and hides only a failed socket close."""
+
+    @pytest.fixture
+    def server(self, monkeypatch: pytest.MonkeyPatch):
+        spec = importlib.util.spec_from_file_location("hindsight_mcp_server", SERVER_SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        monkeypatch.setattr(http.client, "HTTPConnection", _FailingConnection)
+        monkeypatch.setattr(_FailingConnection, "close_error", None)
+        return module
+
+    def test_request_error_is_reported(self, server) -> None:
+        assert server.http_api("GET", "/health") == (0, {"error": "request refused"})
+
+    def test_socket_close_error_does_not_replace_the_request_error(
+        self, server, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(_FailingConnection, "close_error", OSError("close failed"))
+        assert server.http_api("GET", "/health") == (0, {"error": "request refused"})
+
+    def test_other_close_error_is_not_hidden(self, server, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(_FailingConnection, "close_error", RuntimeError("not a socket error"))
+        with pytest.raises(RuntimeError, match="not a socket error"):
+            server.http_api("GET", "/health")
