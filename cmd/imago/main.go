@@ -40,8 +40,9 @@ import (
 	"github.com/cordanaLLM/imago/pkg/tracker"
 )
 
-// version is advertised to MCP clients; release-please owns the VERSION file.
-const version = "0.1.0"
+// version is advertised to MCP clients. The release tool rewrites the constant (the line
+// carries its marker) together with the VERSION file, so the two cannot drift.
+const version = "0.1.0" // x-release-please-version
 
 // envPrefix scopes runtime configuration (IMAGO_LOG_LEVEL, IMAGO_MCP_TRANSPORT, ...).
 const envPrefix = "IMAGO_"
