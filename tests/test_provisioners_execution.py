@@ -6,9 +6,10 @@ package installation commands, service masking, and generated system configurati
 """
 
 from pathlib import Path
+
 import pytest
 
-from tests.harness.mock_runner import MockSandbox, GIT_BASH
+from tests.harness.mock_runner import GIT_BASH, MockSandbox
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
@@ -160,9 +161,7 @@ class TestProvisionersFailClosed:
         self, tmp_path: Path, require_bash, script_name: str, failing_command: str
     ) -> None:
         sandbox = MockSandbox(tmp_path)
-        res = sandbox.run_script(
-            PROVISIONERS_DIR / script_name, env_vars={"MOCK_FAIL": failing_command}
-        )
+        res = sandbox.run_script(PROVISIONERS_DIR / script_name, env_vars={"MOCK_FAIL": failing_command})
         assert res.returncode != 0, f"{script_name} ignored a failed {failing_command}"
         assert res.has_command(failing_command), f"{failing_command} was never reached"
 

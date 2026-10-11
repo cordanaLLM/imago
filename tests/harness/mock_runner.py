@@ -6,16 +6,15 @@ Git Bash, intercepting system commands (apt-get, systemctl, modprobe, curl, tee,
 and recording execution journals and simulated filesystem mutations.
 """
 
-from dataclasses import dataclass, field
-from pathlib import Path
 import os
 import shutil
 import subprocess
 import sys
-from typing import Dict, List, Optional
+from dataclasses import dataclass, field
+from pathlib import Path
 
 
-def _find_bash() -> Optional[Path]:
+def _find_bash() -> Path | None:
     found = shutil.which("bash")
     if found:
         return Path(found)
@@ -339,11 +338,11 @@ class ExecutionResult:
     returncode: int
     stdout: str
     stderr: str
-    commands_log: List[str] = field(default_factory=list)
-    files_created: List[str] = field(default_factory=list)
-    sandbox_root: Optional[Path] = None
+    commands_log: list[str] = field(default_factory=list)
+    files_created: list[str] = field(default_factory=list)
+    sandbox_root: Path | None = None
 
-    def read_file(self, rel_path: str) -> Optional[str]:
+    def read_file(self, rel_path: str) -> str | None:
         """Read content of a file created in the sandbox (e.g. 'etc/sysctl.d/99-lusoris.conf')."""
         if not self.sandbox_root:
             return None
@@ -356,7 +355,7 @@ class ExecutionResult:
         """Check if any logged command starts with cmd_prefix."""
         return any(c.startswith(cmd_prefix) for c in self.commands_log)
 
-    def find_commands(self, cmd_name: str) -> List[str]:
+    def find_commands(self, cmd_name: str) -> list[str]:
         """Return all logged commands matching cmd_name."""
         return [c for c in self.commands_log if c.startswith(cmd_name + " ") or c == cmd_name]
 
@@ -373,9 +372,7 @@ class MockSandbox:
         self.sandbox_root.mkdir(parents=True, exist_ok=True)
         self.prelude_file.write_text(_PRELUDE, encoding="utf-8", newline="\n")
 
-    def run_script(
-        self, script_path: Path, env_vars: Optional[Dict[str, str]] = None
-    ) -> ExecutionResult:
+    def run_script(self, script_path: Path, env_vars: dict[str, str] | None = None) -> ExecutionResult:
         if not BASH_BIN or not BASH_BIN.exists():
             raise RuntimeError("Bash executable not found")
 
@@ -405,6 +402,7 @@ class MockSandbox:
             capture_output=True,
             text=True,
             cwd=str(self.sandbox_root),
+            check=False,
         )
 
         cmds_file = self.sandbox_root / "journal_cmds.log"

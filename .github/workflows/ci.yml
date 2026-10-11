@@ -5,6 +5,8 @@ name: ci
     branches: [main]
   pull_request:
     branches: [main]
+    # ready_for_review starts the run a draft's stopped job did not make.
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -49,8 +51,11 @@ jobs:
               - 'pkg/**'
             python:
               - 'tests/**'
+              - '**/*.py'
               - 'pyproject.toml'
+              - 'ruff.toml'
               - '.github/requirements/test.txt'
+              - '.github/requirements/lint.txt'
             docs:
               - 'docs/**'
               - 'mkdocs.yml'
@@ -120,6 +125,44 @@ jobs:
       - name: Run Codespell
         run: codespell
 
+  lint-python:
+    name: Ruff Lint & Format
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.python == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        if: github.event.pull_request.draft != true
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        if: github.event.pull_request.draft != true
+        with:
+          python-version: "3.12"
+      - name: Install Ruff
+        if: github.event.pull_request.draft != true
+        run: pip install --require-hashes -r .github/requirements/lint.txt
+      # The same two commands as `make lint`, over every Python file of the repository.
+      - name: Run Ruff Lint
+        if: github.event.pull_request.draft != true
+        run: ruff check .
+      - name: Check Ruff Formatting
+        if: github.event.pull_request.draft != true
+        run: ruff format --check .
+
   test-go:
     name: Go 1.27 Build & Unit Tests
     needs: changes
@@ -162,6 +205,8 @@ jobs:
           sudo apt-get install -y shellcheck
           cd packer && packer init . && cd ..
           pip install --require-hashes -r .github/requirements/test.txt
+          # tests/test_python_lint_gate.py runs ruff on the files ruff.toml exempts.
+          pip install --require-hashes -r .github/requirements/lint.txt
       - name: Run Pytest Suite
         run: pytest tests/ -v
 

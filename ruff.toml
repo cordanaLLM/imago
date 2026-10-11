@@ -1,9 +1,11 @@
-# Ruff configuration for the Python verification suites (tests/) and
-# automation scripts (scripts/). Mirrors the Power-of-10 adaptation in
+# Ruff configuration for every Python file of the repository. `make lint` and the
+# Ruff job of ci.yml run `ruff check .` and `ruff format --check .`. Mirrors the Power-of-10 adaptation in
 # docs/principles.md: short functions, explicit bounds, no unused state.
 target-version = "py312"
 line-length = 120
 extend-exclude = ["site", "output-images", "packer_cache", ".workingdir"]
+# A path given on the command line is excluded like one found by the tree walk.
+force-exclude = true
 
 [lint]
 select = ["E", "F", "W", "I", "B", "UP", "PL"]
@@ -12,6 +14,17 @@ ignore = [
   "PLR0913", # test helpers legitimately take several parameters
   "PLR2004", # magic values in assertions are the expected literals
 ]
+
+# Files written by `praetorctl adopt` are not edited by hand. Each one is listed with the
+# exact rules it breaks until the engine ships it clean. Every line names the engine issue
+# and the last valid day; tests/test_python_lint_gate.py fails when a line lacks either,
+# when the day has passed, when a listed rule no longer reports and when the formatter
+# accepts an excluded file.
+[lint.per-file-ignores]
+".config/agent/hooks/block_evasion.py" = ["B904"] # cordanaLLM/praetor#1204, ends 2027-01-09
+".config/lefthook/scripts/checkpoint.py" = ["I001", "PLR1714"] # cordanaLLM/praetor#1204, ends 2027-01-09
+".config/lefthook/scripts/common.py" = ["I001"] # cordanaLLM/praetor#1204, ends 2027-01-09
+"tools/figures/mkdocs_hook.py" = ["PLC0415"] # cordanaLLM/praetor#1204, ends 2027-01-09
 
 [lint.pylint]
 max-branches = 10
@@ -23,3 +36,10 @@ known-first-party = ["tests", "scripts"]
 [format]
 quote-style = "double"
 indent-style = "space"
+# The same four engine-written files as under [lint.per-file-ignores], under the same terms.
+exclude = [
+  ".config/agent/hooks/block_evasion.py", # cordanaLLM/praetor#1204, ends 2027-01-09
+  ".config/lefthook/scripts/checkpoint.py", # cordanaLLM/praetor#1204, ends 2027-01-09
+  ".config/lefthook/scripts/common.py", # cordanaLLM/praetor#1204, ends 2027-01-09
+  "tools/figures/mkdocs_hook.py", # cordanaLLM/praetor#1204, ends 2027-01-09
+]

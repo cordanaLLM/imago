@@ -37,7 +37,7 @@ Across the reference repositories, the stable architectural pattern is:
 | **Root Engineering Contract** | **Adopted** | [`docs/principles.md`](principles.md) & [`AGENTS.md`](https://github.com/cordanaLLM/imago/blob/main/AGENTS.md) |
 | **NASA/JPL Power of 10** | **Adapted** for Shell & Packer | Functions $\le$ 60 lines, `set -euo pipefail`, bounded loops in `packer/provisioners/` |
 | **Single Source of Truth (SSOT)** | **Adopted** | Declarative [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json) driving Packer HCL and provisioner env vars |
-| **Zero-Warning Merge Floor** | **Adopted** | `make lint` (Packer, ShellCheck, Yamllint, shfmt, Codespell) + `make test` |
+| **Zero-Warning Merge Floor** | **Adopted** | `make lint` (Packer, ShellCheck, Yamllint, shfmt, Codespell, Ruff) + `make test` |
 | **Trunk-Based PR Merge Flow** | **Adopted** | Protected `main`, branch protection requiring `required-checks`, squash/rebase only |
 | **Pinned GitHub Actions** | **Adopted** | All 26 actions in `.github/workflows/` pinned to 40-character commit SHAs |
 | **Conventional Commits** | **Adopted** | `type(scope): subject` syntax enforced via PR titles and release automation |

@@ -6,6 +6,7 @@ Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked asser
 """
 
 from pathlib import Path
+
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -25,9 +26,7 @@ class TestCloudInitIntegrity:
     def test_user_data_cloud_config_header(self) -> None:
         """Verify user-data begins with standard #cloud-config header."""
         first_line = USER_DATA_PATH.read_text(encoding="utf-8").splitlines()[0]
-        assert first_line.strip() == "#cloud-config", (
-            f"user-data must begin with '#cloud-config', got '{first_line}'"
-        )
+        assert first_line.strip() == "#cloud-config", f"user-data must begin with '#cloud-config', got '{first_line}'"
 
     def test_user_data_valid_yaml(self) -> None:
         """Verify user-data parses as valid YAML."""

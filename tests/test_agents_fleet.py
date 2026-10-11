@@ -40,18 +40,16 @@ class TestAgentsFleetIntegrity:
                 assert agent_json.is_file(), f"Missing agent.json in {d}"
                 assert agents_md.is_file(), f"Missing AGENTS.md in {d}"
 
-                with open(agent_json, "r", encoding="utf-8") as f:
+                with open(agent_json, encoding="utf-8") as f:
                     data = json.load(f)
                 discovered.add(data.get("id"))
 
-        assert discovered == EXPECTED_AGENTS, (
-            f"Expected agents {EXPECTED_AGENTS}, found {discovered}"
-        )
+        assert discovered == EXPECTED_AGENTS, f"Expected agents {EXPECTED_AGENTS}, found {discovered}"
 
     def test_agent_json_schemas(self) -> None:
         for d in AGENTS_DIR.iterdir():
             if d.is_dir() and not d.name.startswith("."):
-                with open(d / "agent.json", "r", encoding="utf-8") as f:
+                with open(d / "agent.json", encoding="utf-8") as f:
                     data = json.load(f)
 
                 assert "id" in data
@@ -64,7 +62,7 @@ class TestAgentsFleetIntegrity:
 
     def test_hooks_configuration_validity(self) -> None:
         assert HOOKS_JSON.is_file(), f"Missing {HOOKS_JSON}"
-        with open(HOOKS_JSON, "r", encoding="utf-8") as f:
+        with open(HOOKS_JSON, encoding="utf-8") as f:
             hooks_data = json.load(f)
 
         assert "events" in hooks_data
@@ -85,6 +83,7 @@ class TestAgentsFleetIntegrity:
             input=clean_input,
             capture_output=True,
             text=True,
+            check=False,
         )
         assert res_clean.returncode == 0
 
@@ -95,6 +94,7 @@ class TestAgentsFleetIntegrity:
             input=leak_input,
             capture_output=True,
             text=True,
+            check=False,
         )
         assert res_leak.returncode == 1
         assert "SECURITY VIOLATION" in res_leak.stderr
@@ -128,4 +128,3 @@ class TestAgentsFleetIntegrity:
                         ref_rel = stripped[2:].strip().strip("'\"")
                         ref_file = skill_dir / ref_rel
                         assert ref_file.is_file(), f"Referenced file {ref_rel} not found in {skill_dir}"
-

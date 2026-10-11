@@ -9,11 +9,12 @@ Declaratively registers, synchronizes, and audits custom agents defined under .a
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 AGENTS_DIR = REPO_ROOT / ".agents" / "managed-agents"
@@ -21,7 +22,7 @@ DEFAULT_MODEL = "gemini-3.8-flash"
 BASE_AGENT = "antigravity-preview-05-2026"
 
 
-def load_agent_spec(agent_dir: Path) -> Dict[str, Any]:
+def load_agent_spec(agent_dir: Path) -> dict[str, Any]:
     agent_json_path = agent_dir / "agent.json"
     agents_md_path = agent_dir / "AGENTS.md"
 
@@ -30,17 +31,17 @@ def load_agent_spec(agent_dir: Path) -> Dict[str, Any]:
     if not agents_md_path.is_file():
         raise FileNotFoundError(f"Missing AGENTS.md in {agent_dir}")
 
-    with open(agent_json_path, "r", encoding="utf-8") as f:
-        spec: Dict[str, Any] = json.load(f)
+    with open(agent_json_path, encoding="utf-8") as f:
+        spec: dict[str, Any] = json.load(f)
 
-    with open(agents_md_path, "r", encoding="utf-8") as f:
+    with open(agents_md_path, encoding="utf-8") as f:
         spec["system_instruction"] = f.read().strip()
 
     return spec
 
 
-def build_agent_payload(spec: Dict[str, Any]) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {
+def build_agent_payload(spec: dict[str, Any]) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "id": spec.get("id"),
         "base_agent": spec.get("base_agent", BASE_AGENT),
         "description": spec.get("description", ""),
@@ -75,7 +76,7 @@ def build_agent_payload(spec: Dict[str, Any]) -> Dict[str, Any]:
     return payload
 
 
-def validate_agents_fleet() -> List[Dict[str, Any]]:
+def validate_agents_fleet() -> list[dict[str, Any]]:
     if not AGENTS_DIR.is_dir():
         raise FileNotFoundError(f"Agents directory not found at {AGENTS_DIR}")
 
@@ -90,7 +91,7 @@ def validate_agents_fleet() -> List[Dict[str, Any]]:
     return payloads
 
 
-def register_agents(payloads: List[Dict[str, Any]], dry_run: bool = False) -> None:
+def register_agents(payloads: list[dict[str, Any]], dry_run: bool = False) -> None:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key and not dry_run:
         raise RuntimeError("GEMINI_API_KEY environment variable is required unless --dry-run is set.")
@@ -107,7 +108,8 @@ def register_agents(payloads: List[Dict[str, Any]], dry_run: bool = False) -> No
         return
 
     try:
-        from google import genai
+        # google-genai is optional; a missing library takes the ImportError branch below.
+        genai = importlib.import_module("google.genai")
         client = genai.Client()
         for p in payloads:
             print(f"Registering {p['id']} on Google AI Studio...")
