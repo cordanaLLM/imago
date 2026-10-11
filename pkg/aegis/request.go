@@ -89,8 +89,8 @@ const (
 
 // Result is the recorded outcome imago returns to Aegis for one request: the
 // output digest, the signature reference, and the boot evidence reference the
-// stack contract requires. Nothing produces it yet; it pins the shape so the
-// contract is symmetric.
+// stack contract requires. Emit produces it from a finished, signed build; imago
+// has no executor yet (ADR-0024).
 type Result struct {
 	Schema          string `json:"schema"`
 	CorrelationID   string `json:"correlation-id"`
@@ -112,7 +112,7 @@ func (r *Result) Validate() error {
 	case !isDigest(r.ImageDigest):
 		return &Error{CorrelationID: cid, Field: "image-digest", Reason: fmt.Sprintf("must be %q followed by %d lowercase hex characters", DigestPrefix, DigestHexLen), Err: ErrInvalidField}
 	}
-	if err := validateReference(cid, "signature-ref", r.SignatureRef); err != nil {
+	if err := validateSignatureRef(cid, r.SignatureRef); err != nil {
 		return err
 	}
 	return validateReference(cid, "boot-evidence-ref", r.BootEvidenceRef)

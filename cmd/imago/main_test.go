@@ -14,6 +14,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/cordanaLLM/imago/pkg/aegis"
+	"github.com/cordanaLLM/imago/pkg/kernel"
 )
 
 func executeCommand(args ...string) (string, error) {
@@ -178,6 +181,166 @@ func TestAegisValidateRejectsUnknownField(t *testing.T) {
 	_, err := executeCommand("aegis", "validate", path)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "aegis product-input cid-1: input: strict decode")
+}
+
+func TestAegisResultEmit(t *testing.T) {
+	fixturePath, err := filepath.Abs("../../pkg/aegis/testdata/product-input.json")
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	imgPath := filepath.Join(dir, "image.raw")
+	imgData := []byte("built image payload")
+	require.NoError(t, os.WriteFile(imgPath, imgData, 0o600))
+	imgHex := sha256Hex(imgData)
+
+	sumsPath := filepath.Join(dir, "SHA256SUMS")
+	require.NoError(t, os.WriteFile(sumsPath, []byte(fmt.Sprintf("%s  image.raw\n", imgHex)), 0o600))
+
+	sigRef := "https://github.com/cordanaLLM/imago/releases/download/aegis-m18-0001/SHA256SUMS.bundle"
+	bootRef := "evidence/boot/aegis-m18-product-input-0001.json"
+
+	out, err := executeCommand("aegis", "result", "emit",
+		"--request", fixturePath,
+		"--image", imgPath,
+		"--checksums", sumsPath,
+		"--signature-ref", sigRef,
+		"--boot-evidence-ref", bootRef,
+	)
+	require.NoError(t, err)
+
+	res, err := aegis.ParseResult([]byte(out))
+	require.NoError(t, err)
+	assert.Equal(t, "aegis-m18-product-input-0001", res.CorrelationID)
+	assert.Equal(t, "sha256:"+imgHex, res.ImageDigest)
+	assert.Equal(t, sigRef, res.SignatureRef)
+	assert.Equal(t, bootRef, res.BootEvidenceRef)
+}
+
+func TestAegisResultEmitRejectsUnlistedImage(t *testing.T) {
+	fixturePath, err := filepath.Abs("../../pkg/aegis/testdata/product-input.json")
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	imgPath := filepath.Join(dir, "image.raw")
+	require.NoError(t, os.WriteFile(imgPath, []byte("built image payload"), 0o600))
+
+	sumsPath := filepath.Join(dir, "SHA256SUMS")
+	otherHex := strings.Repeat("0", 64)
+	require.NoError(t, os.WriteFile(sumsPath, []byte(fmt.Sprintf("%s  other.raw\n", otherHex)), 0o600))
+
+	sigRef := "https://github.com/cordanaLLM/imago/releases/download/aegis-m18-0001/SHA256SUMS.bundle"
+	bootRef := "evidence/boot/aegis-m18-product-input-0001.json"
+
+	_, err = executeCommand("aegis", "result", "emit",
+		"--request", fixturePath,
+		"--image", imgPath,
+		"--checksums", sumsPath,
+		"--signature-ref", sigRef,
+		"--boot-evidence-ref", bootRef,
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "does not list the image digest")
+}
+
+func TestAegisResultEmitRejectsOtherSignatureForm(t *testing.T) {
+	fixturePath, err := filepath.Abs("../../pkg/aegis/testdata/product-input.json")
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	imgPath := filepath.Join(dir, "image.raw")
+	imgData := []byte("built image payload")
+	require.NoError(t, os.WriteFile(imgPath, imgData, 0o600))
+	imgHex := sha256Hex(imgData)
+
+	sumsPath := filepath.Join(dir, "SHA256SUMS")
+	require.NoError(t, os.WriteFile(sumsPath, []byte(fmt.Sprintf("%s  image.raw\n", imgHex)), 0o600))
+
+	_, err = executeCommand("aegis", "result", "emit",
+		"--request", fixturePath,
+		"--image", imgPath,
+		"--checksums", sumsPath,
+		"--signature-ref", "sigstore://rekor.example.com/entries/0001",
+		"--boot-evidence-ref", "evidence/boot/aegis-m18-product-input-0001.json",
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "signature-ref")
+}
+
+func TestAegisResultEmitRequiresEveryFlag(t *testing.T) {
+	allFlags := map[string]string{
+		"request":           "req.json",
+		"image":             "img.raw",
+		"checksums":         "SHA256SUMS",
+		"signature-ref":     "https://github.com/x/SHA256SUMS.bundle",
+		"boot-evidence-ref": "evidence.json",
+	}
+
+	for dropFlag := range allFlags {
+		t.Run("missing "+dropFlag, func(t *testing.T) {
+			args := []string{"aegis", "result", "emit"}
+			for flag, val := range allFlags {
+				if flag != dropFlag {
+					args = append(args, "--"+flag, val)
+				}
+			}
+			out, err := executeCommand(args...)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), dropFlag)
+			assert.NotContains(t, out, `"schema"`)
+		})
+	}
+}
+
+func writeValidResultFile(t *testing.T) string {
+	t.Helper()
+	res := map[string]any{
+		"schema":            aegis.ResultSchema,
+		"correlation-id":    "aegis-m18-product-input-0001",
+		"image-digest":      "sha256:" + strings.Repeat("ab", 32),
+		"signature-ref":     "https://github.com/cordanaLLM/imago/releases/download/aegis-m18-0001/SHA256SUMS.bundle",
+		"boot-evidence-ref": "evidence/boot/aegis-m18-product-input-0001.json",
+	}
+	data, err := json.Marshal(res)
+	require.NoError(t, err)
+	path := filepath.Join(t.TempDir(), "result.json")
+	require.NoError(t, os.WriteFile(path, data, 0o600))
+	return path
+}
+
+func TestAegisResultValidate(t *testing.T) {
+	path := writeValidResultFile(t)
+
+	out, err := executeCommand("aegis", "result", "validate", path)
+	require.NoError(t, err)
+	assert.Contains(t, out, "accepted (imago.p01.product-result.v1)")
+	assert.Contains(t, out, "Image digest:")
+	assert.Contains(t, out, "Signature ref:")
+	assert.Contains(t, out, "Boot evidence ref:")
+
+	outJSON, err := executeCommand("aegis", "result", "validate", path, "--json")
+	require.NoError(t, err)
+	assert.Contains(t, outJSON, `"schema": "imago.p01.product-result.v1"`)
+}
+
+func TestAegisResultValidateRejectsUnknownField(t *testing.T) {
+	badJSON := []byte(`{
+		"schema": "imago.p01.product-result.v1",
+		"correlation-id": "cid-1",
+		"image-digest": "sha256:` + strings.Repeat("ab", 32) + `",
+		"signature-ref": "https://github.com/cordanaLLM/imago/releases/download/aegis-m18-0001/SHA256SUMS.bundle",
+		"boot-evidence-ref": "evidence/boot/aegis-m18-product-input-0001.json",
+		"unknown": 1
+	}`)
+	path := filepath.Join(t.TempDir(), "bad.json")
+	require.NoError(t, os.WriteFile(path, badJSON, 0o600))
+
+	_, err := executeCommand("aegis", "result", "validate", path)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "strict decode")
+}
+
+func TestSignatureBundleNameMatchesKernelRelease(t *testing.T) {
+	assert.Equal(t, kernel.BundleFile, aegis.SignatureBundleFile)
 }
 
 const testKernelRevision = "188c35d188c35d188c35d188c35d188c35d18800"
