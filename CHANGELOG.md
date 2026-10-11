@@ -161,6 +161,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The OpenSSH container test no longer fails because of host load (#69). Its one
+  60-second budget covered the installation of `openssh-server`, whose duration
+  depends on the host, so the same commit passed and failed within minutes. In
+  `tests/test_container_integration.py` the container start and the installation now
+  have their own bounds (120 s and 300 s); a host that exceeds one skips the sshd
+  tests with the measured time, and `sshd -t` keeps a 20-second budget. The test reads
+  the drop-in from `packer/provisioners/00-base-strip.sh` instead of an inline copy,
+  and two new tests cover the negative cases: a drop-in with an unknown directive is
+  rejected, and an installation that exceeds its bound skips.
 - The rejection text of `pkg/aegis` is bounded. `Error.Reason` was documented as not
   echoing unbounded input, but a reason built from decoder or I/O error text repeated
   caller-controlled text at full length: a manifest with a 5000-byte unknown field name
