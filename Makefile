@@ -28,7 +28,7 @@ fmt: ## Format Packer HCL configurations
 fmt-check: ## Verify Packer HCL formatting
 	@cd packer && $(PACKER) fmt -check .
 
-lint: fmt-check lint-workflows lint-manifest ## Run packer validate, shellcheck, actionlint, and yamllint
+lint: fmt-check lint-workflows lint-manifest ## Run packer validate, shellcheck, actionlint, yamllint, and codespell
 	@echo "==> Validating Packer configuration..."
 	@cd packer && $(PACKER) validate .
 	@echo "==> Running ShellCheck on provisioner scripts..."
@@ -37,6 +37,8 @@ lint: fmt-check lint-workflows lint-manifest ## Run packer validate, shellcheck,
 		echo "==> Running Yamllint..."; \
 		yamllint -c .yamllint.yml .github/ packer/http/; \
 	fi
+	@echo "==> Running Codespell..."
+	@codespell
 	@echo "==> All lint checks passed successfully."
 
 lint-workflows: ## Run actionlint on GitHub Actions workflows

@@ -211,7 +211,7 @@ Quick verification commands (run the targeted ones while developing, all before 
 
 ```bash
 make fmt-check                  # Verify Packer HCL formatting
-make lint                       # packer validate, shellcheck, actionlint, yamllint
+make lint                       # packer validate, shellcheck, actionlint, yamllint, codespell
 make test-go                    # Go unit tests (golusoris core composition)
 make test                       # Go + Pytest verification suites
 make verify-all                 # Praetor gate: compile-context --verify, audit, build, tests

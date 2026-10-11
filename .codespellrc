@@ -1,3 +1,5 @@
 [codespell]
-skip = .git,output-images,packer_cache,*.qcow2,*.img,*.lock,.pytest_cache,*.zst,*.iso
-ignore-words-list = nts,ptb,vainfo,clinfo,amdgpu,radeonsi,cgroup,cgroups,cgroupfs,containerd,virtio,virtiofs,unraid,resolute,nd,renderd,te,hart
+# site is the local MkDocs output. package-lock.json holds package names and
+# tools/figures/dist/player.js is a minified bundle; neither is prose.
+skip = .git,output-images,packer_cache,*.qcow2,*.img,*.lock,.pytest_cache,*.zst,*.iso,site,package-lock.json,./tools/figures/dist/player.js
+ignore-words-list = nts,ptb,vainfo,clinfo,amdgpu,radeonsi,cgroup,cgroups,cgroupfs,containerd,virtio,virtiofs,unraid,resolute,nd,renderd,te,hart,unparseable
