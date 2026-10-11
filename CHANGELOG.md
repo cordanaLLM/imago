@@ -115,6 +115,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ever tagged or published, so the release manifest is empty and `initial-version`
   states the first one. The release pull request moves to a branch named after the new
   package.
+- Every workflow action that ran on the Node 20 runtime is pinned to its current release,
+  which runs on Node 24: `checkout` v7.0.1, `setup-go` v7.0.0, `setup-python` v7.0.0,
+  `upload-artifact` v7.0.2, `deploy-pages` v5.0.1, the four `codeql-action` steps v4.38.3,
+  `paths-filter` v4.0.3, `setup-packer` v3.4.0, `sbom-action/download-syft` v0.24.3,
+  `release-please-action` v5.0.0, `create-pull-request` v8.1.1, `repository-dispatch`
+  v4.0.1 and `action-gh-release` v3.0.3. Each pin is the commit of its tag.
+  `cosign-installer` stays at v3.8.1: it has no Node runtime, and v4 installs cosign 3
+  by default.
 - **Breaking**: `sync-kernel-manifest.yml` refuses a `kernel_release_published` payload without `stream`, `version`, and `tag` (the default-version fallback is removed), downloads the nucleus release, verifies the keyless cosign bundle over `SHA256SUMS`, runs `imago kernel artifact verify` against the payload and the `versions.json` contract pin, and only then proposes the `kernel.streams.<stream>` pin (version, `artifact_digest`, provenance) as a pull request that adds only `versions.json`.
 - `dispatch-kernel-requirements.yml` validates `kernel/requirement.json` and dispatches its path, `sha256`, and commit to the provider named in `versions.json` instead of the unread drivers/runtimes/kubernetes triple; it triggers on changes to the requirement file.
 - `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).
