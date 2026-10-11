@@ -67,7 +67,7 @@ env:
 jobs:
   build-matrix:
     name: Build Image (${{ matrix.flavor }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       packages: write

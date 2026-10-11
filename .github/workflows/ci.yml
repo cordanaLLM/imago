@@ -22,7 +22,7 @@ env:
 jobs:
   changes:
     name: Detect Changed Paths
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       packer: ${{ steps.filter.outputs.packer }}
       shell: ${{ steps.filter.outputs.shell }}
@@ -68,7 +68,7 @@ jobs:
     name: Packer Format & Validate
     needs: changes
     if: github.event_name == 'push' || needs.changes.outputs.packer == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789  # v3.4.0
@@ -85,7 +85,7 @@ jobs:
     name: ShellCheck & Shfmt Provisioners
     needs: changes
     if: github.event_name == 'push' || needs.changes.outputs.shell == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Install Shell Analyzers
@@ -101,7 +101,7 @@ jobs:
     name: Actionlint & Yamllint
     needs: changes
     if: github.event_name == 'push' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Install Workflow Linters
@@ -122,7 +122,7 @@ jobs:
     name: Go 1.27 Build & Unit Tests
     needs: changes
     if: github.event_name == 'push' || needs.changes.outputs.go == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
@@ -145,7 +145,7 @@ jobs:
       needs.changes.outputs.packer == 'true' ||
       needs.changes.outputs.shell == 'true' ||
       needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
@@ -167,7 +167,7 @@ jobs:
     name: Strict MkDocs Build
     needs: changes
     if: github.event_name == 'push' || needs.changes.outputs.docs == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
@@ -180,7 +180,7 @@ jobs:
 
   gitleaks:
     name: Secret & Privacy Leak Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
