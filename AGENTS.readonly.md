@@ -207,7 +207,6 @@ make fmt-check                  # Verify Packer HCL formatting
 make lint                       # packer validate, shellcheck, actionlint, yamllint, codespell, ruff
 make test-go                    # Go unit tests (golusoris core composition)
 make test                       # Go + Pytest verification suites
-imago plan route --ready        # Ranked ready set of the planning graph
 ```
 
 1. **Inspect Authority**: Read the relevant authority file (`docs/principles.md`, `versions.json`, or the nearest docs). Before commit, inspect staged, unstaged, and untracked changes.

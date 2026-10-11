@@ -78,7 +78,8 @@
     "step-lefthook-verify": {
       "cost": "small",
       "done": false,
-      "owner": "cordanaLLM/imago"
+      "owner": "cordanaLLM/imago",
+      "evidence": "Open; carried by https://github.com/cordanaLLM/imago/issues/80 since 2026-10-11"
     },
     "step-archetype-draft": {
       "cost": "small",
@@ -88,16 +89,17 @@
     },
     "step-archetype-upstream": {
       "cost": "small",
-      "done": false,
+      "done": true,
       "owner": "cordanaLLM/praetor",
       "needs_external_contract": true,
-      "evidence": "Request filed as https://github.com/cordanaLLM/praetor/issues/49; pull request pending maintainer acceptance"
+      "evidence": "https://github.com/cordanaLLM/praetor/pull/54 ships .config/archetypes/os-image.yaml; the request was https://github.com/cordanaLLM/praetor/issues/49"
     },
     "step-archetype-switch": {
       "cost": "small",
-      "done": false,
+      "done": true,
       "owner": "cordanaLLM/imago",
-      "needs_external_contract": true
+      "needs_external_contract": true,
+      "evidence": "https://github.com/cordanaLLM/imago/pull/37 declares the os-image profile in .standards.yaml"
     },
     "step-create-repo": {
       "cost": "small",
@@ -123,7 +125,8 @@
       "done": false,
       "owner": "cordanaLLM/Aegis-OS",
       "needs_external_contract": true,
-      "needs_hardware": true
+      "needs_hardware": true,
+      "evidence": "Open; carried by https://github.com/cordanaLLM/imago/issues/46 since 2026-10-11"
     },
     "step-nucleus-contract": {
       "cost": "medium",
@@ -135,7 +138,8 @@
     "step-app-hardening": {
       "cost": "medium",
       "done": false,
-      "owner": "cordanaLLM/imago"
+      "owner": "cordanaLLM/imago",
+      "evidence": "Open; carried by https://github.com/cordanaLLM/imago/issues/81 since 2026-10-11"
     }
   }
 }
