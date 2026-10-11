@@ -25,7 +25,7 @@ concurrency:
 jobs:
   sync:
     name: Verify and Pin Kernel Release from nucleus
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
       contents: write

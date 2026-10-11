@@ -128,6 +128,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   run that commit through `.config/lefthook/engine.sh` instead of the `praetorctl` on `PATH`.
   The `Makefile` includes `.config/praetor/engine.mk` and calls `$(PRAETORCTL)`. A pin that
   cannot be installed fails the hook and the target; nothing falls back to `PATH`.
+- Every workflow job names its runner: all 22 jobs that ran on `ubuntu-latest` now run on
+  `ubuntu-26.04`, the system that label moves to from 2026-10-19. The next system release
+  needs a commit here instead of arriving with the label.
 - **Breaking**: `sync-kernel-manifest.yml` refuses a `kernel_release_published` payload without `stream`, `version`, and `tag` (the default-version fallback is removed), downloads the nucleus release, verifies the keyless cosign bundle over `SHA256SUMS`, runs `imago kernel artifact verify` against the payload and the `versions.json` contract pin, and only then proposes the `kernel.streams.<stream>` pin (version, `artifact_digest`, provenance) as a pull request that adds only `versions.json`.
 - `dispatch-kernel-requirements.yml` validates `kernel/requirement.json` and dispatches its path, `sha256`, and commit to the provider named in `versions.json` instead of the unread drivers/runtimes/kubernetes triple; it triggers on changes to the requirement file.
 - `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).
