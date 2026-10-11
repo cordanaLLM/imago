@@ -175,6 +175,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The CDI container test and the container cleanup no longer fail because of host
+  load. The CDI test ran `apt-get` and its check under one 40-second timeout, and the
+  cleanup gave `docker rm -f` one attempt, so a loaded host turned both into failures
+  of the local gate. In `tests/test_container_integration.py` the installation of
+  `python3-yaml` now has the 300-second installation bound; a host that exceeds it
+  skips the CDI tests with the measured time, and the check itself keeps a 20-second
+  budget. The cleanup tries the removal at most three times and fails only when the
+  container remains. The specification reaches the check on standard input, read from
+  `packer/provisioners/75-appliance-vision.sh`. New tests cover a specification of
+  another device kind, an installation that exceeds its bound, and the removal against
+  a stubbed and the real Docker daemon. The sysctl test installs nothing and is
+  unchanged.
 - The OpenSSH container test no longer fails because of host load (#69). Its one
   60-second budget covered the installation of `openssh-server`, whose duration
   depends on the host, so the same commit passed and failed within minutes. In
