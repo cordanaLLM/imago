@@ -218,7 +218,6 @@ make lint                       # packer validate, shellcheck, actionlint, yamll
 make test-go                    # Go unit tests (golusoris core composition)
 make test                       # Go + Pytest verification suites
 make verify-all                 # Praetor gate: compile-context --verify, audit, build, tests
-imago plan route --ready        # Ranked ready set of the planning graph
 ```
 
 

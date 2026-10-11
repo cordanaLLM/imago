@@ -119,6 +119,7 @@ nav:
       - "0022: Fail-Closed Provisioners & Declared Main Protection": adr/0022-fail-closed-provisioners-and-declared-main-protection.md
       - "0023: EUPL-1.2 Licence & REUSE Annotations": adr/0023-eupl-1.2-licence-and-reuse-annotations.md
       - "0024: Product-Result Emitter & Signature Reference Form": adr/0024-product-result-emitter-and-signature-reference-form.md
+      - "0025: Forge as Record of Open Work & Frozen Planning Graph": adr/0025-forge-as-record-of-open-work-and-frozen-planning-graph.md
       - "0018: NAS & Storage Appliance Ecosystem": adr/0018-nas-and-storage-appliance-ecosystem.md
   - Engineering & Governance:
       - Engineering Principles: principles.md
