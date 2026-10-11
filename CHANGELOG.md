@@ -127,6 +127,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `dispatch-kernel-requirements.yml` validates `kernel/requirement.json` and dispatches its path, `sha256`, and commit to the provider named in `versions.json` instead of the unread drivers/runtimes/kubernetes triple; it triggers on changes to the requirement file.
 - `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).
 
+### Removed
+
+- Generated files of agent clients and editors the project does not use. `.standards.yaml`
+  now selects `agent_clients: [claude, codex, gemini]` and
+  `editors: [universal, vscode, antigravity]`, so the engine compiles and verifies those
+  only. Removed: the Cursor, Windsurf and Copilot context files and the two Copilot
+  persona files, and the Neovim, Zed, Helix, Emacs, Fleet, Sublime Text and Visual Studio
+  files (`.nvim.lua`, `lua/standards.lua`, `.zed/`, `.helix/`, `.dir-locals.el`, `.fleet/`,
+  `standards.sublime-project`, `.clang-tidy`). `AGENTS.md` stays the one source every
+  remaining client file is compiled from.
+
 ### Fixed
 
 - The documentation site deploys again. `.github/workflows/pages.yml` pinned
