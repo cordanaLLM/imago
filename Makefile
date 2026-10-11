@@ -1,6 +1,6 @@
 -include .config/praetor/engine.mk
 .PHONY: help init fmt fmt-check lint test clean compress docs-serve docs-build \
-        build-cli test-go audit lint-workflows lint-manifest \
+        build-cli test-go fuzz audit lint-workflows lint-manifest \
         build-base-generic build-base-intel build-base-amd \
         build-base-nvidia-legacy build-base-nvidia-mainstream build-base-nvidia-modern build-base-nvidia-bleeding build-base-nvidia-datacenter \
         build-docker-generic build-docker-intel build-docker-amd build-docker-nvidia build-docker-nvidia-modern build-docker-nvidia-bleeding \
@@ -60,6 +60,20 @@ test-bench: ## Run Go benchmarks with memory allocation metrics
 test-coverage: ## Run Go test coverage analysis
 	@go test -cover -coverprofile=coverage.out ./...
 	@go tool cover -func=coverage.out
+
+FUZZTIME ?= 30s
+
+# -fuzzminimizetime: Go spends up to 60s minimizing each interesting input by
+# default, which stalls a short run at zero executions per second.
+fuzz: ## Fuzz every Go fuzz target in turn, FUZZTIME each (default 30s)
+	@set -euo pipefail; \
+	files="$$(git grep -lE '^func Fuzz[A-Za-z0-9_]+\(' -- '*_test.go')"; \
+	for file in $$files; do \
+		for name in $$(sed -nE 's/^func (Fuzz[A-Za-z0-9_]+)\(.*/\1/p' "$$file"); do \
+			echo "fuzz $$name in ./$$(dirname "$$file") for $(FUZZTIME)"; \
+			go test "./$$(dirname "$$file")/" -run '^$$' -fuzz "^$$name\$$" -fuzztime "$(FUZZTIME)" -fuzzminimizetime 2s; \
+		done; \
+	done
 
 test: test-go ## Run automated configuration, SSOT, privacy, execution, and container tests
 	@pytest tests/ -v
