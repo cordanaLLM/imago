@@ -123,6 +123,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   v4.0.1 and `action-gh-release` v3.0.3. Each pin is the commit of its tag.
   `cosign-installer` stays at v3.8.1: it has no Node runtime, and v4 installs cosign 3
   by default.
+- The Praetor engine is pinned: `PRAETOR_REF` in `.github/workflows/ci.yml` names the engine
+  commit, and the Git hooks and `make verify-all`, `make compile-context` and `make audit`
+  run that commit through `.config/lefthook/engine.sh` instead of the `praetorctl` on `PATH`.
+  The `Makefile` includes `.config/praetor/engine.mk` and calls `$(PRAETORCTL)`. A pin that
+  cannot be installed fails the hook and the target; nothing falls back to `PATH`.
 - **Breaking**: `sync-kernel-manifest.yml` refuses a `kernel_release_published` payload without `stream`, `version`, and `tag` (the default-version fallback is removed), downloads the nucleus release, verifies the keyless cosign bundle over `SHA256SUMS`, runs `imago kernel artifact verify` against the payload and the `versions.json` contract pin, and only then proposes the `kernel.streams.<stream>` pin (version, `artifact_digest`, provenance) as a pull request that adds only `versions.json`.
 - `dispatch-kernel-requirements.yml` validates `kernel/requirement.json` and dispatches its path, `sha256`, and commit to the provider named in `versions.json` instead of the unread drivers/runtimes/kubernetes triple; it triggers on changes to the requirement file.
 - `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).

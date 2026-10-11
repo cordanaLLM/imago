@@ -1,3 +1,4 @@
+-include .config/praetor/engine.mk
 .PHONY: help init fmt fmt-check lint test clean compress docs-serve docs-build \
         build-cli test-go audit lint-workflows lint-manifest \
         build-base-generic build-base-intel build-base-amd \
@@ -238,17 +239,17 @@ clean: ## Clean up local build artifacts and caches
 # Praetor declared verification; existing project recipes remain unchanged.
 .PHONY: verify-all
 verify-all:
-	@standardsctl compile-context --verify
-	@standardsctl audit
+	@$(PRAETORCTL) compile-context --verify
+	@$(PRAETORCTL) audit
 	@'go' 'build' '-v' './...'
 	@'go' 'test' '-v' '-race' './...'
 	@'python3' '-m' 'pytest'
 
 compile-context:
-	@standardsctl compile-context
+	@$(PRAETORCTL) compile-context
 
 audit:
-	@standardsctl audit
+	@$(PRAETORCTL) audit
 
 # BEGIN praetor documentation gate
 .PHONY: docs-lint docs-figures
