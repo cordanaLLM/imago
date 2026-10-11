@@ -4,13 +4,16 @@ package aegis_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -145,6 +148,61 @@ func TestNegativeUnknownField(t *testing.T) {
 	_, err = parse(t, m)
 	requireRejected(t, err, fixtureCID, "input", aegis.ErrDecode)
 	assert.Contains(t, err.Error(), `unknown field "jitter-seconds"`)
+}
+
+// TestBoundaryDecodeReasonLength holds the bound of Error.Reason against an
+// unknown field name, which encoding/json repeats in its error at full length.
+func TestBoundaryDecodeReasonLength(t *testing.T) {
+	const prefix = `strict decode: json: unknown field "`
+	fits := aegis.MaxReasonLen - len(prefix) - len(`"`)
+	cases := []struct {
+		name      string
+		field     string
+		truncated bool
+	}{
+		{"short name is reported whole", "extra", false},
+		{"reason of exactly the bound is reported whole", strings.Repeat("a", fits), false},
+		{"reason one byte above the bound is cut", strings.Repeat("a", fits+1), true},
+		{"name of 5000 bytes is cut", strings.Repeat("a", 5000), true},
+		{"cut inside a multi-byte character leaves valid text", "a" + strings.Repeat("\u00e9", 4000), true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := aegis.Parse([]byte(`{"correlation-id":"` + fixtureCID + `","` + tc.field + `":1}`))
+			requireRejected(t, err, fixtureCID, "input", aegis.ErrDecode)
+			var aerr *aegis.Error
+			require.ErrorAs(t, err, &aerr)
+			assert.LessOrEqual(t, len(aerr.Reason), aegis.MaxReasonLen)
+			assert.True(t, utf8.ValidString(aerr.Reason), "reason is not valid UTF-8")
+			assert.True(t, strings.HasPrefix(aerr.Reason, prefix), aerr.Reason)
+			assert.Equal(t, tc.truncated, strings.HasSuffix(aerr.Reason, " (truncated)"), aerr.Reason)
+			if !tc.truncated {
+				assert.Equal(t, prefix+tc.field+`"`, aerr.Reason)
+			}
+		})
+	}
+}
+
+// failingReader fails every read with a caller-chosen error.
+type failingReader struct{ err error }
+
+func (r failingReader) Read([]byte) (int, error) { return 0, r.err }
+
+// TestBoundaryIOReasonLength holds the bound of Error.Reason against I/O error
+// text: a path the caller chose, and a reader error of any length.
+func TestBoundaryIOReasonLength(t *testing.T) {
+	long := strings.Repeat("d", 200)
+	_, openErr := aegis.Load(filepath.Join(t.TempDir(), long, long+".json"))
+	_, readErr := aegis.Decode(failingReader{err: errors.New(strings.Repeat("r", 5000))})
+	for name, err := range map[string]error{"open manifest: ": openErr, "read manifest: ": readErr} {
+		var aerr *aegis.Error
+		require.ErrorAs(t, err, &aerr, name)
+		assert.Equal(t, aegis.MissingCorrelationID, aerr.CorrelationID, name)
+		assert.Len(t, aerr.Reason, aegis.MaxReasonLen, name)
+		assert.True(t, strings.HasPrefix(aerr.Reason, name), aerr.Reason)
+		assert.True(t, strings.HasSuffix(aerr.Reason, " (truncated)"), aerr.Reason)
+		assert.Error(t, aerr.Err, name)
+	}
 }
 
 func TestNegativeMalformedJSON(t *testing.T) {

@@ -41,6 +41,9 @@ const (
 	MaxTokenLen = 128
 	// RevisionLen is the exact length of the lowercase hex git revision.
 	RevisionLen = 40
+	// MaxReasonLen bounds Error.Reason in bytes. A reason built from decoder or
+	// I/O error text is cut to this length and marked as truncated.
+	MaxReasonLen = 256
 )
 
 // ProductInput mirrors build/product-input.json field for field. JSON keys are
@@ -88,7 +91,7 @@ type Retries struct {
 func Load(path string) (*ProductInput, error) {
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: "open manifest: " + err.Error(), Err: err}
+		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: boundReason("open manifest: " + err.Error()), Err: err}
 	}
 	p, err := Decode(f)
 	cerr := f.Close()
@@ -96,7 +99,7 @@ func Load(path string) (*ProductInput, error) {
 		return nil, err
 	}
 	if cerr != nil {
-		return nil, &Error{CorrelationID: p.CorrelationID, Field: "input", Reason: "close manifest: " + cerr.Error(), Err: cerr}
+		return nil, &Error{CorrelationID: p.CorrelationID, Field: "input", Reason: boundReason("close manifest: " + cerr.Error()), Err: cerr}
 	}
 	return p, nil
 }
@@ -106,7 +109,7 @@ func Load(path string) (*ProductInput, error) {
 func Decode(r io.Reader) (*ProductInput, error) {
 	data, err := io.ReadAll(io.LimitReader(r, MaxInputBytes+1))
 	if err != nil {
-		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: "read manifest: " + err.Error(), Err: err}
+		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: boundReason("read manifest: " + err.Error()), Err: err}
 	}
 	return Parse(data)
 }
@@ -125,7 +128,7 @@ func Parse(data []byte) (*ProductInput, error) {
 	dec.DisallowUnknownFields()
 	var p ProductInput
 	if err := dec.Decode(&p); err != nil {
-		return nil, &Error{CorrelationID: cid, Field: "input", Reason: "strict decode: " + err.Error(), Err: fmt.Errorf("%w: %w", ErrDecode, err)}
+		return nil, &Error{CorrelationID: cid, Field: "input", Reason: boundReason("strict decode: " + err.Error()), Err: fmt.Errorf("%w: %w", ErrDecode, err)}
 	}
 	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
 		return nil, &Error{CorrelationID: cid, Field: "input", Reason: "trailing content after the manifest", Err: ErrTrailingContent}

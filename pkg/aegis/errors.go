@@ -4,6 +4,7 @@ package aegis
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Placeholders reported in place of a correlation id that cannot be echoed.
@@ -42,7 +43,8 @@ type Error struct {
 	CorrelationID string
 	// Field names the rejected manifest field; "input" before decoding succeeds.
 	Field string
-	// Reason states the violated rule without echoing unbounded input.
+	// Reason states the violated rule without echoing unbounded input: it is at
+	// most MaxReasonLen bytes.
 	Reason string
 	// Err is the cause: a sentinel from this package, optionally wrapping an
 	// encoding/json error, or the I/O error that prevented reading.
@@ -56,6 +58,19 @@ func (e *Error) Error() string {
 
 // Unwrap exposes the cause to errors.Is and errors.As.
 func (e *Error) Unwrap() error { return e.Err }
+
+// truncatedMark ends a reason that boundReason cut.
+const truncatedMark = " (truncated)"
+
+// boundReason returns text cut to MaxReasonLen bytes. Decoder and I/O errors
+// repeat caller-controlled text, such as an unknown field name, at any length.
+// A cut inside a multi-byte character drops the partial character.
+func boundReason(text string) string {
+	if len(text) <= MaxReasonLen {
+		return text
+	}
+	return strings.ToValidUTF8(text[:MaxReasonLen-len(truncatedMark)], "") + truncatedMark
+}
 
 // reportedCorrelationID maps a raw correlation-id to the value an Error reports.
 func reportedCorrelationID(raw string) string {
