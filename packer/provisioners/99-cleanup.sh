@@ -7,19 +7,24 @@ set -euo pipefail
 
 clean_cloud_init_and_auth() {
   echo "==> Sanitizing cloud-init state..."
-  sudo cloud-init clean --logs --seed || true
+  sudo cloud-init clean --logs --seed
 
   echo "==> Enforcing PasswordAuthentication no on final snapshot sealing..."
   echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config.d/00-hardened-sshd.conf
   sudo chmod 0600 /etc/ssh/sshd_config.d/00-hardened-sshd.conf
 
   echo "==> Restricting low-level binary permissions..."
-  sudo chmod 0700 /usr/bin/as /usr/bin/byacc 2>/dev/null || true
+  local binary
+  for binary in /usr/bin/as /usr/bin/byacc; do
+    if [ -e "${binary}" ]; then
+      sudo chmod 0700 "${binary}"
+    fi
+  done
 }
 
 clean_apt_cache() {
   echo "==> Cleaning apt caches and index files..."
-  sudo apt-get autoremove --purge -y || true
+  sudo apt-get autoremove --purge -y
   sudo apt-get clean
   sudo rm -rf /var/lib/apt/lists/*
 }
@@ -37,21 +42,26 @@ clean_machine_identities() {
 clean_logs_and_histories() {
   echo "==> Truncating log files and clearing bash histories..."
   sudo rm -f /root/.bash_history /home/ubuntu/.bash_history
-  sudo journalctl --rotate 2>/dev/null || true
-  sudo journalctl --vacuum-time=1s 2>/dev/null || true
+  sudo journalctl --rotate
+  sudo journalctl --vacuum-time=1s
   sudo rm -rf /var/log/journal/*
 
-  sudo find /var/log -type f -exec truncate -s 0 {} \; 2>/dev/null || true
+  sudo find /var/log -type f -exec truncate -s 0 {} \;
   sudo rm -rf /tmp/* /var/tmp/*
 }
 
 zero_free_space() {
   echo "==> Zero-filling unallocated blocks for sparse compression..."
-  sudo dd if=/dev/zero of=/EMPTY bs=1M status=none 2>/dev/null || true
+  # dd has no count: it ends when the filesystem is full, so non-zero is the normal end.
+  if ! sudo dd if=/dev/zero of=/EMPTY bs=1M status=none 2>/dev/null; then
+    echo "    Zero-fill stopped at the end of free space."
+  fi
   sudo sync
   sudo rm -f /EMPTY
   echo "==> Running fstrim to reclaim thin-provisioned storage..."
-  sudo fstrim -av 2>/dev/null || true
+  if ! sudo fstrim -av; then
+    echo "    fstrim returned non-zero; unused blocks were not discarded on at least one filesystem." >&2
+  fi
 }
 
 # The build account is not sealed here. Locking its password and removing its sudoers

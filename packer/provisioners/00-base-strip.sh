@@ -13,10 +13,24 @@ strip_documentation_paths() {
   echo 'path-include=/usr/share/locale/en*' | sudo tee -a /etc/dpkg/dpkg.cfg.d/01_nolocale
 }
 
+disable_units_if_present() {
+  local unit
+  for unit in "$@"; do
+    if systemctl cat "${unit}" >/dev/null 2>&1; then
+      sudo systemctl disable --now "${unit}"
+    fi
+  done
+}
+
 purge_distro_bloat() {
   echo "==> Purging snapd, telemetry, and unneeded daemons..."
-  sudo systemctl disable --now snapd.service snapd.socket snapd.seeded.service 2>/dev/null || true
+  # Units are stopped while their packages still own them: the purge removes the unit files.
+  disable_units_if_present snapd.service snapd.socket snapd.seeded.service \
+    apt-news.service esm-cache.service motd-news.timer
 
+  # A purge that names a package missing from the index removes nothing at all,
+  # so the index is refreshed before the purge and the hold.
+  sudo apt-get update
   sudo DEBIAN_FRONTEND=noninteractive apt-get purge -y --auto-remove \
     snapd \
     lxd-installer \
@@ -25,12 +39,10 @@ purge_distro_bloat() {
     popularity-contest \
     motd-news-config \
     plymouth \
-    plymouth-theme-ubuntu-text 2>/dev/null || true
+    plymouth-theme-ubuntu-text
 
   sudo rm -rf /var/cache/snapd /root/snap /home/ubuntu/snap
-  sudo apt-mark hold snapd lxd-installer 2>/dev/null || true
-
-  sudo systemctl disable --now apt-news.service esm-cache.service motd-news.timer 2>/dev/null || true
+  sudo apt-mark hold snapd lxd-installer
 }
 
 configure_fast_boot_and_systemd() {
@@ -63,11 +75,11 @@ EOF
     echo "==> Configuring instant GRUB boot timeout and serial console..."
     sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
     echo 'GRUB_RECORDFAIL_TIMEOUT=0' | sudo tee -a /etc/default/grub
-    sudo update-grub 2>/dev/null || true
+    sudo update-grub
   fi
 
   echo "==> Enabling fstrim weekly timer for SSD and sparse disk wear reduction..."
-  sudo systemctl enable fstrim.timer 2>/dev/null || true
+  sudo systemctl enable fstrim.timer
 }
 
 install_base_essentials() {
@@ -96,7 +108,7 @@ configure_zram_swap() {
     sudo sed -i 's/^#*ALGO=.*/ALGO=zstd/' /etc/default/zramswap
     sudo sed -i 's/^#*PERCENT=.*/PERCENT=25/' /etc/default/zramswap
     sudo sed -i 's/^#*PRIORITY=.*/PRIORITY=100/' /etc/default/zramswap
-    sudo systemctl enable zramswap.service 2>/dev/null || true
+    sudo systemctl enable zramswap.service
   fi
 }
 

@@ -6,15 +6,27 @@ repository:
     owner: cordanaLLM
     name: imago
     visibility: public
-    description: "Reusable OS image forge: hardened, hardware-accelerated cloud and bare-metal images built from a declarative version manifest, kernel artifacts consumed from cordanaLLM/nucleus"
-    homepage: "https://cordanallm.github.io/imago"
+    # Description, homepage and topics repeat what the forge carries today, so a remote sync
+    # writes none of them. Public metadata changes with the first release under the new names.
+    description: "Production-grade, hardened, hardware-accelerated cloud and bare-metal OS image forge on Ubuntu 26.04."
+    homepage: "https://cordanallm.github.io/imago/"
     topics:
-      - os-image
+      - bare-metal
+      - cdi
+      - cloud-images
+      - containerd
+      - cuda
+      - hardened
+      - intel-arc
+      - kubernetes
+      - openvino
       - packer
-      - cloud-init
-      - hardening
-      - hiss-16
-      - golusoris
+      - proxmox
+      - qemu
+      - rocm
+      - ubuntu-26-04
+      - unraid
+      - vllm
 # Ed25519 Exit-0 receipt trust anchor (praetorctl gate keygen; private key
 # outside the repository at ~/.config/praetor/receipt.key or PRAETOR_RECEIPT_KEY).
 # Generated on the office workstation on 2026-09-15 so gates can mint receipts
@@ -61,3 +73,31 @@ needs:
     optional:
         - config.yaml
         - crypto.receipt
+# Declared gaps (one rule, one path, a reason, an expiry). The audit prints each entry and
+# fails once it expires.
+exceptions:
+    - rule: HISS-11
+      path: .github/workflows/release-matrix.yml
+      reason: >-
+          the release workflow publishes images without a cosign signature, an SBOM or build
+          provenance, and supply-chain.yml holds no signing step (SLSA Build Level 3 declared,
+          Level 0 measured; enforce_cosign without a cosign signing step; require_sbom without an
+          SBOM step); raise the workflows as docs/guides/releasing.md in Praetor describes, then
+          remove this entry
+      expires: "2027-01-09"
+register:
+    sources:
+        expected: 13
+        sha256:
+            sha256:a72d30c2f78f31cb7e8af346bf13fea115e8730d75a1222a4314133134cd0fc1
+        inputs:
+            - path: .paperclip/harness.json
+              surface: prompts
+              kind: message
+              format: json
+              selector: operating_contract.*
+            - path: .paperclip/harness.json
+              surface: prompts
+              kind: message
+              format: json
+              selector: invariants.*

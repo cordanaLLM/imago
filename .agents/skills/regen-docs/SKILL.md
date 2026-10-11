@@ -5,7 +5,7 @@ description: Build and validate the Material for MkDocs documentation portal in 
 
 # Regenerate Documentation Portal
 
-The documentation portal uses Material for MkDocs and is deployed to GitHub Pages.
+Documentation portal uses Material for MkDocs and is deployed to GitHub Pages.
 
 ## Build in Strict Mode
 ```bash

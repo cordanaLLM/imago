@@ -5,7 +5,7 @@
 ---
 
 ## 1. Single Source of Truth (`versions.json`)
-- [ ] If the flavor introduces new software, repositories, or driver branches, add them to `versions.json`.
+- [ ] If flavor introduces new software, repositories, or driver branches, add them to `versions.json`.
 - [ ] Validate against schema: `python3 -c "import json, jsonschema; s=json.load(open('versions.schema.json')); d=json.load(open('versions.json')); jsonschema.validate(d, s)"`.
 - [ ] Ensure **zero** hardcoded URLs or versions in Packer templates or shell scripts.
 

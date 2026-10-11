@@ -49,6 +49,7 @@ Gerard J. Holzmann's [_The Power of 10: Rules for Developing Safety-Critical Cod
 ## 4. Generational Hardware Segmentation
 
 Hardware acceleration drivers and runtimes must remain strictly isolated by generational architecture:
+
 - **Intel Arc / Xe**: Dedicated Battlemage Xe2, Alchemist, Level Zero, and Media Driver stack ([`30-gpu-intel.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/30-gpu-intel.sh)).
 - **AMD Radeon / ROCm**: Segregated into user-space Mesa VA-API/RADV ([`31-gpu-amd-mesa.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/31-gpu-amd-mesa.sh)) and ROCm 10 compute ([`32-gpu-amd-rocm.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/32-gpu-amd-rocm.sh)).
 - **NVIDIA Segmentation**:

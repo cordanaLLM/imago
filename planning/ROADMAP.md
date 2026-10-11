@@ -37,6 +37,7 @@ Unsupported in this proposal:
   - Caller-asserted unverified source `source-operator-decisions` sha256 `a4c0b06c2a0bdf0391e236d9f88eb7a3be2295d045fea64808524136a2431f2c`: The migration is tracked as a typed dependency graph under \`planning/\`, compiled with praetor&\#39;s planning compiler and routed by \`imago plan route\`.
 
 <a id="roadmap-726f61646d61702d72656e616d652d6d6f64756c65"></a>
+
 ## roadmap\-rename\-module
 
 Step `step-rename-module`; TODO [`todo-rename-module`](TODO.md#todo-746f646f2d72656e616d652d6d6f64756c65); milestone [`ms-identity`](MILESTONES.md#milestone-6d732d6964656e74697479).
@@ -66,6 +67,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - The Go version directive follows golusoris core \(1.27.1\).
 
 <a id="roadmap-726f61646d61702d72656e616d652d646f6373"></a>
+
 ## roadmap\-rename\-docs
 
 Step `step-rename-docs`; TODO [`todo-rename-docs`](TODO.md#todo-746f646f2d72656e616d652d646f6373); milestone [`ms-identity`](MILESTONES.md#milestone-6d732d6964656e74697479).
@@ -95,6 +97,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - CHANGELOG history entries are untouched.
 
 <a id="roadmap-726f61646d61702d636f72652d636c692d6c6f67"></a>
+
 ## roadmap\-core\-cli\-log
 
 Step `step-core-cli-log`; TODO [`todo-core-cli-log`](TODO.md#todo-746f646f2d636f72652d636c692d6c6f67); milestone [`ms-golusoris`](MILESTONES.md#milestone-6d732d676f6c75736f726973).
@@ -124,6 +127,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Command help text is unchanged for existing commands.
 
 <a id="roadmap-726f61646d61702d636f72652d636c6f636b"></a>
+
 ## roadmap\-core\-clock
 
 Step `step-core-clock`; TODO [`todo-core-clock`](TODO.md#todo-746f646f2d636f72652d636c6f636b); milestone [`ms-golusoris`](MILESTONES.md#milestone-6d732d676f6c75736f726973).
@@ -153,6 +157,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Advancing the fake clock exactly past the TTL prunes the staged action.
 
 <a id="roadmap-726f61646d61702d636f72652d6d6370"></a>
+
 ## roadmap\-core\-mcp
 
 Step `step-core-mcp`; TODO [`todo-core-mcp`](TODO.md#todo-746f646f2d636f72652d6d6370); milestone [`ms-golusoris`](MILESTONES.md#milestone-6d732d676f6c75736f726973).
@@ -182,6 +187,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Client disconnect on stdio ends the process through fx.Shutdowner.
 
 <a id="roadmap-726f61646d61702d6e656564732d6d616e6966657374"></a>
+
 ## roadmap\-needs\-manifest
 
 Step `step-needs-manifest`; TODO [`todo-needs-manifest`](TODO.md#todo-746f646f2d6e656564732d6d616e6966657374); milestone [`ms-golusoris`](MILESTONES.md#milestone-6d732d676f6c75736f726973).
@@ -211,6 +217,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Standard\-library slog stays excluded from third\-party counts.
 
 <a id="roadmap-726f61646d61702d706c616e2d6772617068"></a>
+
 ## roadmap\-plan\-graph
 
 Step `step-plan-graph`; TODO [`todo-plan-graph`](TODO.md#todo-746f646f2d706c616e2d6772617068); milestone [`ms-planning`](MILESTONES.md#milestone-6d732d706c616e6e696e67).
@@ -240,6 +247,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Every step names between 1 and 32 requirements.
 
 <a id="roadmap-726f61646d61702d706c616e2d726f75746572"></a>
+
 ## roadmap\-plan\-router
 
 Step `step-plan-router`; TODO [`todo-plan-router`](TODO.md#todo-746f646f2d706c616e2d726f75746572); milestone [`ms-planning`](MILESTONES.md#milestone-6d732d706c616e6e696e67).
@@ -269,6 +277,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - A plan over 512 KiB is rejected before decoding.
 
 <a id="roadmap-726f61646d61702d65706963732d70726f6a656374696f6e"></a>
+
 ## roadmap\-epics\-projection
 
 Step `step-epics-projection`; TODO [`todo-epics-projection`](TODO.md#todo-746f646f2d65706963732d70726f6a656374696f6e); milestone [`ms-planning`](MILESTONES.md#milestone-6d732d706c616e6e696e67).
@@ -298,6 +307,7 @@ Kind: `manual`; status: `proposed`. Actions are inert instructions.
   - Milestones referenced by PR metadata remain valid.
 
 <a id="roadmap-726f61646d61702d70726165746f722d77696e646f77732d646566656374"></a>
+
 ## roadmap\-praetor\-windows\-defect
 
 Step `step-praetor-windows-defect`; TODO [`todo-praetor-windows-defect`](TODO.md#todo-746f646f2d70726165746f722d77696e646f77732d646566656374); milestone [`ms-praetor`](MILESTONES.md#milestone-6d732d70726165746f72).
@@ -327,6 +337,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Both the profiles and facets directories are compared with slash normalisation.
 
 <a id="roadmap-726f61646d61702d707974686f6e2d67617465"></a>
+
 ## roadmap\-python\-gate
 
 Step `step-python-gate`; TODO [`todo-python-gate`](TODO.md#todo-746f646f2d707974686f6e2d67617465); milestone [`ms-praetor`](MILESTONES.md#milestone-6d732d70726165746f72).
@@ -356,6 +367,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Strict marker enforcement is preserved.
 
 <a id="roadmap-726f61646d61702d61646f70742d70726165746f72"></a>
+
 ## roadmap\-adopt\-praetor
 
 Step `step-adopt-praetor`; TODO [`todo-adopt-praetor`](TODO.md#todo-746f646f2d61646f70742d70726165746f72); milestone [`ms-praetor`](MILESTONES.md#milestone-6d732d70726165746f72).
@@ -385,6 +397,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - The baseline records exactly the infractions the dry run reported.
 
 <a id="roadmap-726f61646d61702d6c656674686f6f6b2d766572696679"></a>
+
 ## roadmap\-lefthook\-verify
 
 Step `step-lefthook-verify`; TODO [`todo-lefthook-verify`](TODO.md#todo-746f646f2d6c656674686f6f6b2d766572696679); milestone [`ms-praetor`](MILESTONES.md#milestone-6d732d70726165746f72).
@@ -414,6 +427,7 @@ Kind: `manual`; status: `proposed`. Actions are inert instructions.
   - A docs\-only change skips the heavy suites through the diff\-aware filter.
 
 <a id="roadmap-726f61646d61702d6170702d68617264656e696e67"></a>
+
 ## roadmap\-app\-hardening
 
 Step `step-app-hardening`; TODO [`todo-app-hardening`](TODO.md#todo-746f646f2d6170702d68617264656e696e67); milestone [`ms-app`](MILESTONES.md#milestone-6d732d617070).
@@ -443,6 +457,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - A function at exactly 60 lines passes.
 
 <a id="roadmap-726f61646d61702d6172636865747970652d6472616674"></a>
+
 ## roadmap\-archetype\-draft
 
 Step `step-archetype-draft`; TODO [`todo-archetype-draft`](TODO.md#todo-746f646f2d6172636865747970652d6472616674); milestone [`ms-archetype`](MILESTONES.md#milestone-6d732d617263686574797065).
@@ -472,6 +487,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - max\_func\_loc is exactly 60.
 
 <a id="roadmap-726f61646d61702d6172636865747970652d757073747265616d"></a>
+
 ## roadmap\-archetype\-upstream
 
 Step `step-archetype-upstream`; TODO [`todo-archetype-upstream`](TODO.md#todo-746f646f2d6172636865747970652d757073747265616d); milestone [`ms-archetype`](MILESTONES.md#milestone-6d732d617263686574797065).
@@ -501,6 +517,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - The archetype passes praetor&\#39;s own catalog tests.
 
 <a id="roadmap-726f61646d61702d6172636865747970652d737769746368"></a>
+
 ## roadmap\-archetype\-switch
 
 Step `step-archetype-switch`; TODO [`todo-archetype-switch`](TODO.md#todo-746f646f2d6172636865747970652d737769746368); milestone [`ms-archetype`](MILESTONES.md#milestone-6d732d617263686574797065).
@@ -530,6 +547,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Baseline count does not increase across the switch.
 
 <a id="roadmap-726f61646d61702d6372656174652d7265706f"></a>
+
 ## roadmap\-create\-repo
 
 Step `step-create-repo`; TODO [`todo-create-repo`](TODO.md#todo-746f646f2d6372656174652d7265706f); milestone [`ms-transfer`](MILESTONES.md#milestone-6d732d7472616e73666572).
@@ -545,7 +563,7 @@ Kind: `manual`; status: `proposed`. Actions are inert instructions.
 
 ### Expected outputs
 
-- `output-repo`: https://github.com/cordanaLLM/imago resolves and the fleet topology lists it.
+- `output-repo`: <https://github.com/cordanaLLM/imago> resolves and the fleet topology lists it.
 
 ### Acceptance proposal
 
@@ -559,6 +577,7 @@ Kind: `manual`; status: `proposed`. Actions are inert instructions.
   - Branch rulesets from .github/rulesets apply on the transferred repository.
 
 <a id="roadmap-726f61646d61702d726564697265637473"></a>
+
 ## roadmap\-redirects
 
 Step `step-redirects`; TODO [`todo-redirects`](TODO.md#todo-746f646f2d726564697265637473); milestone [`ms-transfer`](MILESTONES.md#milestone-6d732d7472616e73666572).
@@ -588,6 +607,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - Historical CHANGELOG links are left as redirects.
 
 <a id="roadmap-726f61646d61702d61656769732d736368656d612d70696e"></a>
+
 ## roadmap\-aegis\-schema\-pin
 
 Step `step-aegis-schema-pin`; TODO [`todo-aegis-schema-pin`](TODO.md#todo-746f646f2d61656769732d736368656d612d70696e); milestone [`ms-aegis`](MILESTONES.md#milestone-6d732d6165676973).
@@ -617,6 +637,7 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
   - A retry count at the bound is accepted; one above is refused.
 
 <a id="roadmap-726f61646d61702d61656769732d70616972"></a>
+
 ## roadmap\-aegis\-pair
 
 Step `step-aegis-pair`; TODO [`todo-aegis-pair`](TODO.md#todo-746f646f2d61656769732d70616972); milestone [`ms-aegis`](MILESTONES.md#milestone-6d732d6165676973).
@@ -646,6 +667,7 @@ Kind: `manual`; status: `proposed`. Actions are inert instructions.
   - An empty requirement list is rejected explicitly.
 
 <a id="roadmap-726f61646d61702d6e75636c6575732d636f6e7472616374"></a>
+
 ## roadmap\-nucleus\-contract
 
 Step `step-nucleus-contract`; TODO [`todo-nucleus-contract`](TODO.md#todo-746f646f2d6e75636c6575732d636f6e7472616374); milestone [`ms-nucleus`](MILESTONES.md#milestone-6d732d6e75636c657573).
@@ -673,4 +695,3 @@ Kind: `implementation`; status: `proposed`. Actions are inert instructions.
 
 - Boundary:
   - An empty kernel requirement list is rejected explicitly.
-

@@ -16,7 +16,8 @@ Enterprise hardware decommission cycles (typically 3–5 years in hyperscale and
 | **14G** | R740, R740xd, R640 | 1st/2nd Gen Xeon Scalable (Skylake/Cascade Lake) | DDR4-2666/2933 | PERC H740P / HBA330, U.2 NVMe backplane | `cloudnative-storage`, `k8s-node-generic` |
 | **15G** | R750, R650, C6520 | 3rd Gen Xeon Scalable (Ice Lake-SP) | DDR4-3200 8-channel | PERC H755 / Front NVMe PCIe Gen4 | `ai-infer-generic`, `k8s-node-generic` |
 
-#### Platform Quirks & Mitigations:
+#### Platform Quirks & Mitigations
+
 - **iDRAC Fan Acoustic Curve**: Dell 13G/14G servers increase fan speed to 80–100% duty cycle when non-certified PCIe cards (such as NVIDIA GPUs or Coral TPUs) are inserted. Lusoris documents IPMI raw command mitigations (`ipmitool raw 0x30 0x30 0x01 0x00` to disable dynamic fan control algorithms) in deployment runbooks.
 - **SAS HBA IT-Mode**: Hardware RAID controllers (`PERC H730`) should be flashed or set to HBA pass-through mode for OpenZFS in `cloudnative-storage`.
 
@@ -31,7 +32,8 @@ Enterprise hardware decommission cycles (typically 3–5 years in hyperscale and
 | **Gen10 Plus** | DL385 Gen10 Plus | AMD EPYC 7002/7003 (Rome/Milan) | Smart Array SR416i-a (PCIe Gen4) | iLO 5 |
 | **Gen11** | DL380 / DL385 Gen11 | 4th/5th Gen Xeon / AMD EPYC 9004 | Tri-Mode Controllers (U.3 NVMe) | iLO 6 |
 
-#### Platform Quirks & Mitigations:
+#### Platform Quirks & Mitigations
+
 - **Smart Array CCISS / HPSA Driver**: Lusoris bare-metal kernels configure `hpsa.hpsa_simple_mode=1` to allow direct drive addressing by OpenZFS and Linux software RAID without hardware RAID virtual disks.
 
 ---
@@ -59,7 +61,7 @@ Enterprise hardware decommission cycles (typically 3–5 years in hyperscale and
 
 Modern cloud infrastructure and sovereign AI datacenters present divergent requirements between production stability and bleeding-edge acceleration throughput. Lusoris formalizes two distinct tiers:
 
-```
+```text
 +-----------------------------------------------------------------------------------------+
 |                                 LUSORIS DATACENTER TIERS                                |
 +---------------------------------------------+-------------------------------------------+
@@ -76,6 +78,7 @@ Modern cloud infrastructure and sovereign AI datacenters present divergent requi
 ```
 
 ### 2.1 Tier A: Established Enterprise Production (Hopper / Ampere)
+
 - **Design Objective**: Rock-solid stability for multi-tenant Kubernetes clusters, private cloud infrastructure, and enterprise inference.
 - **Software Stack**:
   - NVIDIA 565 Mainstream driver branch.
@@ -85,6 +88,7 @@ Modern cloud infrastructure and sovereign AI datacenters present divergent requi
 - **Primary Flavors**: `base-nvidia-mainstream`, `docker-nvidia`, `k8s-node-nvidia`, `ai-infer-nvidia`.
 
 ### 2.2 Tier B: Bleeding-Edge Generational AI (Blackwell / Hopper Open)
+
 - **Design Objective**: Extreme-scale foundation model training, multi-node vLLM FP4/FP8 inference, and multi-GPU tensor-parallel workloads.
 - **Software Stack**:
   - NVIDIA 615 Open Kernel Modules driver branch.

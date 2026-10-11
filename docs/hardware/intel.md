@@ -24,4 +24,3 @@ vainfo --display drm --device /dev/dri/renderD128
 # Verify OpenCL compute platform
 clinfo -l
 ```
-

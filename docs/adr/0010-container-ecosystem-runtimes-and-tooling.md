@@ -21,6 +21,7 @@ An architectural review of the broader container ecosystem—specifically catalo
 We adopt a phased modernization program integrating high-leverage container ecosystem technologies into `lusoris-cloud-images`:
 
 ### 1. Dual OCI Runtime Engine (`runc` + `crun`) in Kubernetes & Container Hosts
+
 - In `50-k8s-runtime.sh`, `crun` is installed alongside standard `runc`.
 - containerd (`/etc/containerd/config.toml`) is configured with dual runtime classes:
   - Default runtime remains standard `runc` for maximum ecosystem compatibility.
@@ -28,14 +29,17 @@ We adopt a phased modernization program integrating high-leverage container ecos
 - In `41-podman-runtime.sh`, `crun` remains the primary default OCI runtime for rootless and daemonless container execution.
 
 ### 2. Zero-Footprint Diagnostic Tooling (`cdebug`)
+
 - `cdebug` is baked into all container host images (`docker-*`, `podman-*`, `k8s-node-*`, `k3s-*`) under `/usr/local/bin/cdebug`.
 - Operators can debug any running container or Kubernetes pod without image mutation:
+
   ```bash
   sudo cdebug exec -it <container-id-or-name>
   sudo cdebug exec -it --image nicolaka/netshoot <container-id-or-name>
   ```
 
 ### 3. Declarative Single Source of Truth (`versions.json`) Integration
+
 - All runtime and tool versions are pinned declaratively in `versions.json` and validated by `versions.schema.json`:
   - `runtimes.crun`: `"1.20"`
   - `runtimes.stargz_snapshotter`: `"0.15.1"`
@@ -43,6 +47,7 @@ We adopt a phased modernization program integrating high-leverage container ecos
   - `tools.enroot`: `"3.4.1"`
 
 ### 4. Roadmap Integrations (Phase 2)
+
 - **`stargz-snapshotter` Plugin**: In upcoming releases, `stargz-snapshotter` will be integrated into `50-k8s-runtime.sh` and `60-ai-infer-runtime.sh` to enable on-demand block streaming for eStargz-formatted AI images.
 - **NVIDIA `enroot`**: Bundled into `base-nvidia-datacenter` and `ai-infer-nvidia-*` for rootless Slurm/HPC container isolation.
 - **`container-structure-test`**: Integrated into Packer QEMU verification to validate image filesystem contracts before release artifact publishing.
@@ -50,11 +55,13 @@ We adopt a phased modernization program integrating high-leverage container ecos
 ## Consequences
 
 ### Positive
+
 - **Drastic Resource Savings**: Nodes utilizing `crun` experience a ~85% reduction in runtime memory overhead per container.
 - **Zero-Bloat Troubleshooting**: Production images maintain zero unnecessary packages while operators retain instant debugging capabilities via `cdebug`.
 - **Sub-Second Pod Scheduling**: Lays the foundation for instant cold-starts of heavy AI/ML containers via lazy image streaming.
 - **Power of 10 Compliance**: All installation logic adheres strictly to bounded network execution (`curl --max-time 30`), functions $\le 60$ lines, and checked return codes.
 
 ### Negative / Neutral
+
 - Rootfs size of container host images increases by ~22MB due to the static `cdebug` binary.
 - Operators must specify `runtimeClassName: crun` on Pod specs to leverage the non-default C-based runtime.

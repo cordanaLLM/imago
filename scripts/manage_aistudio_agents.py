@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0
 """
 Automated Agent Fleet Manager for Google AI Studio & Antigravity Managed Agents.
-Declaratively registers, synchronizes, and audits custom agents defined under .agents/agents/.
+Declaratively registers, synchronizes, and audits custom agents defined under .agents/managed-agents/.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-AGENTS_DIR = REPO_ROOT / ".agents" / "agents"
+AGENTS_DIR = REPO_ROOT / ".agents" / "managed-agents"
 DEFAULT_MODEL = "gemini-3.8-flash"
 BASE_AGENT = "antigravity-preview-05-2026"
 
@@ -77,8 +77,7 @@ def build_agent_payload(spec: Dict[str, Any]) -> Dict[str, Any]:
 
 def validate_agents_fleet() -> List[Dict[str, Any]]:
     if not AGENTS_DIR.is_dir():
-        print(f"Error: Agents directory not found at {AGENTS_DIR}", file=sys.stderr)
-        sys.exit(1)
+        raise FileNotFoundError(f"Agents directory not found at {AGENTS_DIR}")
 
     payloads = []
     for agent_dir in sorted(AGENTS_DIR.iterdir()):
@@ -94,10 +93,9 @@ def validate_agents_fleet() -> List[Dict[str, Any]]:
 def register_agents(payloads: List[Dict[str, Any]], dry_run: bool = False) -> None:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key and not dry_run:
-        print("Error: GEMINI_API_KEY environment variable is required unless --dry-run is set.", file=sys.stderr)
-        sys.exit(1)
+        raise RuntimeError("GEMINI_API_KEY environment variable is required unless --dry-run is set.")
 
-    print(f"Discovered {len(payloads)} agents in .agents/agents/:")
+    print(f"Discovered {len(payloads)} agents in .agents/managed-agents/:")
     for p in payloads:
         print(f"  -> Agent ID: {p['id']}")
         print(f"     Base Agent: {p['base_agent']}")
@@ -127,9 +125,13 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Validate without registering via API")
     args = parser.parse_args()
 
-    payloads = validate_agents_fleet()
-    if args.action in ("validate", "register"):
-        register_agents(payloads, dry_run=(args.action == "validate" or args.dry_run))
+    try:
+        payloads = validate_agents_fleet()
+        if args.action in ("validate", "register"):
+            register_agents(payloads, dry_run=(args.action == "validate" or args.dry_run))
+    except (FileNotFoundError, RuntimeError) as err:
+        print(f"Error: {err}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

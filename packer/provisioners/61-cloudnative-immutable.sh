@@ -7,8 +7,13 @@ set -euo pipefail
 
 configure_tmpfs_mounts() {
   echo "==> Configuring volatile tmpfs mounts for /tmp and /var/tmp..."
-  # Enable systemd tmp.mount
-  sudo systemctl enable tmp.mount || true
+  # tmp.mount is a loadable unit only on releases that ship it in the unit path;
+  # elsewhere the fstab entry below is what mounts /tmp.
+  if systemctl cat tmp.mount >/dev/null 2>&1; then
+    sudo systemctl enable tmp.mount
+  else
+    echo "    tmp.mount is not a loadable unit here; /tmp is mounted from the fstab entry." >&2
+  fi
 
   # Add hardened tmpfs mount options in fstab if not present
   if ! grep -q "tmpfs /tmp" /etc/fstab; then

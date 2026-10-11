@@ -44,10 +44,12 @@ flowchart TD
 
 ## 2. Tier 1: Minimal Base Cloud OS (8 Flavors)
 
-### Flavors:
+### Flavors
+
 - `base-generic`, `base-intel`, `base-amd`, `base-nvidia-legacy`, `base-nvidia-mainstream`, `base-nvidia-modern`, `base-nvidia-bleeding`, `base-nvidia-datacenter`
 
-### Hardening Invariants:
+### Hardening Invariants
+
 1. **Zero Base Bloat**: Complete uninstallation of `snapd`, `lxd`, `ubuntu-advantage-tools`, `motd-news`, and apt doc/man page caches.
 2. **Resilient Network Time Security (NTS)**:
    - Primary: Anycast NTS (`time.cloudflare.com:4460` or configured endpoint).
@@ -71,10 +73,12 @@ flowchart TD
 
 ## 3. Tier 2: Container Hosts (7 Flavors)
 
-### Flavors:
+### Flavors
+
 - `docker-generic`, `docker-intel`, `docker-amd`, `docker-nvidia`, `docker-nvidia-modern`, `docker-nvidia-bleeding`, `podman-generic`
 
-### Hardening Invariants:
+### Hardening Invariants
+
 1. **Container Engine Configuration (`/etc/docker/daemon.json`)**:
    - Native cgroupdriver set to `systemd` (`exec-opts: ["native.cgroupdriver=systemd"]`).
    - Standard logging driver: `json-file` with strict log rotation (`max-size: "50m"`, `max-file: "3"`).
@@ -92,10 +96,12 @@ flowchart TD
 
 ## 4. Tier 3: Enterprise Kubernetes Nodes (9 Flavors)
 
-### Flavors:
+### Flavors
+
 - `k8s-node-generic`, `k8s-node-cilium`, `k8s-node-calico`, `k8s-node-flannel`, `k8s-node-intel`, `k8s-node-amd`, `k8s-node-nvidia`, `k8s-node-nvidia-modern`, `k8s-node-nvidia-bleeding`
 
-### Hardening Invariants:
+### Hardening Invariants
+
 1. **Container Runtime (`containerd 2.3.x`)**:
    - CRI plugin configured with `SystemdCgroup = true`.
    - Discard unpacked layers enabled for storage economy.
@@ -112,10 +118,12 @@ flowchart TD
 
 ## 5. Tier 4: K3s Edge Fleet (5 Flavors)
 
-### Flavors:
+### Flavors
+
 - `k3s-agent-generic`, `k3s-agent-intel`, `k3s-agent-amd`, `k3s-agent-nvidia`, `k3s-server-generic`
 
-### Hardening Invariants:
+### Hardening Invariants
+
 1. **Memory Budget**:
    - Idle resident set size (RSS) < 300MB RAM.
    - Embedded containerd runtime with disabled legacy storage drivers.
@@ -130,10 +138,12 @@ flowchart TD
 
 ## 6. Tier 5: Cloud-Native Immutable & Storage Appliances (4 Flavors)
 
-### Flavors:
+### Flavors
+
 - `cloudnative-generic`, `cloudnative-k8s`, `cloudnative-storage`, `cloudnative-pg`
 
-### Hardening Invariants:
+### Hardening Invariants
+
 1. **Immutable Filesystem Protection (`cloudnative-generic`, `cloudnative-k8s`)**:
    - Read-only root mount option (`ro`) in fstab or kernel command line.
    - Ephemeral `/var/log` and `/tmp` mounted via tmpfs with strict size limits.
@@ -154,10 +164,12 @@ flowchart TD
 
 ## 7. Tier 6: AI & LLM Inference Appliances (6 Flavors)
 
-### Flavors:
+### Flavors
+
 - `ai-infer-generic`, `ai-infer-intel`, `ai-infer-amd`, `ai-infer-nvidia`, `ai-infer-nvidia-modern`, `ai-infer-nvidia-bleeding`
 
-### Hardening Invariants:
+### Hardening Invariants
+
 1. **Memory & NUMA Tuning**:
    - Transparent Hugepages set to `always` or `madvise` in sysfs.
    - `vm.zone_reclaim_mode = 0` to avoid costly NUMA node stalls.
@@ -171,10 +183,12 @@ flowchart TD
 
 ## 8. Tier 7: Specialized Homelab Appliances (5 Flavors)
 
-### Flavors:
+### Flavors
+
 - `appliance-vision-nvr`, `appliance-gateway-dns`, `appliance-media-server`, `appliance-ci-runner`, `appliance-game-server`
 
-### Hardening Invariants:
+### Hardening Invariants
+
 1. **`appliance-vision-nvr`**:
    - Google Coral Edge TPU: `gasket-dkms` module installed, udev rule `SUBSYSTEM=="apex", MODE="0660", GROUP="render"`.
    - Intel Media Driver (`iHD`) with VA-API hardware passthrough for low-latency RTSP decoding.
@@ -214,11 +228,13 @@ Following [ADR-0011](../adr/0011-enterprise-golden-image-compliance-and-lifecycl
 All production images ship with a hardened OpenSSH configuration drop-in at `/etc/ssh/sshd_config.d/00-hardened-sshd.conf` (permissions `0600`):
 
 ### 10.1 Cryptographic Suites
+
 - **Key Exchange**: `curve25519-sha256`, `curve25519-sha256@libssh.org`, `diffie-hellman-group16-sha512`, `diffie-hellman-group18-sha512`.
 - **Ciphers**: `chacha20-poly1305@openssh.com`, `aes256-gcm@openssh.com`, `aes128-gcm@openssh.com`.
 - **MACs**: `hmac-sha2-512-etm@openssh.com`, `hmac-sha2-256-etm@openssh.com`.
 
 ### 10.2 Operational Boundaries & Session Controls
+
 - `PermitRootLogin no`: Direct root SSH access is completely blocked.
 - `PasswordAuthentication no`: Enforced upon final snapshot sealing in `99-cleanup.sh`. Access strictly requires SSH keys or CA certificates.
 - `MaxAuthTries 3` and `MaxSessions 2`: Mitigates brute-force authentication attempts.
@@ -226,4 +242,5 @@ All production images ship with a hardened OpenSSH configuration drop-in at `/et
 - `X11Forwarding no`, `AllowTcpForwarding no`, `AllowAgentForwarding no`: Prevents lateral proxy hopping and agent hijacking.
 
 ### 10.3 Enterprise OpenSSH Certificate Authority
+
 Images pre-configure `TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pub`. Organizations can deploy enterprise CA public keys via cloud-init or configuration management, enabling engineers to authenticate using short-lived (1–8h), MFA-backed user certificates issued by identity providers (IdPs) without managing static `authorized_keys`.

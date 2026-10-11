@@ -47,7 +47,7 @@ configure_kernel_and_iommu() {
 
   if [ -f /etc/default/grub ]; then
     sudo sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*/& ${iommu_param}/" /etc/default/grub
-    sudo update-grub 2>/dev/null || true
+    sudo update-grub
   fi
 }
 
@@ -61,7 +61,7 @@ ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{queue/rotational}=="0", ATTR{queue
 EOF
 
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    cloud-guest-utils fdisk parted 2>/dev/null || true
+    cloud-guest-utils fdisk parted
 }
 
 install_disk_stream_helper() {

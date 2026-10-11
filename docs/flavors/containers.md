@@ -9,6 +9,7 @@
 Pre-baked with official Docker CE 29.8, `containerd.io` 2.3.5, and Docker Compose v2 plugin.
 
 ### Daemon Tuning (`/etc/docker/daemon.json`)
+
 ```json
 {
   "exec-opts": ["native.cgroupdriver=systemd"],
@@ -26,6 +27,7 @@ Pre-baked with official Docker CE 29.8, `containerd.io` 2.3.5, and Docker Compos
 ```
 
 ### Flavors
+
 - **`docker-generic`**: Standard CPU container host for Docker Compose stacks.
 - **`docker-intel`**: Pre-configured Intel QuickSync, Level Zero access, and CDI specification (`/etc/cdi/intel.yaml`) for Jellyfin, Plex, and Intel OpenVINO containers.
 - **`docker-amd`**: Pre-configured AMD ROCm 10 compute runtime, `/dev/kfd` access, and CDI specification (`/etc/cdi/amd.yaml`) for PyTorch and ROCm containers.
@@ -40,6 +42,7 @@ Pre-baked with official Docker CE 29.8, `containerd.io` 2.3.5, and Docker Compos
 Daemonless and rootless container host designed for security-conscious environments and systemd integration via **Quadlet**.
 
 ### Features
+
 - Rootless subordinate UID/GID mappings pre-configured (`/etc/subuid` and `/etc/subgid`).
 - Quadlet generator directories initialized at `/etc/containers/systemd/` and `~/.config/containers/systemd/`.
 - Netavark modern CNI network stack and crun OCI runtime.

@@ -11,7 +11,7 @@ DISTRO_RELEASE="${DISTRO_RELEASE:-resolute}"
 setup_rocm_repository() {
   echo "==> Configuring AMD ROCm apt repository (v${ROCM_VERSION}) on Ubuntu ${DISTRO_RELEASE}..."
   sudo mkdir -p -m 755 /etc/apt/keyrings
-  curl -fsSL https://repo.radeon.com/rocm/rocm.gpg |
+  curl -fsSL --max-time 30 https://repo.radeon.com/rocm/rocm.gpg |
     sudo gpg --dearmor --yes -o /etc/apt/keyrings/rocm.gpg
 
   local arch
@@ -27,12 +27,12 @@ install_rocm_packages() {
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     rocm-hip-runtime \
     rocminfo \
-    hwinfo || true
+    hwinfo
 }
 
 configure_rocm_permissions_and_cdi() {
   echo "==> Configuring AMD KFD compute permissions and Container Device Interface (CDI)..."
-  sudo usermod -aG render,video ubuntu || true
+  sudo usermod -aG render,video ubuntu
 
   cat <<'EOF' | sudo tee /etc/udev/rules.d/65-rocm-kfd.rules
 KERNEL=="kfd", SUBSYSTEM=="kfd", GROUP="render", MODE="0666"

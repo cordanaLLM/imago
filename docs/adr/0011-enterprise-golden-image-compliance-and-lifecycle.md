@@ -21,6 +21,7 @@ Modern cloud security engineering dictates that machine and container images mus
 We formalize an enterprise compliance and multi-cloud lifecycle contract for `lusoris-cloud-images`:
 
 ### 1. OpenSSH Hardening Drop-in (`00-hardened-sshd.conf`)
+
 - In `00-base-strip.sh`, deploy a hardened configuration drop-in at `/etc/ssh/sshd_config.d/00-hardened-sshd.conf` with permissions `0600`:
   - **Cipher Selection**: `chacha20-poly1305@openssh.com`, `aes256-gcm@openssh.com`, `aes128-gcm@openssh.com`.
   - **Key Exchange**: `curve25519-sha256`, `curve25519-sha256@libssh.org`, `diffie-hellman-group16-sha512`, `diffie-hellman-group18-sha512`.
@@ -30,6 +31,7 @@ We formalize an enterprise compliance and multi-cloud lifecycle contract for `lu
   - **Build-Time Communicator Protection**: Temporary build credentials remain active during Packer execution; in `99-cleanup.sh`, `PasswordAuthentication no` is enforced upon snapshot sealing.
 
 ### 2. NIST SP 800-53 (Rev. 5) & NIST SP 800-190 Compliance Mappings
+
 - Codify explicit mappings across all 44 flavors:
   - **AC-6 (Least Privilege)**: Stripping setuid/setgid bits from non-essential utilities, setting low-level binary permissions (`chmod 0700 /usr/bin/as /usr/bin/byacc`), unprivileged container execution (UID >= 10001).
   - **CM-6 (Configuration Settings)**: Complete declarative version locking via `versions.json` Single Source of Truth.
@@ -38,21 +40,25 @@ We formalize an enterprise compliance and multi-cloud lifecycle contract for `lu
   - **NIST SP 800-190**: Elimination of package managers/shells in minimal container layers, seccomp profile enforcement, and read-only rootfilesystems.
 
 ### 3. Multi-Cloud Lifecycle & KMS Governance
+
 - Standardize cross-account KMS grant procedures for AWS Auto Scaling Service-Linked Roles (`AWSServiceRoleForAutoScaling`).
 - Standardize Azure Compute Gallery (ACG) and GCP Shared VPC image project RBAC/IAM configurations.
 - Enforce a 30-day image deprecation cadence across public cloud catalogs.
 
 ### 4. Declarative Dynamic Compliance Specification (`tests/compliance/goss.yaml`)
+
 - Provide a standalone, zero-dependency Goss specification to evaluate booted image instances against kernel sysctl, filesystem blacklist, and SSH security baselines.
 
 ## Consequences
 
 ### Positive
+
 - **Federal & Enterprise Audit Readiness**: Aligns `lusoris-cloud-images` with DISA STIG, NIST SP 800-53, and NIST SP 800-190 standards alongside CIS Benchmark Level 2.
 - **Elimination of Static SSH Keys**: Enables enterprise fleets to transition to ephemeral, identity-backed OpenSSH user certificates.
 - **Zero-Patching Fleet Immutability**: Guarantees production nodes run on fresh, uncorrupted base layers without configuration drift.
 - **Operational Safety**: Avoids the top production pitfalls (broken package managers from `/tmp` noexec, auditd buffer panics, and cross-account KMS launch failures).
 
 ### Negative / Neutral
+
 - Hardened SSH cipher suites require automation clients to support modern cryptography (`curve25519-sha256`, `chacha20-poly1305`).
 - Deployments utilizing password authentication must transition to SSH public keys or CA certificates upon snapshot finalization.

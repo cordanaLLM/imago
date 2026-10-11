@@ -5,7 +5,7 @@ description: Generate strict Conventional Commits messages conforming to the rep
 
 # Conventional Commit Message Drafting
 
-All commits in `lusoris-cloud-images` must follow the Conventional Commits specification.
+All commits in `lusoris-cloud-images` must follow Conventional Commits specification.
 
 ## Format
 ```text
@@ -17,11 +17,11 @@ All commits in `lusoris-cloud-images` must follow the Conventional Commits speci
 ```
 
 ## Types
-- `feat`: A new image flavor, builder target, or major feature.
-- `fix`: A bug fix in provisioners, templates, CI, or tests.
+- `feat`: New image flavor, builder target, or major feature.
+- `fix`: Bug fix in provisioners, templates, CI, or tests.
 - `chore`: Maintenance, dependency updates, or toolchain changes.
 - `docs`: Documentation updates under `docs/` or `README.md`.
-- `refactor`: Code change that neither fixes a bug nor adds a feature.
+- `refactor`: Code change that neither fixes bug nor adds feature.
 - `perf`: Performance improvement in build times or boot latency.
 - `ci`: CI/CD workflow updates, GitHub Actions, or security scanner tweaks.
 

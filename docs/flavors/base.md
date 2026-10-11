@@ -14,18 +14,22 @@ The `base-*` tier provides a zero-bloat, hardened Linux foundation for general-p
 ## Available Flavors
 
 ### `base-generic`
+
 Lightweight headless compute image. Suitable for web servers, databases, and microVMs. Uses `KERNEL_PROFILE=generic`.
 
 ### `base-intel`
+
 Includes Intel Media Driver (`iHD`), Level Zero runtime (`libze`), OpenCL compute, Battlemage Xe2 support, CDI specification, and diagnostics (`vainfo`, `clinfo`).
 
 ### `base-amd`
+
 Includes Mesa Gallium `radeonsi` VA-API, RADV Vulkan drivers, AMDGPU DRM runtime, and CDI specification.
 
 ### `base-nvidia-*`
+
 Segregated into four hardware generations and datacenter:
+
 - `base-nvidia-legacy`: NVIDIA 535 LTS driver branch for Pascal and Volta (`sm_60`, `sm_70`).
 - `base-nvidia-mainstream`: NVIDIA 565 driver branch for Turing and Ampere (`sm_75`, `sm_80`, `sm_86`).
 - `base-nvidia-bleeding`: NVIDIA 615 driver branch for Blackwell (`sm_100`, `sm_120`, RTX 5090, B200).
 - `base-nvidia-datacenter`: NVIDIA Open Kernel Modules and Fabric Manager for Hopper and Blackwell multi-GPU NVLink meshes. Uses `KERNEL_PROFILE=baremetal`.
-

@@ -57,6 +57,7 @@ flowchart TD
 ## 2. Command-Line Interface (CLI) Reference
 
 ### 2.1 Flavor Catalog (`flavors`)
+
 ```bash
 # List all 44 production flavors across all 7 tiers
 imago flavors list
@@ -73,13 +74,16 @@ imago flavors get appliance-vision-nvr
 ```
 
 ### 2.2 Version Manifest Verification (`manifest`)
+
 ```bash
 # Validate versions.json semantic invariants
 imago manifest validate
 ```
 
 ### 2.3 Hardened Cloud-Init Generation (`cloud-init`)
+
 Generates production-hardened `user-data` YAML with Anycast NTS, secure non-root users, and hypervisor optimizations:
+
 ```bash
 # Generate Proxmox cloud-init user-data
 imago cloud-init generate --flavor=base-generic --hostname=node-01
@@ -95,7 +99,9 @@ imago cloud-init generate --flavor=base-generic --platform=macos
 ```
 
 ### 2.4 Multi-Backend Build Dispatcher (`build`)
+
 Dispatches builds to local Packer or remote CI backends:
+
 ```bash
 # Formulate local packer build command
 imago build --flavor=base-generic --backend=local
@@ -110,7 +116,9 @@ imago build --flavor=cloudnative-storage --backend=proxmox
 Supported Backends: `local`, `gitea`, `proxmox`, `gitlab`, `woodpecker`, `harbor`, `minio`, `jenkins`, `github`.
 
 ### 2.5 Imageless Host Provisioning (`apply`)
+
 Transforms a running Linux machine or container directly into any of the 44 flavors without flashing virtual disks:
+
 ```bash
 # Dry-run inspection of provisioner steps
 imago apply --flavor=ai-infer-nvidia --dry-run
@@ -120,12 +128,15 @@ imago apply --flavor=docker-generic | sudo bash
 ```
 
 ### 2.6 MicroVM Direct Kernel Boot (`boot`)
+
 Generates direct kernel/initramfs boot commands for QEMU, Cloud-Hypervisor, or Firecracker:
+
 ```bash
 imago boot --flavor=ai-infer-generic --kernel=/boot/vmlinuz --initrd=/boot/initrd.img
 ```
 
 ### 2.7 Machine-Verifiable Hardening Standards (`standards`)
+
 ```bash
 # List hardening baselines across all 44 flavors
 imago standards list
@@ -135,6 +146,7 @@ imago standards get k8s-node-cilium
 ```
 
 ### 2.8 Epics and Milestones Tracking (`epics`, `milestones`)
+
 ```bash
 # List tracked recurring operational epics
 imago epics list
@@ -159,6 +171,7 @@ imago plan route --ready --json
 See [Planning Graph & Todo Routing](planning-graph.md) for the file layout and the routing policy.
 
 ### 2.10 Static Analysis & Repository Health (`lint`, `audit`)
+
 ```bash
 # Run internal schema and catalog linters
 imago lint
@@ -178,6 +191,7 @@ imago aegis validate build/product-input.json --json
 ```
 
 The decoder rejects unknown fields, trailing content, and manifests above 1 MiB. Every rejection is a correlated error `aegis product-input <correlation-id>: <field>: <reason>` (`(missing)` when the manifest carries no correlation id) and exits non-zero. Contract bounds: `retries.max-attempts` 1..10, `retries.backoff-seconds` 0..3600, 1..256 unique packages, `revision` exactly 40 lowercase hex characters, definition paths relative and free of `..` segments. See [ADR-0020](../adr/0020-aegis-product-input-contract-acceptance.md) for the full contract and why the request is not a Packer flavor dispatch.
+
 ### 2.12 Kernel Requirement and Artifact Contract (`kernel`)
 
 ```bash
@@ -203,6 +217,7 @@ imago kernel artifact verify --manifest kernel-mainstream.manifest.json --dir ./
 `imago` exposes native AI tooling conforming to the Model Context Protocol v1.7.0.
 
 ### 3.1 Launching the Server
+
 ```bash
 # Stdio transport (default for AI agents, Claude Desktop, Cursor)
 imago mcp --transport=stdio
@@ -212,6 +227,7 @@ imago mcp --transport=http --addr=:8899
 ```
 
 ### 3.2 Client Configuration Example (`claude_desktop_config.json`)
+
 ```json
 {
   "mcpServers": {
@@ -229,8 +245,8 @@ imago mcp --transport=http --addr=:8899
 | :--- | :--- | :--- |
 | **`list_flavors`** | `tier` (optional string) | List available flavors filtered by workload tier |
 | **`get_flavor`** | `flavor_id` (string) | Return hardware stack, kernel profile, and provisioners |
-| **`validate_manifest`**| `path` (optional string) | Validate `versions.json` Single Source of Truth |
-| **`generate_cloudinit`**| `flavor`, `hostname`, `platform` | Generate hardened cloud-init YAML user-data |
+| **`validate_manifest`** | `path` (optional string) | Validate `versions.json` Single Source of Truth |
+| **`generate_cloudinit`** | `flavor`, `hostname`, `platform` | Generate hardened cloud-init YAML user-data |
 | **`get_standards`** | `flavor_id` (string) | Query machine-readable CIS/BSI hardening requirements |
 | **`list_epics`** | None | List recurring operational and architectural epics |
 | **`get_milestones`** | None | List active release milestones |
@@ -371,16 +387,19 @@ Both manifests declare the stdio Hindsight bridge and optional cluster knowledge
 | :--- | :--- | :--- |
 | **`hindsight_recall`** | `query` (string), `top_k` (int, default 5), `bank_id` (string) | Semantic hybrid retrieval over durable architectural rules, bug root causes, and previous decisions |
 | **`hindsight_retain`** | `content` (string), `context` (string), `bank_id` (string) | Persists discoveries, rationale, and constraints into Hindsight memory |
-| **`hindsight_reflect`**| `bank_id` (string) | Triggers observation consolidation and mental model synthesis |
+| **`hindsight_reflect`** | `bank_id` (string) | Triggers observation consolidation and mental model synthesis |
 | **`hindsight_status`** | None | Probes backend connectivity, active bank count, and local buffer state |
 | **`hindsight_list_banks`** | None | Lists available fleet memory banks in the tenant |
 
 ### 4.3 Zero-Leak Privacy Guard
+
 Prior to retaining any facts into Hindsight vector memory, `scripts/hindsight_mcp_server.py` automatically strips:
+
 - RFC 1918 private IP addresses (`10.x`, `192.168.x`, `172.16-31.x` -> `[REDACTED-RFC1918-IP]`).
 - Workstation user directories (`/home/<user>`, `/Users/<user>`, `C:\Users\<user>` -> `[REDACTED-USER-PATH]`).
 
 ### 4.4 Cluster Port-Forwarding Supervisor
+
 To bridge the cluster-private service to `127.0.0.1:8888`:
 
 ```bash
@@ -390,4 +409,3 @@ python scripts/tunnel_hindsight.py --check
 # Start tunnel supervisor daemon
 python scripts/tunnel_hindsight.py
 ```
-

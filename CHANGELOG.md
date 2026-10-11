@@ -89,11 +89,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
 
 ### Changed
+
+- The repository is re-adopted on the current Praetor engine (ADR-0022). The agent context is
+  compiled into six vendor projections from `AGENTS.md`, the hooks run the offline audit
+  before a commit and the full audit and gate before a push, and the declared branch
+  rule set for `main` requires signed commits and nine status checks.
+- A documentation gate is part of `make verify-all` and of CI (`Documentation Governance`):
+  `make docs-lint` checks every tracked Markdown file with the pinned markdownlint
+  configuration, and `make docs-figures` checks the rendered figures. The existing
+  Markdown files were brought into line with it.
+- The managed-agent manifests moved from `.agents/agents/` to `.agents/managed-agents/`;
+  `.agents/agents/` now holds only the agent definitions the engine projects for each
+  coding tool.
+- The privacy tests scan the files git tracks or would add, instead of every file in the
+  working tree. Ignored files (coverage data, build caches, local state) hold workstation
+  paths by design and are never published.
+- `.standards.yaml` declares one dated exception: `release-matrix.yml` publishes images
+  without a cosign signature, an SBOM or build provenance (HISS-11). The exception names
+  the file, the rule and the reason, and expires on 2027-01-09.
+- CI runs `go vet ./...` before the Go unit tests.
 - **Breaking**: `sync-kernel-manifest.yml` refuses a `kernel_release_published` payload without `stream`, `version`, and `tag` (the default-version fallback is removed), downloads the nucleus release, verifies the keyless cosign bundle over `SHA256SUMS`, runs `imago kernel artifact verify` against the payload and the `versions.json` contract pin, and only then proposes the `kernel.streams.<stream>` pin (version, `artifact_digest`, provenance) as a pull request that adds only `versions.json`.
 - `dispatch-kernel-requirements.yml` validates `kernel/requirement.json` and dispatches its path, `sha256`, and commit to the provider named in `versions.json` instead of the unread drivers/runtimes/kubernetes triple; it triggers on changes to the requirement file.
 - `docs/operations/sister-repo-kernel-forge-blueprint.md` section 4 documents the pinned contract: payload shape, manifest schema and bounds, and the verification order (cosign bundle, `SHA256SUMS` digest, per-artifact digests, `versions.json` pin).
 
 ### Fixed
+
+- Provisioners fail when a step fails. 81 commands in 27 provisioners and scripts ended
+  in `|| true`, so a package that did not install, a unit that could not be enabled or a
+  module that was not configured left a build that reported success. The suppression is
+  removed; the few steps that may legitimately do nothing (a unit that is not installed,
+  a kernel module the build machine cannot load) test for that case and say so.
+- Every download in a provisioner and in CI carries a time limit, so a stalled mirror
+  ends the build instead of holding it.
+- `cdebug` is downloaded from the asset name its releases publish. The former URL
+  carried the version in the file name, matched no asset, and the failure was discarded.
+- `hyperv-daemons` is installed only where the package index offers it; where it does
+  not, the build says that no Hyper-V guest daemons are installed.
+- `spice-vdagent` is no longer enabled by hand: the package ships no unit that can be
+  enabled, and its udev rule starts the agent when the SPICE port appears.
+- `scripts/manage_aistudio_agents.py`, `scripts/orchestrate_fanout.py` and the privacy
+  guard hook report an error to their caller instead of ending the process from inside
+  a helper, and `imago audit` runs its script under a time limit.
 
 - Two preheated images were pinned to tags that do not exist: Flannel carried a `v`
   prefix upstream dropped, and the AMD device plugin was pinned to a Kubernetes

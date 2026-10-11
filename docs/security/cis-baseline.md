@@ -14,6 +14,7 @@
 ## Protocol Blacklisting (`/etc/modprobe.d/blacklist-uncommon.conf`)
 
 Unused legacy and dangerous network and storage protocols are blacklisted to reduce kernel attack surface:
+
 - Network protocols: `dccp`, `sctp`, `rds`, `tipc`.
 - Legacy filesystems: `cramfs`, `freevxfs`, `jffs2`, `hfs`, `hfsplus`.
 
@@ -21,4 +22,3 @@ Unused legacy and dangerous network and storage protocols are blacklisted to red
 
 - The temporary SSH build password (`ubuntu:ubuntu`) is locked via `passwd -l ubuntu` during `99-cleanup.sh`.
 - Host SSH keys are wiped from the image template and automatically regenerated on first boot by cloud-init.
-

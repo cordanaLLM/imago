@@ -11,6 +11,7 @@ Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked asser
 
 from pathlib import Path
 import re
+import subprocess
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -19,15 +20,35 @@ GITIGNORE_PATH = REPO_ROOT / ".gitignore"
 IGNORED_SCAN_PARTS = {".git", ".pytest_cache", "__pycache__", ".workingdir2", "tests", "bin", "site"}
 
 
+def publishable_files() -> list[Path]:
+    """Return the files git tracks or would add, outside the ignored scan parts.
+
+    The zero-leak invariant binds what can reach a remote. Files that .gitignore excludes
+    (coverage data, build caches, local state) carry workstation paths by design and are
+    never committed, so they are not scanned.
+    """
+    listing = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    ).stdout
+    candidates = [REPO_ROOT / rel for rel in listing.split("\0") if rel]
+    return [
+        path
+        for path in candidates
+        if path.is_file() and not any(part in IGNORED_SCAN_PARTS for part in path.relative_to(REPO_ROOT).parts)
+    ]
+
+
 class TestSecurityPrivacyIntegrity:
     def test_no_private_rfc1918_ips(self) -> None:
         """Verify no private RFC 1918 IPs exist in configs, scripts, or templates."""
         ip_pattern = re.compile(
             r"\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b"
         )
-        for path in REPO_ROOT.rglob("*"):
-            if not path.is_file() or any(p in IGNORED_SCAN_PARTS for p in path.parts):
-                continue
+        for path in publishable_files():
             # Skip documentation files as they discuss RFC 1918 rules or examples
             if path.suffix == ".md" or "docs" in path.parts:
                 continue
@@ -43,9 +64,7 @@ class TestSecurityPrivacyIntegrity:
         user_path_pattern = re.compile(r"/home/(?!(ubuntu|username|runner)\b)[a-zA-Z0-9_-]+")
         darwin_path_pattern = re.compile(r"/Users/[a-zA-Z0-9_-]+")
 
-        for path in REPO_ROOT.rglob("*"):
-            if not path.is_file() or any(p in IGNORED_SCAN_PARTS for p in path.parts):
-                continue
+        for path in publishable_files():
 
             content = path.read_text(encoding="utf-8", errors="ignore")
             m_linux = user_path_pattern.search(content)
@@ -83,9 +102,7 @@ class TestSecurityPrivacyIntegrity:
     def test_no_unencrypted_private_keys(self) -> None:
         """Verify no unencrypted private keys exist in the repository."""
         key_header_pattern = re.compile(r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----")
-        for path in REPO_ROOT.rglob("*"):
-            if not path.is_file() or any(p in IGNORED_SCAN_PARTS for p in path.parts):
-                continue
+        for path in publishable_files():
             # Skip gitleaks scanner definitions and test fixtures
             if path.name.startswith(".gitleaks"):
                 continue

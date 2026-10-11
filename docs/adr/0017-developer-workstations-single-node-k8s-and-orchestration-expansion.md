@@ -22,6 +22,7 @@ An architectural review of developer and operator workflows identified four crit
 We formalize the architectural roadmap for developer workstations, standalone Kubernetes, and alternative orchestrators:
 
 ### 1. Developer Workstation Appliances (`dev-workstation`)
+
 - **Remote Web IDE**: Integrates `code-server` with configurable TLS, password/token authentication, and native OpenSSH with agent forwarding.
 - **Polyglot Developer Toolchains**: Pre-installs modern compiler toolchains:
   - Python: `uv` (fast package manager and Python version manager).
@@ -32,6 +33,7 @@ We formalize the architectural roadmap for developer workstations, standalone Ku
 - **Diagnostic CLI Suite**: Includes `cdebug`, `starship`, `tmux`, `zsh`, `neovim`, `btop`, `ripgrep`, `fd`, `bat`, and `eza`.
 
 ### 2. Turnkey Single-Node Kubernetes (`k8s-node-standalone`)
+
 - **Base Runtime**: containerd 2.3.5, kubelet 1.37.0, and kubeadm.
 - **Automated Standalone Bootstrap**: A cloud-init hook initializes the cluster on first boot:
   - Untaints the control plane: `kubectl taint nodes --all node-role.kubernetes.io/control-plane-`.
@@ -40,6 +42,7 @@ We formalize the architectural roadmap for developer workstations, standalone Ku
   - Automatically loads pre-cached CNI daemonsets (Cilium or Flannel).
 
 ### 3. Lightweight Clustered Container Orchestrators
+
 - **Docker Swarm Profile**:
   - Leverages existing `docker-*` flavors with pre-tuned kernel VXLAN settings, sysctl buffer scaling, and firewall rules for Swarm management (TCP 2377), node communication (TCP/UDP 7946), and overlay traffic (UDP 4789).
   - Supplies automated cloud-init join templates for instant manager/worker formation.
@@ -51,6 +54,7 @@ We formalize the architectural roadmap for developer workstations, standalone Ku
   - Expands unit generation tools for daemonless systemd-supervised `.container` services.
 
 ### 4. Self-Hosted Dev Backend (`appliance-dev-forge`)
+
 - Packages a complete, lightweight developer platform into a turnkey appliance:
   - **Git Forge**: Forgejo (Go-based, $< 80\text{MB}$ RAM).
   - **CI Engine**: Woodpecker CI server and agent.
@@ -59,11 +63,12 @@ We formalize the architectural roadmap for developer workstations, standalone Ku
 ## Consequences
 
 ### Positive
+
 - **Complete Developer Journey**: Extends `lusoris-cloud-images` from hypervisor infrastructure to day-to-day developer productivity.
 - **Zero-Barrier Single-Node K8s**: Enables instant local Kubernetes clusters without cluster-api or multi-node setup complexity.
 - **Operational Diversity**: Supports teams and homelabbers seeking lightweight alternatives (Docker Swarm, Nomad) to heavy Kubernetes clusters.
 - **Hard Rule 10 Compliance**: All proposed profiles and templates strictly preserve the RFC 1918 zero-leak invariant.
 
 ### Negative / Neutral
-- Adds new appliance flavors to the documentation and testing matrices.
 
+- Adds new appliance flavors to the documentation and testing matrices.

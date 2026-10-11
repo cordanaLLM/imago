@@ -22,7 +22,7 @@ EOF
 setup_inference_directories() {
   echo "==> Setting up model cache directories and permissions..."
   sudo mkdir -p /var/lib/models/huggingface /var/lib/models/ollama /var/lib/models/vllm /etc/vllm /etc/ollama
-  sudo chown -R ubuntu:ubuntu /var/lib/models 2>/dev/null || true
+  sudo chown -R ubuntu:ubuntu /var/lib/models
 
   # Hook environment variables for model caches and runtime thread affinity
   cat <<'EOF' | sudo tee /etc/profile.d/ai-env.sh

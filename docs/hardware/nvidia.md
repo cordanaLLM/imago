@@ -50,4 +50,3 @@ All modern and bleeding flavors generate native Container Device Interface (CDI)
 - **Open Kernel Modules**: Installs official `nvidia-open` 615 kernel modules.
 - **Fabric Manager**: Pre-configures and automatically enables `nvidia-fabricmanager-615` for full-mesh NVLink and NVSwitch multi-GPU scaling.
 - **GPUDirect Storage (GDS)**: Pre-configured with RDMA, NVMe-oF, and peer-to-peer DMA hooks.
-

@@ -5,10 +5,12 @@ All `lusoris-cloud-images` flavors are engineered for seamless operation in Unra
 ## 1. Importing the Image to Unraid
 
 1. Download and decompress the release image into your Unraid domains share:
+
    ```bash
    cd /mnt/user/domains/my-appliance/
    curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > vdisk1.qcow2
    ```
+
 2. In the Unraid Web GUI:
    - Navigate to **VMs -> Add VM -> Linux**.
    - **Primary vDisk Location**: Select **Manual** and browse to `/mnt/user/domains/my-appliance/vdisk1.qcow2`.
@@ -25,17 +27,20 @@ All `lusoris-cloud-images` flavors are engineered for seamless operation in Unra
 
 All `lusoris-cloud-images` kernels load `9p`, `9pnet`, and `virtiofs` modules at boot.
 
-### Using virtiofs:
+### Using virtiofs
+
 1. In Unraid VM settings, add a **virtiofs** share tag:
    - **Share Name**: `media`
    - **Source Path**: `/mnt/user/data`
 2. Inside the guest VM:
+
    ```bash
    sudo mkdir -p /mnt/unraid
    sudo mount -t virtiofs media /mnt/unraid
    ```
+
 3. To mount automatically on boot, add to `/etc/fstab`:
+
    ```text
    media  /mnt/unraid  virtiofs  defaults,_netdev  0  0
    ```
-

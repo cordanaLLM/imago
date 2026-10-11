@@ -145,4 +145,3 @@ sudo cdebug exec -it --runtime containerd <container-id>
 # Attach a fully-equipped network diagnostic toolkit (netshoot) to a pod namespace
 sudo cdebug exec -it --image nicolaka/netshoot --runtime containerd <container-id>
 ```
-

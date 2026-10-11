@@ -9,12 +9,16 @@ Windows developer workstations and Windows Server environments require seamless 
 Lusoris images can be imported directly into WSL2 as custom distributions, providing a hardened, bloat-free foundation for container and Kubernetes development.
 
 ### 1.1 Tarball Export & Import Workflow
+
 1. Convert or export the raw Lusoris root filesystem:
+
    ```powershell
    # In PowerShell (Windows Terminal)
    wsl --import lusoris-cloud C:\WSL\lusoris-cloud .\output-images\base-generic\rootfs.tar.gz --version 2
    ```
+
 2. Verify distribution registration:
+
    ```powershell
    wsl -l -v
    # Output:
@@ -23,6 +27,7 @@ Lusoris images can be imported directly into WSL2 as custom distributions, provi
    ```
 
 ### 1.2 Declarative Configuration (`/etc/wsl.conf`)
+
 Lusoris provides a pre-validated `/etc/wsl.conf` supporting full systemd initialization and interop:
 
 ```ini
@@ -50,6 +55,7 @@ With `systemd=true`, all standard Linux services (`chrony`, `docker`, `container
 For complete isolation, PCI passthrough testing, or Windows Server virtualization, Lusoris produces Generation 2 UEFI-compliant images.
 
 ### 2.1 Virtual Machine Provisioning
+
 ```powershell
 # Create Generation 2 VM in PowerShell
 New-VM -Name "lusoris-srv01" `

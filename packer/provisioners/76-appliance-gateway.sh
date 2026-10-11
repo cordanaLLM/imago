@@ -18,7 +18,7 @@ RESOLV
 
   # Ensure static resolv.conf points to public DNS until container starts
   sudo rm -f /etc/resolv.conf
-  sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf || true
+  sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
 }
 
 configure_wireguard_and_forwarding() {

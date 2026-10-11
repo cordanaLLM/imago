@@ -13,6 +13,7 @@
 `nucleus` is the dedicated compilation and packaging factory for custom-patched, high-performance Linux kernels consumed by `imago` and the wider Lusoris ecosystem.
 
 ### Core Objectives
+
 1. **Decouple Compilation Compute**: Isolate heavy, multi-hour kernel compilation (Clang/LLVM 20, GCC 15, patch queues, kselftests) from cloud OS image generation.
 2. **Multi-Architecture Support**: Produce reproducible kernel packages across **`x86_64` (AMD64)**, **`arm64` (aarch64)**, and **`riscv64`** (roadmap).
 3. **Multi-Stream Kernel Matrix**: Build and maintain 4 live-verified kernel streams aligned with `kernel.org`:
@@ -82,6 +83,7 @@ nucleus/
 All compilation and packaging scripts must enforce `set -euo pipefail`, have functions $\le 60$ lines, and execute inside reproducible OCI builder containers.
 
 ### Example: `scripts/build-kernel.sh`
+
 ```bash
 #!/usr/bin/env bash
 # Copyright 2026 Lusoris
@@ -238,4 +240,3 @@ Tasks:
 5. Create automated pytest suites validating kconfig syntax and the RFC 1918 zero-leak invariant.
 6. Commit all files using Conventional Commits.
 ```
-

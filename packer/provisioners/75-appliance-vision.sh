@@ -19,7 +19,7 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="1a6e", ATTRS{idProduct}=="089a", MODE="0660"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="9302", MODE="0660", GROUP="render"
 RULES
 
-  sudo usermod -aG render,video ubuntu || true
+  sudo usermod -aG render,video ubuntu
 }
 
 configure_intel_quicksync_media() {

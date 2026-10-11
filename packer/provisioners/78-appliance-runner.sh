@@ -26,8 +26,8 @@ install_build_essentials() {
     pkg-config \
     libssl-dev
 
-  # Initialize Git LFS globally
-  git lfs install --system || true
+  # Initialize Git LFS globally; the system gitconfig is writable by root only.
+  sudo git lfs install --system
 }
 
 configure_runner_tmpfs() {

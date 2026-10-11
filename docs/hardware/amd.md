@@ -18,10 +18,12 @@ Supported hardware: AMD Radeon RX 6000/7000/8000 series, Ryzen APUs, Radeon Pro,
 `lusoris-cloud-images` segments AMD compute into **ROCm Legacy** and **ROCm Bleeding-Edge**:
 
 ### ROCm Legacy (`rocm_legacy_version: 7.14.0`)
+
 - **Use Case**: Older AMD architectures (RDNA 2, Vega, early CDNA) supported under the stable ROCm 7.x line.
 - **Packages**: `rocm-hip-runtime`, `rocminfo`, `hip-runtime-amd`.
 
 ### ROCm Bleeding-Edge (`rocm_bleeding_version: 10.0.0` / TheRock)
+
 - **Use Case**: Cutting-edge RDNA 3, RDNA 4 (RX 8000 series), and Instinct MI300/MI325 accelerators with unified ROCm 10 kernel drivers and modern PyTorch 2.6+ wheels.
 - **Kernel & Memory**: Configured with 48-bit GPU virtual addressing, IOMMU page tables, and HugeTLB support.
 - **Permissions**: Udev rule pre-configured at `/etc/udev/rules.d/70-kfd.rules` granting the `render` group full read/write access to `/dev/kfd`.
@@ -38,4 +40,3 @@ rocminfo
 # Verify Mesa VA-API hardware acceleration
 vainfo --display drm --device /dev/dri/renderD128
 ```
-

@@ -28,24 +28,29 @@ A deep engineering audit of `lusoris-cloud-images` against Holzmann NASA/JPL Pow
 We implement systematic modernization, hardening, and test enforcement across the repository:
 
 ### 1. Dynamic Architecture Resolution
+
 - Replaced hardcoded `arch=amd64` in APT repository configuration blocks with dynamic shell expansion: `$(dpkg --print-architecture)`.
 - Guarded `dpkg --add-architecture i386` in `79-appliance-game.sh` to execute exclusively on `amd64` hosts.
 - Added regression test `test_universal_architecture_dynamic_apt_sources` to guarantee no hardcoded `arch=amd64` or `arch=x86_64` strings re-enter shell provisioners.
 
 ### 2. Containerd 2.x CRI Schema Migration
+
 - In `50-k8s-runtime.sh`, updated the CRI configuration generator to detect and support both containerd 2.x (`plugins."io.containerd.cri.v1.runtime"`) and fallback 1.x schemas.
 - Registered the high-performance `crun` OCI runtime with `systemd` cgroup drivers under both modern and legacy paths.
 - Synchronized `stargz_snapshotter` to version `0.18.2` in `versions.json`, `builds.pkr.hcl`, and Go manifest structures for seamless containerd 2.3+ compatibility.
 
 ### 3. Dual-Stack IPv4/IPv6 SSH Baseline
+
 - In `00-base-strip.sh`, configured `AddressFamily any` in `/etc/ssh/sshd_config.d/00-hardened-sshd.conf`.
 - Dual-stack networking is preserved while maintaining strict SSH hardening (`PermitRootLogin prohibit-password`, `KbdInteractiveAuthentication no`, `MaxAuthTries 3`).
 
 ### 4. NIST SP 800-53 SI-4 Kernel Audit Logging
+
 - Replaced `audit=0` in default GRUB command-line strings with `audit=1 audit_backlog_limit=8192`.
 - Added `net.ipv4.tcp_syncookies = 1` to `/etc/sysctl.d/99-lusoris.conf` to fully satisfy CIS Level 2 network baseline and Goss compliance assertions.
 
 ### 5. Declarative Compliance-as-Code & MCP Tooling
+
 - Introduced declarative Goss compliance profile (`tests/compliance/goss.yaml`) validating CIS Level 2 and NIST SP 800-53 controls.
 - Created `tests/test_compliance.py` asserting strict synchrony between compliance baselines and shell provisioners.
 - Added `inspect_compliance` tool to the Lusoris Forge MCP Server (`pkg/mcp/server.go`) for autonomous agent verification.
@@ -53,6 +58,7 @@ We implement systematic modernization, hardening, and test enforcement across th
 ## Consequences
 
 ### Positive
+
 - **True Multi-Architecture Portability**: Golden images and build provisioners can now seamlessly target `arm64` (e.g. AWS Graviton, Ampere Altra) and `riscv64` without APT source corruption.
 - **Upstream CRI Readiness**: Kubernetes nodes running containerd 2.3.5 properly parse runtime configurations and leverage `crun` without schema deprecation warnings.
 - **Zero-Friction Dual-Stack Support**: Enterprise and cloud environments operating pure IPv6 or hybrid networks achieve out-of-the-box connectivity.
@@ -60,4 +66,5 @@ We implement systematic modernization, hardening, and test enforcement across th
 - **NASA/JPL Power of 10 Invariant Maintained**: All updated functions remain $\le 60$ lines with zero ShellCheck warnings.
 
 ### Negative / Neutral
+
 - Enabling the Linux audit subsystem (`audit=1`) introduces marginal CPU overhead ($< 0.2\%$), well within acceptable bounds for enterprise virtualization and bare-metal workloads.

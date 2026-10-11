@@ -31,5 +31,4 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0019](0019-imago-fleet-migration-praetor-golusoris-planning-graph.md) | Fleet Migration to cordanaLLM/imago: Praetor Governance, Golusoris Core, and a Routed Planning Graph | Accepted | 2026-09-15 |
 | [0020](0020-aegis-product-input-contract-acceptance.md) | Aegis Product-Input Contract Acceptance | Accepted | 2026-09-15 |
 | [0021](0021-pinned-kernel-artifact-contract-with-nucleus.md) | Pinned Kernel Artifact Contract with cordanaLLM/nucleus | Accepted | 2026-09-15 |
-
-
+| [0022](0022-fail-closed-provisioners-and-declared-main-protection.md) | Fail-Closed Provisioners and a Declared Rule Set for `main` | Accepted | 2026-10-11 |

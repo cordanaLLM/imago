@@ -7,22 +7,27 @@
 ## 1. Open-Source NAS Platforms
 
 ### 1.1 OpenMediaVault (OMV)
+
 OpenMediaVault is a Debian-based NAS solution popular in lightweight homelab environments.
 
 - **OMV-KVM Virtualization**:
   - The `openmediavault-kvm` (Cockpit Machines) plugin runs standard QEMU/KVM virtual machines.
   - Download the `.qcow2.zst` artifact into the OMV storage pool:
+
     ```bash
     zstdcat lusoris-cloud-docker-generic.qcow2.zst > /srv/dev-disk-by-uuid-.../vms/docker-node.qcow2
     ```
+
   - Attach via Cockpit UI with VirtIO bus and network bridge.
 - **Client Mount Optimization**:
   - OMV SMB/NFS exports mount inside Lusoris guests with optimized readahead:
+
     ```bash
     sudo blockdev --setra 4096 /dev/vda
     ```
 
 ### 1.2 CasaOS & ZimaOS (Container-First Home Cloud)
+
 IceWhale's CasaOS and ZimaOS deliver a Docker-first personal cloud experience.
 
 - **Storage Aggregation**:
@@ -35,6 +40,7 @@ IceWhale's CasaOS and ZimaOS deliver a Docker-first personal cloud experience.
 ## 2. Commercial Virtual NAS Appliances
 
 ### 2.1 QNAP QTScloud
+
 QNAP QTScloud is the official virtualized operating system from QNAP, deploying as a virtual appliance on Proxmox VE, VMware ESXi, Hyper-V, and cloud providers.
 
 - **Architecture with Lusoris**:
@@ -43,6 +49,7 @@ QNAP QTScloud is the official virtualized operating system from QNAP, deploying 
     - **iSCSI Target**: Block devices mapped directly to containerd / kubelet via `open-iscsi`.
     - **NFSv4.2**: High-throughput file sharing with ACLs enabled.
 - **Client Tuning**:
+
   ```bash
   # Enable iSCSI daemon and auto-discovery
   sudo systemctl enable --now iscsid
@@ -50,6 +57,7 @@ QNAP QTScloud is the official virtualized operating system from QNAP, deploying 
   ```
 
 ### 2.2 Synology Virtual DSM (vDSM)
+
 Synology vDSM runs DSM inside Synology Virtual Machine Manager (VMM) or nested within KVM.
 
 - **Synology VMM Guest Compatibility**:
@@ -58,6 +66,7 @@ Synology vDSM runs DSM inside Synology Virtual Machine Manager (VMM) or nested w
   - Lusoris Kubernetes flavors (`k8s-node-*`) seamlessly integrate with the Synology CSI driver for dynamic PersistentVolume allocation backed by DSM Storage Pools.
 
 ### 2.3 StarWind SAN & NAS
+
 StarWind SAN & NAS is an enterprise-grade virtual storage appliance designed for VMware vSphere and Proxmox VE, offering dual-controller high availability.
 
 - **NVMe-oF (TCP) & iSCSI Multipathing**:
@@ -76,4 +85,3 @@ For operators seeking an ultra-lean, hardened, enterprise ZFS storage appliance 
   - Automated atomic snapshots via `sanoid` (hourly/daily/monthly retention).
   - Snapshot replication via `syncoid`.
   - Automated weekly ZFS scrub timer (`zfs-scrub.timer`).
-

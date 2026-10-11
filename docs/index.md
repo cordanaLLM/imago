@@ -84,4 +84,3 @@ flowchart TD
 - [VMware ESXi Import Guide](platforms/vmware.md)
 - [Bare-Metal NVMe Flashing Guide](platforms/baremetal.md)
 - [Architecture Decision Records (ADRs)](adr/README.md)
-

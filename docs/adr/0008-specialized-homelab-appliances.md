@@ -31,10 +31,12 @@ All flavors maintain strict NASA/JPL Power of 10 compliance in provisioners, sin
 ## Consequences
 
 ### Positive
+
 - Delivers turnkey, production-grade solutions for the 5 most common homelab container workloads.
 - Eliminates repetitive manual kernel configuration, udev tweaking, and network buffer troubleshooting for operators.
 - Expands the total image catalog to 44 active flavors while preserving zero bloat and fast boot times.
 
 ### Negative / Trade-offs
+
 - Expands the automated build matrix and test surface by 5 additional builds.
 - Adds 5 shell provisioners (`75-appliance-vision.sh` through `79-appliance-game.sh`) to the repository.

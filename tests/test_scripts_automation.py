@@ -76,7 +76,7 @@ class TestManageAIStudioAgents:
         assert "registry.k8s.io" in allowlist
 
     def test_validate_agents_fleet_existing_repo(self):
-        """Validates all agents committed to .agents/agents/ conform to spec."""
+        """Validates all agents committed to .agents/managed-agents/ conform to spec."""
         payloads = manage_agents.validate_agents_fleet()
         assert len(payloads) > 0
 
@@ -90,9 +90,8 @@ class TestManageAIStudioAgents:
         missing_dir = tmp_path / "nonexistent"
         monkeypatch.setattr(manage_agents, "AGENTS_DIR", missing_dir)
 
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(FileNotFoundError, match="Agents directory not found"):
             manage_agents.validate_agents_fleet()
-        assert exc.value.code == 1
 
     def test_register_agents_dry_run(self, capsys):
         payloads = [
@@ -113,9 +112,8 @@ class TestManageAIStudioAgents:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         payloads = [{"id": "agent-test"}]
 
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
             manage_agents.register_agents(payloads, dry_run=False)
-        assert exc.value.code == 1
 
     def test_register_agents_live_mock(self, monkeypatch, capsys):
         monkeypatch.setenv("GEMINI_API_KEY", "test-key-mock")
@@ -245,9 +243,9 @@ class TestGuardPrivacyHook:
     )
     def test_rfc1918_blocked(self, private_ip: str):
         payload = f"Setting upstream DNS server to {private_ip} in config"
-        with pytest.raises(SystemExit) as exc:
-            self.guard.inspect_payload(payload)
-        assert exc.value.code == 1
+        violation = self.guard.inspect_payload(payload)
+        assert violation is not None
+        assert private_ip in violation
 
     @pytest.mark.parametrize(
         "benign_ip",
@@ -264,17 +262,16 @@ class TestGuardPrivacyHook:
     )
     def test_benign_ips_allowed(self, benign_ip: str):
         payload = f"Configuring public DNS server {benign_ip}"
-        # Must not raise SystemExit
-        self.guard.inspect_payload(payload)
+        assert self.guard.inspect_payload(payload) is None
 
     def test_workstation_paths_blocked(self):
-        with pytest.raises(SystemExit) as exc:
-            self.guard.inspect_payload("Writing output to /home/developer/secrets.txt")
-        assert exc.value.code == 1
+        violation = self.guard.inspect_payload("Writing output to /home/developer/secrets.txt")
+        assert violation is not None
+        assert "Local workstation path" in violation
 
-        with pytest.raises(SystemExit) as exc:
-            self.guard.inspect_payload(r"Target file is C:\Users\user1\dev\project\file.py")
-        assert exc.value.code == 1
+        violation = self.guard.inspect_payload(r"Target file is C:\Users\user1\dev\project\file.py")
+        assert violation is not None
+        assert "Local workstation path" in violation
 
     def test_hook_main_stdin_clean(self, monkeypatch):
         clean_input = json.dumps({"arguments": {"content": "server 192.0.2.10:123"}})

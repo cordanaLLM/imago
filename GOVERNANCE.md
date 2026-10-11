@@ -18,6 +18,7 @@
 ## Becoming a Maintainer
 
 Active contributors who consistently demonstrate:
+
 1. Deep adherence to project quality gates (NASA/JPL Power of 10, clean ShellCheck, declarative source of truth).
 2. Constructive, collaborative code reviews.
 3. Sustained contributions over several release cycles.

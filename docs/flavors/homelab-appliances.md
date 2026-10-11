@@ -55,6 +55,7 @@ flowchart TD
 | **Container Engine** | Docker CE 29.8 with native CDI specification (`coral.google.com/edgetpu`) |
 
 ### Key Features
+
 - **Zero-Friction Coral TPU**: Pre-installs out-of-tree kernel module dependencies and sets up `/etc/udev/rules.d/65-edgetpu.rules` with `render` group ownership, enabling rootless Frigate detection.
 - **Intel QuickSync Passthrough**: Pre-configures `intel-media-va-driver-non-free` and `vainfo` for low-power hardware video decode of H.264/H.265 RTSP camera feeds.
 - **Container Device Interface (CDI)**: Delivers `/etc/cdi/coral.yaml` allowing Docker and containerd to mount Coral TPUs using standard `--device coral.google.com/edgetpu=apex0` flags.
@@ -71,6 +72,7 @@ flowchart TD
 | **Routing Engine** | Native WireGuard kernel module autoload + IPv4/IPv6 packet forwarding |
 
 ### Key Features
+
 - **Port 53 Freedom**: Automatically overrides `systemd-resolved` with `DNSStubListener=no` and repoints `/etc/resolv.conf`, eliminating the ubiquitous `address already in use` error when deploying DNS containers.
 - **Line-Rate Packet Forwarding**: Tunes sysctl with `net.ipv4.ip_forward = 1` and `net.ipv6.conf.all.forwarding = 1` while disabling ICMP redirect spoofing.
 - **WireGuard Ready**: Pre-loads `wireguard.ko` on system boot, enabling instant site-to-site tunnels and overlay networking.
@@ -87,6 +89,7 @@ flowchart TD
 | **Streaming Engine** | 4096KB block device readahead (`read_ahead_kb = 4096`) |
 
 ### Key Features
+
 - **Dual-Vendor GPU Transcoding**: Enables hardware-accelerated transcoding regardless of whether the VM runs on an Intel N100 mini-PC, modern Core i7 iGPU, or AMD Radeon APU (RDNA 3/3.5).
 - **Smooth 4K Remux Playback**: Configures dynamic 4096KB readahead rules to eliminate network and disk stalls during high-bitrate media playback.
 - **NAS-Optimized Mounting**: Ships essential network filesystem drivers so remote TrueNAS/Unraid shares mount without host tool installation.
@@ -103,6 +106,7 @@ flowchart TD
 | **Filesystem Tuning** | 4GB volatile `/tmp` in-memory tmpfs mount |
 
 ### Key Features
+
 - **Cross-Platform Container Builds**: Enables `docker buildx build --platform linux/amd64,linux/arm64` out of the box without requiring manual binfmt registration containers.
 - **High-Speed In-Memory Scratch**: Mounts `/tmp` on tmpfs to drastically accelerate compilation, object linking, and artifact compression while prolonging host SSD endurance.
 - **Batteries-Included Toolchain**: Ships with Git Large File Storage (LFS) and standard build tools for immediate runner registration.
@@ -119,6 +123,7 @@ flowchart TD
 | **Resource Limits** | 1,048,576 open file descriptors (`nofile`) & `vm.max_map_count = 1048576` |
 
 ### Key Features
+
 - **Multiarch Steam Runtime**: Enables `i386` architecture and pre-installs 32-bit glibc, libstdc++, and SDL2 runtimes required by dedicated game servers.
 - **Packet Loss Elimination**: Increases default UDP socket buffers to 16MB to absorb bursty multiplayer traffic spikes without dropping client packets.
 - **Pterodactyl Ready**: Configures elevated system limits (1M open files and 1M memory maps) to host dozens of concurrent game server instances reliably.

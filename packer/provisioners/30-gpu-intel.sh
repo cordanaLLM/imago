@@ -22,7 +22,7 @@ install_intel_drivers() {
 
 configure_intel_permissions_and_cdi() {
   echo "==> Configuring udev rules and Intel Container Device Interface (CDI)..."
-  sudo usermod -aG render,video ubuntu || true
+  sudo usermod -aG render,video ubuntu
 
   cat <<'EOF' | sudo tee /etc/udev/rules.d/60-intel-gpu.rules
 KERNEL=="card*", SUBSYSTEM=="drm", GROUP="video", MODE="0660"

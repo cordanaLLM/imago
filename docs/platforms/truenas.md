@@ -9,6 +9,7 @@ All `lusoris-cloud-images` flavors are engineered for high-performance virtualiz
 TrueNAS SCALE utilizes KVM for virtualization, providing native VirtIO disk, network, and PCI passthrough capabilities.
 
 ### Step 1: Download & Prepare Image on a ZFS Dataset
+
 Log in to your TrueNAS host via SSH and decompress the release artifact into your VM zvol or dataset:
 
 ```bash
@@ -26,6 +27,7 @@ qemu-img convert -p -O raw docker-generic.qcow2 /dev/zvol/tank/vms/docker-node-z
 ```
 
 ### Step 2: Configure VM in TrueNAS Web GUI
+
 1. Navigate to **Virtualization -> Add VM**.
 2. **Guest Operating System**: Select **Linux**.
 3. **CPUs & Memory**:
@@ -53,19 +55,25 @@ qemu-img convert -p -O raw docker-generic.qcow2 /dev/zvol/tank/vms/docker-node-z
 ## 3. High-Performance NAS Storage Mounts
 
 ### A. High-Throughput NFSv4.2 with Client-Side Caching (`fscache`)
+
 To mount TrueNAS ZFS shares inside a Lusoris guest with maximum throughput and local RAM caching:
 
 1. In `/etc/fstab` inside the Lusoris guest:
+
    ```text
    truenas.example.com:/mnt/tank/media  /mnt/nas/media  nfs4  rw,noatime,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev,fsc  0  0
    ```
+
 2. Enable `cachefilesd` in the guest for persistent SSD client-side caching:
+
    ```bash
    sudo systemctl enable --now cachefilesd
    ```
 
 ### B. SMB 3.1.1 Multi-Channel
+
 For SMB/CIFS shares, Lusoris kernels support SMB 3.1.1 with multi-channel enabled for bonding multiple virtual NICs:
+
 ```text
 //truenas.example.com/share  /mnt/nas/share  cifs  credentials=/etc/smbcredentials,vers=3.1.1,multichannel,uid=1000,gid=1000,_netdev  0  0
 ```
@@ -73,7 +81,8 @@ For SMB/CIFS shares, Lusoris kernels support SMB 3.1.1 with multi-channel enable
 ---
 
 ## 4. Thin Provisioning & TRIM / Discard
+
 Lusoris images enable `fstrim.timer` weekly by default. When using VirtIO-SCSI in TrueNAS:
+
 - Ensure the disk device is created with **VirtIO-SCSI** and discard is enabled.
 - Reclaimed space inside the VM is automatically returned to the underlying ZFS pool.
-

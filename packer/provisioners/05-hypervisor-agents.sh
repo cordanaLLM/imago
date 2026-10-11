@@ -11,10 +11,15 @@ install_hypervisor_packages() {
     qemu-guest-agent \
     open-vm-tools \
     spice-vdagent \
-    acpid || true
+    acpid
 
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    hyperv-daemons 2>/dev/null || true
+  # hyperv-daemons is a Debian package name that not every Ubuntu archive publishes.
+  if apt-cache show hyperv-daemons >/dev/null 2>&1; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      hyperv-daemons
+  else
+    echo "    hyperv-daemons is not in the package index; no Hyper-V guest daemons are installed." >&2
+  fi
 }
 
 configure_unraid_virtfs() {
@@ -27,18 +32,22 @@ configure_unraid_virtfs() {
 virtiofs
 EOF
 
-  sudo modprobe 9p 2>/dev/null || true
-  sudo modprobe 9pnet 2>/dev/null || true
-  sudo modprobe 9pnet_virtio 2>/dev/null || true
-  sudo modprobe virtiofs 2>/dev/null || true
+  local module
+  for module in 9p 9pnet 9pnet_virtio virtiofs; do
+    if ! sudo modprobe "${module}"; then
+      echo "    Module ${module} did not load in the build environment; it stays listed in modules-load.d." >&2
+    fi
+  done
 }
 
 configure_agent_services() {
   echo "==> Enabling hypervisor daemons with dormant condition guards..."
-  sudo systemctl enable qemu-guest-agent.service 2>/dev/null || true
-  sudo systemctl enable open-vm-tools.service 2>/dev/null || true
-  sudo systemctl enable acpid.service 2>/dev/null || true
-  sudo systemctl enable spice-vdagent.service 2>/dev/null || true
+  # spice-vdagent needs no enable: its udev rule starts spice-vdagentd.socket when the
+  # SPICE virtio port appears, and the package ships no system unit with an install section.
+  local unit
+  for unit in qemu-guest-agent.service open-vm-tools.service acpid.service; do
+    sudo systemctl enable "${unit}"
+  done
 
   sudo mkdir -p /etc/systemd/system/open-vm-tools.service.d
   cat <<'EOF' | sudo tee /etc/systemd/system/open-vm-tools.service.d/10-condition-virt.conf
