@@ -90,6 +90,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Every workflow installs its Python tools from a hash lock with
+  `pip install --require-hashes`. The inputs and the locks compiled from them with
+  `uv pip compile --generate-hashes --universal` live under `.github/requirements/`
+  (`docs`, `lint`, `sast`, `test`), and Renovate updates the locks through its
+  `pip-compile` manager. `requirements-test.txt` moved to `.github/requirements/test.in`.
+  `mkdocs-minify-plugin` is no longer installed; `mkdocs.yml` enables no plugin.
 - The repository is re-adopted on the current Praetor engine (ADR-0022). The agent context is
   compiled into six vendor projections from `AGENTS.md`, the hooks run the offline audit
   before a commit and the full audit and gate before a push, and the declared branch

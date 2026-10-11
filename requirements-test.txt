@@ -1,4 +1,0 @@
-# Test dependencies for lusoris-cloud-images verification suite
-pytest>=7.0.0
-jsonschema>=4.0.0
-pyyaml>=6.0.0

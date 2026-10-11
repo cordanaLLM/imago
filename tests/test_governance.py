@@ -15,6 +15,8 @@ import subprocess
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKER_DIR = REPO_ROOT / "packer"
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
+REQUIREMENTS_DIR = REPO_ROOT / ".github" / "requirements"
+PIP_INSTALL = re.compile(r"\bpip3?\s+install\b(.*)$")
 
 
 class TestGovernanceIntegrity:
@@ -46,7 +48,8 @@ class TestGovernanceIntegrity:
             REPO_ROOT / "release-please-config.json",
             REPO_ROOT / ".release-please-manifest.json",
             REPO_ROOT / "renovate.json",
-            REPO_ROOT / "requirements-test.txt",
+            REPO_ROOT / ".github" / "requirements" / "test.in",
+            REPO_ROOT / ".github" / "requirements" / "test.txt",
             REPO_ROOT / ".github" / "epics.json",
             REPO_ROOT / ".github" / "milestones.json",
             REPO_ROOT / "go.mod",
@@ -178,6 +181,55 @@ class TestGovernanceIntegrity:
             wf_file = WORKFLOWS_DIR / wf_name
             assert wf_file.exists(), f"Mandatory workflow missing: {wf_name}"
             assert wf_file.stat().st_size > 0, f"Workflow is empty: {wf_name}"
+
+    def test_workflow_pip_installs_use_a_hash_lock(self) -> None:
+        """Verify every pip install in a workflow installs only from a hash lock.
+
+        pip checks the hashes only under `--require-hashes`; a package named on the
+        command line, or a requirement file outside the lock directory, is unpinned.
+        """
+        installs = []
+        for workflow in sorted(WORKFLOWS_DIR.glob("*.yml")):
+            for number, line in enumerate(workflow.read_text(encoding="utf-8").splitlines(), 1):
+                match = PIP_INSTALL.search(line)
+                if match:
+                    installs.append((f"{workflow.name}:{number}", match.group(1).split()))
+        assert installs, "No pip install line was found, so the pattern no longer matches"
+        for where, arguments in installs:
+            assert "--require-hashes" in arguments, f"{where}: pip install without --require-hashes"
+            sources = [argument for argument in arguments if not argument.startswith("-")]
+            assert sources, f"{where}: pip install names no requirement file"
+            for source in sources:
+                lock = REPO_ROOT / source
+                assert lock.parent == REQUIREMENTS_DIR and lock.suffix == ".txt", (
+                    f"{where}: {source} is not a lock under .github/requirements"
+                )
+                assert lock.is_file(), f"{where}: {source} does not exist"
+
+    def test_hash_locks_state_a_compile_command_the_update_bot_can_run(self) -> None:
+        """Verify each lock header names its input and writes option values with `=`.
+
+        Renovate recompiles a lock by running the command in its header. It refuses
+        `--python-version 3.12` and `--output-file <path>` written with a space, and
+        then extracts no dependency from that lock.
+        """
+        locks = sorted(REQUIREMENTS_DIR.glob("*.txt"))
+        inputs = sorted(REQUIREMENTS_DIR.glob("*.in"))
+        assert locks, "No lock was found under .github/requirements"
+        assert [lock.stem for lock in locks] == [source.stem for source in inputs], (
+            "Every input needs its lock and every lock its input"
+        )
+        for lock in locks:
+            relative = lock.relative_to(REPO_ROOT).as_posix()
+            command = lock.read_text(encoding="utf-8").splitlines()[1].lstrip("# ").split()
+            assert command[:3] == ["uv", "pip", "compile"], f"{relative}: header is not a compile command"
+            assert "--generate-hashes" in command, f"{relative}: compiled without --generate-hashes"
+            assert relative[: -len(".txt")] + ".in" in command, f"{relative}: header names another input"
+            assert f"--output-file={relative}" in command, f"{relative}: --output-file must use '='"
+            versions = [option for option in command if option.startswith("--python-version")]
+            assert versions and all("=" in option for option in versions), (
+                f"{relative}: --python-version must use '='"
+            )
 
     def test_audit_repository_health_script_executable(self) -> None:
         """Verify audit-repository-health.sh is present and executable."""
