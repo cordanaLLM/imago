@@ -9,8 +9,8 @@ Documentation portal uses Material for MkDocs and is deployed to GitHub Pages.
 
 ## Build in Strict Mode
 ```bash
-# Install dependencies
-pip install mkdocs-material pymdown-extensions
+# Install the hash-locked dependencies the workflows install
+pip install --require-hashes -r .github/requirements/docs.txt
 
 # Build site with zero tolerance for broken links or warnings
 mkdocs build --strict

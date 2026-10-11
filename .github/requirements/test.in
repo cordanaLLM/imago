@@ -1,0 +1,6 @@
+# Copyright 2026 Lusoris
+# Test suite: the test-python job of ci.yml and the manifest check of
+# sync-kernel-manifest.yml install the lock compiled from this file.
+pytest>=7.0.0
+jsonschema>=4.0.0
+pyyaml>=6.0.0

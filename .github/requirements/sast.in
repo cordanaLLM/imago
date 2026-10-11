@@ -1,0 +1,4 @@
+# Copyright 2026 Lusoris
+# Static analysis: the semgrep job of security-scans.yml installs the lock compiled
+# from this file.
+semgrep

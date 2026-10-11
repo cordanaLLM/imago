@@ -1,0 +1,4 @@
+# Copyright 2026 Lusoris
+# Spelling check: the lint-workflows job of ci.yml installs the lock compiled from
+# this file.
+codespell

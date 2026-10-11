@@ -19,6 +19,11 @@
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "rebaseWhen": "behind-base-branch",
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/^\\.github/requirements/[^/]+\\.txt$/"
+    ]
+  },
   "packageRules": [
     {
       "matchManagers": [
@@ -31,6 +36,7 @@
     {
       "matchManagers": [
         "pip_requirements",
+        "pip-compile",
         "setup-cfg",
         "pep621"
       ],

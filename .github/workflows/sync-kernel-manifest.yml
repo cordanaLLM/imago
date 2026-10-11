@@ -50,7 +50,7 @@ jobs:
         uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
 
       - name: Install Validation Dependencies
-        run: pip install --no-cache-dir jsonschema pytest
+        run: pip install --no-cache-dir --require-hashes -r .github/requirements/test.txt
 
       # The payload names the release; nothing is pinned on its word alone and
       # nothing is defaulted: a payload without stream, version, and tag fails.

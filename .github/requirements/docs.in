@@ -1,0 +1,5 @@
+# Copyright 2026 Lusoris
+# Documentation site: the docs-strict job of ci.yml and the build job of pages.yml
+# install the lock compiled from this file.
+mkdocs-material
+pymdown-extensions
