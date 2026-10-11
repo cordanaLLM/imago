@@ -99,7 +99,7 @@ func TestMilestonesList(t *testing.T) {
 	out, err := executeCommand("milestones", "list", "--path", milestonesPath)
 	require.NoError(t, err)
 	assert.Contains(t, out, "TITLE")
-	assert.Contains(t, out, "v2026")
+	assert.Contains(t, out, "1.0 — First release")
 }
 
 func TestStandardsGet(t *testing.T) {
