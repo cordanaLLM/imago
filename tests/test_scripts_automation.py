@@ -72,8 +72,7 @@ class TestManageAIStudioAgents:
 
         # Check network allowlist contains expected domains
         allowlist = [item["domain"] for item in payload["base_environment"]["network"]["allowlist"]]
-        assert "github.com" in allowlist
-        assert "registry.k8s.io" in allowlist
+        assert {"github.com", "registry.k8s.io"} <= set(allowlist)
 
     def test_validate_agents_fleet_existing_repo(self):
         """Validates all agents committed to .agents/managed-agents/ conform to spec."""

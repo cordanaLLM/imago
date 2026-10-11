@@ -148,6 +148,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The Hindsight MCP server no longer hides every error raised while it closes a failed
+  connection. `http_api` in `scripts/hindsight_mcp_server.py` wrapped the close in a bare
+  `except Exception: pass`; it now suppresses only `OSError`, the error a socket close
+  raises, so the request error is still the one reported and any other failure surfaces.
+  Three tests in `tests/test_mcp_hindsight.py` cover the path.
+- Two test modules import only what they use (`tests/test_agents_fleet.py`,
+  `tests/test_cloudinit_deep.py`), and the allowlist check in
+  `tests/test_scripts_automation.py` compares sets of domains, so code scanning stops
+  reading it as a substring check on a URL.
 - The documentation site deploys again. `.github/workflows/pages.yml` pinned
   `actions/upload-pages-artifact` v3.0.1, which calls `actions/upload-artifact` by tag;
   the repository admits only actions pinned to a full commit, inner actions included, so
