@@ -1,5 +1,5 @@
 # Copyright 2026 Lusoris Authors
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """Automated verification suite for Hindsight MCP memory bridge and configs.
 
 Asserts:
@@ -179,3 +179,55 @@ class TestHttpApiCleanup:
         monkeypatch.setattr(_FailingConnection, "close_error", RuntimeError("not a socket error"))
         with pytest.raises(RuntimeError, match="not a socket error"):
             server.http_api("GET", "/health")
+
+
+class _EndedProcess:
+    """A port-forward process that has already ended."""
+
+    def wait(self) -> int:
+        return 1
+
+    def poll(self) -> int:
+        return 1
+
+
+class TestTunnelStartBound:
+    """run_tunnel starts the port-forward a bounded number of times, then gives up."""
+
+    @pytest.fixture
+    def tunnel(self, monkeypatch: pytest.MonkeyPatch):
+        spec = importlib.util.spec_from_file_location("tunnel_hindsight", TUNNEL_SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
+        monkeypatch.setattr(module, "check_health", lambda _port: False)
+        return module
+
+    def count_starts(self, tunnel, monkeypatch: pytest.MonkeyPatch, max_starts: int) -> tuple[int, int]:
+        """Run the supervisor against a port-forward that always ends; return (status, starts)."""
+        starts = []
+
+        def fake_popen(cmd, **_kwargs):
+            starts.append(cmd)
+            # Ends a supervisor that ignores its bound instead of hanging the test run.
+            # pytest.fail raises a BaseException, which run_tunnel's retry handler lets through.
+            if len(starts) > max_starts + 2:
+                pytest.fail("run_tunnel started the port-forward beyond its bound")
+            return _EndedProcess()
+
+        monkeypatch.setattr(tunnel.subprocess, "Popen", fake_popen)
+        return tunnel.run_tunnel(8888, max_starts=max_starts), len(starts)
+
+    def test_gives_up_after_the_bound(self, tunnel, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+        assert self.count_starts(tunnel, monkeypatch, 3) == (1, 3)
+        assert "started 3 times; giving up" in capsys.readouterr().err
+
+    def test_bound_of_one_starts_once(self, tunnel, monkeypatch: pytest.MonkeyPatch) -> None:
+        assert self.count_starts(tunnel, monkeypatch, 1) == (1, 1)
+
+    def test_bound_of_zero_starts_nothing(self, tunnel, monkeypatch: pytest.MonkeyPatch) -> None:
+        assert self.count_starts(tunnel, monkeypatch, 0) == (1, 0)
+
+    def test_default_bound_is_declared(self, tunnel) -> None:
+        assert tunnel.MAX_STARTS == 7200
+        assert tunnel.run_tunnel.__defaults__ == (tunnel.DEFAULT_PORT, tunnel.MAX_STARTS)

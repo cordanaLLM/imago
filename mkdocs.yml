@@ -4,7 +4,7 @@ site_url: https://cordanallm.github.io/imago
 repo_url: https://github.com/cordanaLLM/imago
 repo_name: cordanaLLM/imago
 edit_uri: edit/main/docs/
-copyright: "Copyright &copy; 2026 The Lusoris Authors — Apache 2.0 License"
+copyright: "Copyright &copy; 2026 The Lusoris Authors — EUPL-1.2"
 
 theme:
   name: material
@@ -117,6 +117,7 @@ nav:
       - "0020: Aegis Product-Input Contract Acceptance": adr/0020-aegis-product-input-contract-acceptance.md
       - "0021: Pinned Kernel Artifact Contract with nucleus": adr/0021-pinned-kernel-artifact-contract-with-nucleus.md
       - "0022: Fail-Closed Provisioners & Declared Main Protection": adr/0022-fail-closed-provisioners-and-declared-main-protection.md
+      - "0023: EUPL-1.2 Licence & REUSE Annotations": adr/0023-eupl-1.2-licence-and-reuse-annotations.md
       - "0018: NAS & Storage Appliance Ecosystem": adr/0018-nas-and-storage-appliance-ecosystem.md
   - Engineering & Governance:
       - Engineering Principles: principles.md

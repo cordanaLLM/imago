@@ -64,4 +64,14 @@ Any user-discoverable addition (new flavor, Packer variable, or provisioner step
 
 ## Developer Certificate of Origin (DCO)
 
-By contributing to this repository, you certify that you have the right to submit the code under the project's Apache 2.0 license.
+By contributing to this repository, you certify that you have the right to submit the code under the project's licence, the European Union Public Licence 1.2 (`EUPL-1.2`).
+
+## Licence Information (REUSE)
+
+Every file carries licence and copyright information that `reuse lint` can read. [`REUSE.toml`](REUSE.toml) assigns `EUPL-1.2` to the whole tree, so a new file of your own needs nothing more than the `Copyright 2026 Lusoris` header.
+
+A file you take from another project keeps its licence:
+
+1. Add the licence text with `reuse download <SPDX identifier>`.
+2. Add an `[[annotations]]` table for the file **after** the whole-tree table in `REUSE.toml`. REUSE applies only the last table that matches a file.
+3. Run `reuse lint`. The pre-commit hook and the `REUSE lint` check run the same command.

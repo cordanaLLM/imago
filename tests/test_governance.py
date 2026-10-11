@@ -17,6 +17,10 @@ PACKER_DIR = REPO_ROOT / "packer"
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 REQUIREMENTS_DIR = REPO_ROOT / ".github" / "requirements"
 PIP_INSTALL = re.compile(r"\bpip3?\s+install\b(.*)$")
+# The last revision published under Apache-2.0; every later one is EUPL-1.2 (ADR-0023).
+APACHE_LAST_REVISION = "44a6bfa"
+# Built from two parts so that this file does not carry the header it searches for.
+FORMER_LICENCE_HEADER = "Licensed under the " + "Apache License"
 
 
 class TestGovernanceIntegrity:
@@ -138,18 +142,43 @@ class TestGovernanceIntegrity:
         )
 
     def test_license_terms_and_copyright(self) -> None:
-        """Verify LICENSE file contains Apache 2.0 terms and README/mkdocs state copyright."""
+        """Verify LICENSE holds the EUPL-1.2 text and README/mkdocs state licence, boundary and copyright."""
         license_path = REPO_ROOT / "LICENSE"
-        assert license_path.exists(), "LICENSE file is missing"
+        assert license_path.is_file(), "LICENSE file is missing"
+        assert not license_path.is_symlink(), "LICENSE must be a regular file, not a link"
         content = license_path.read_text(encoding="utf-8")
-        assert "Apache License" in content, "Missing Apache License terms in LICENSE"
-        assert "Version 2.0" in content, "Missing Version 2.0 declaration in LICENSE"
+        assert "EUROPEAN UNION PUBLIC LICENCE v. 1.2" in content, "LICENSE does not hold the EUPL-1.2 text"
+        declared = (REPO_ROOT / "LICENSES" / "EUPL-1.2.txt").read_text(encoding="utf-8")
+        assert content == declared, "LICENSE differs from LICENSES/EUPL-1.2.txt"
 
         readme_content = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
         assert "Lusoris Authors" in readme_content, "Missing Lusoris copyright in README.md"
+        for needed in ("## License", "EUPL-1.2", "Apache-2.0", APACHE_LAST_REVISION):
+            assert needed in readme_content, f"README.md licence section does not name {needed}"
 
-        mkdocs_content = (REPO_ROOT / "mkdocs.yml").read_text(encoding="utf-8")
-        assert "The Lusoris Authors" in mkdocs_content, "Missing Lusoris copyright in mkdocs.yml"
+        mkdocs_lines = (REPO_ROOT / "mkdocs.yml").read_text(encoding="utf-8").splitlines()
+        copyright_lines = [line for line in mkdocs_lines if line.startswith("copyright:")]
+        assert len(copyright_lines) == 1, "mkdocs.yml needs exactly one copyright line"
+        assert "The Lusoris Authors" in copyright_lines[0], "Missing Lusoris copyright in mkdocs.yml"
+        assert "EUPL-1.2" in copyright_lines[0], "The mkdocs.yml copyright line does not name the licence"
+
+    def test_no_source_header_names_the_former_licence(self) -> None:
+        """A tracked source file must not carry the Apache-2.0 header the tree had before ADR-0023."""
+        listed = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "ls-files", "-z", "*.py", "*.sh", "*.go", "*.hcl", "*.mjs"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
+        paths = [rel for rel in listed.stdout.split("\0") if rel]
+        assert len(paths) > 50, f"git ls-files listed only {len(paths)} source files"
+        stale = [
+            rel
+            for rel in paths
+            if FORMER_LICENCE_HEADER in (REPO_ROOT / rel).read_text(encoding="utf-8", errors="replace")
+        ]
+        assert stale == [], f"These files still carry the former licence header: {stale}"
 
     def test_agent_directives_parity(self) -> None:
         """Verify AGENTS.md and CLAUDE.md reference principles.md contract."""

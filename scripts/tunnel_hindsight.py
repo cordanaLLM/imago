@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2026 Lusoris Authors
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """Cluster tunnel daemon for Hindsight semantic-memory backend.
 
 Maintains a localhost port-forward to service/hindsight in the ai namespace:
@@ -21,6 +21,10 @@ import time
 DEFAULT_PORT = 8888
 NAMESPACE = "ai"
 SERVICE = "service/hindsight"
+# Upper bound on port-forward starts. The 5 s pause after each ended
+# port-forward alone keeps the supervisor running for ten hours before the
+# bound is reached.
+MAX_STARTS = 7200
 
 
 def check_health(port: int = DEFAULT_PORT) -> bool:
@@ -38,8 +42,8 @@ def check_health(port: int = DEFAULT_PORT) -> bool:
         return False
 
 
-def run_tunnel(port: int = DEFAULT_PORT) -> int:
-    """Launch and supervise kubectl port-forward subprocess."""
+def run_tunnel(port: int = DEFAULT_PORT, max_starts: int = MAX_STARTS) -> int:
+    """Launch and supervise kubectl port-forward; give up after `max_starts` starts."""
     print(f"[*] Starting Hindsight tunnel on 127.0.0.1:{port} -> {SERVICE} (ns: {NAMESPACE})...")
     cmd = [
         "kubectl",
@@ -50,7 +54,7 @@ def run_tunnel(port: int = DEFAULT_PORT) -> int:
         "--address=127.0.0.1",
     ]
 
-    while True:
+    for _ in range(max_starts):
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -72,6 +76,8 @@ def run_tunnel(port: int = DEFAULT_PORT) -> int:
         except Exception as exc:
             print(f"[!] Tunnel error: {exc}. Retrying in 10s...", file=sys.stderr)
             time.sleep(10)
+    print(f"[!] Port-forward was started {max_starts} times; giving up.", file=sys.stderr)
+    return 1
 
 
 def main() -> int:

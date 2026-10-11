@@ -65,7 +65,7 @@ The repository runs the OpenSSF Scorecard supply-chain security analysis via Git
 | **Dangerous-Workflow** | **10 / 10** | **PASS (✓)** | Workflows avoid untrusted script evaluations or code injections. |
 | **Vulnerabilities** | **10 / 10** | **PASS (✓)** | Zero known unfixed OSV/CVE vulnerabilities. |
 | **Security-Policy** | **10 / 10** | **PASS (✓)** | Public `SECURITY.md` with explicit disclosure SLA and channels. |
-| **License** | **10 / 10** | **PASS (✓)** | Permissive Apache-2.0 OSI-approved license. |
+| **License** | **10 / 10** | **PASS (✓)** | `LICENSE` holds the EUPL-1.2, an OSI-approved copyleft licence. |
 | **Dependency-Update** | **10 / 10** | **PASS (✓)** | Zero-noise Renovate active with automated grouping and 3-day stability guard. |
 | **CI-Tests** | **10 / 10** | **PASS (✓)** | 100% of pull requests verified by automated test suites. |
 | **Pinned-Dependencies** | **10 / 10** | **PASS (✓)** | 100% of GitHub Actions pinned to 40-character immutable commit SHAs. |

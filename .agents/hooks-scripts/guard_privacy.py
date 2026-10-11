@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2026 Lusoris
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """
 Pre-tool lifecycle hook for Gemini Antigravity Agent sandbox.
 Asserts zero private RFC 1918 IP addresses or developer workstation paths

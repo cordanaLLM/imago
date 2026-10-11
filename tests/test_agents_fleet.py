@@ -1,5 +1,5 @@
 # Copyright 2026 Lusoris
-# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: EUPL-1.2
 """
 Automated verification suite for Google AI Studio Managed Agents and Antigravity fleet.
 Asserts agent definitions, hooks configuration, and privacy guardrails.
