@@ -1,0 +1,7 @@
+---
+# Copyright 2026 Lusoris
+# Trivy reads pip dependencies only from files named requirements.txt. The
+# pinned CI lockfiles under .github/requirements/ need an explicit pattern.
+scan:
+  file-patterns:
+    - 'pip:\.github/requirements/.*\.txt'

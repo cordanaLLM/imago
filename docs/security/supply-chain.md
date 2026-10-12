@@ -25,6 +25,8 @@ Every release provides a complete catalog of installed deb packages, container l
 
 Images and repository code are continuously scanned via **Trivy** and **Semgrep** in CI, halting releases if unpatched `CRITICAL` CVEs are detected.
 
+The Trivy job reads its file patterns from [`.github/trivy.yaml`](https://github.com/cordanaLLM/imago/blob/main/.github/trivy.yaml), which adds the pinned pip lockfiles under `.github/requirements/`; trivy itself reads pip dependencies only from files named `requirements.txt`. After the scan, `tools/ci/trivy_coverage.py` compares the targets of the JSON report with the lockfiles `git ls-files` lists (`go.mod`, `package-lock.json`, `.github/requirements/*.txt`) and fails the job when a lockfile was not scanned. A new lockfile type needs a pattern in both files.
+
 ---
 
 ## 4. Continuous Assurance & PR Project Hard Gates
