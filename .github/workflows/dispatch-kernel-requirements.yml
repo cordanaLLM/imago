@@ -61,11 +61,20 @@ jobs:
           print("payload=" + json.dumps(payload, separators=(",", ":")))
           PY
 
-      - name: Dispatch Event to nucleus
-        if: env.KERNEL_FORGE_TOKEN != ''
-        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+      # Without the token nothing reaches nucleus; the job fails instead of
+      # passing with the dispatch skipped (tests/test_kernel_dispatch.py).
+      - name: Require Dispatch Token
         env:
           KERNEL_FORGE_TOKEN: ${{ secrets.KERNEL_FORGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KERNEL_FORGE_TOKEN:-}" ]; then
+            echo "::error::KERNEL_FORGE_TOKEN is not set; the kernel requirement was not dispatched to nucleus"
+            exit 1
+          fi
+
+      - name: Dispatch Event to nucleus
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ secrets.KERNEL_FORGE_TOKEN }}
           repository: ${{ steps.payload.outputs.repository }}

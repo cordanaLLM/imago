@@ -219,6 +219,8 @@ The manifest schema `imago.nucleus.kernel-artifact.v1` is owned by `imago` (`pkg
 }
 ```
 
+The dispatch needs the `KERNEL_FORGE_TOKEN` repository secret. Without it the `Require Dispatch Token` step fails the job, so a requirement change that did not reach `nucleus` shows as a failed run rather than a green one; `tests/test_kernel_dispatch.py` checks this.
+
 `nucleus` fetches the file at `ref`, checks its `sha256`, and evaluates every feature with the named probe. Its `verify-requirements.yml` still checks a fixed symbol list today; consuming the payload shape on the `nucleus` side is tracked there and does not weaken the downstream verification above.
 
 ---
