@@ -93,6 +93,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
 
 ### Changed
+- The Praetor engine pin moves from `4ae6247c` to `6622361940dc` (`PRAETOR_REF` in
+  `.github/workflows/ci.yml`). The new engine's audit refused the earlier texts of
+  `tools/markdownlint/verify.mjs`, `tools/markdownlint/no-private-scratch-links.mjs` and
+  `tools/figures/checks.mjs`, and `praetorctl adopt` refreshed them together with
+  `.config/agent/hooks/block_evasion.py`; no other adopted file changes. The refreshed
+  interceptor chains its exception, so its `ruff.toml` lint line lists no rule (it was
+  `B904`); the file stays excluded from the formatter until the same end date.
 - Open work is recorded on the forge only (ADR-0025): the planning graph under `planning/` is frozen as the record of the migration, its three open steps are carried by issues #80, #81 and #46, and `planning/routing.json` marks the two archetype steps done. `.github/milestones.json` is copied from the forge again and gains the milestone "Post-1.0 roadmap". `AGENTS.md` no longer lists `imago plan route --ready` in the working sequence; the command itself is unchanged.
 - Python sources under `tests/`, `scripts/` and `.agents/` follow the Ruff rule set and formatter: sorted imports, built-in generic annotations, an explicit `check=` on every `subprocess.run`. `get_tool_definitions` in `scripts/hindsight_mcp_server.py` builds its five definitions through `tool_definition` and returns the same list as before. `ci.yml` also runs when a draft pull request is marked ready for review.
 - `scripts/tunnel_hindsight.py` starts `kubectl port-forward` at most 7200 times and then stops with exit status 1. It restarted without a bound before.

@@ -21,7 +21,7 @@ ignore = [
 # when the day has passed, when a listed rule no longer reports and when the formatter
 # accepts an excluded file.
 [lint.per-file-ignores]
-".config/agent/hooks/block_evasion.py" = ["B904"] # cordanaLLM/praetor#1204, ends 2027-01-09
+".config/agent/hooks/block_evasion.py" = [] # cordanaLLM/praetor#1204, ends 2027-01-09
 ".config/lefthook/scripts/checkpoint.py" = ["I001", "PLR1714"] # cordanaLLM/praetor#1204, ends 2027-01-09
 ".config/lefthook/scripts/common.py" = ["I001"] # cordanaLLM/praetor#1204, ends 2027-01-09
 "tools/figures/mkdocs_hook.py" = ["PLC0415"] # cordanaLLM/praetor#1204, ends 2027-01-09
