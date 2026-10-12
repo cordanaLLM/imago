@@ -45,7 +45,7 @@ Across the reference repositories, the stable architectural pattern is:
 | **Append-Only ADRs** | **Adopted** | [`docs/adr/`](adr/README.md) following standardized format |
 | **Material for MkDocs Portal** | **Adopted** | `mkdocs build --strict` deploying to GitHub Pages via [`pages.yml`](https://github.com/cordanaLLM/imago/blob/main/.github/workflows/pages.yml) |
 | **Privacy & Zero-Leak Invariant** | **Adopted** | Strict prohibition on RFC 1918 IPs and `/home/*` paths (`test_no_private_ips_or_user_paths`) |
-| **Supply-Chain & SAST Scans** | **Adopted** | OpenSSF Scorecard v2.4.4, Semgrep SAST, Trivy CVE filesystem scan, Gitleaks |
+| **Supply-Chain & SAST Scans** | **Adopted** | OpenSSF Scorecard v2.4.4, Semgrep SAST, Trivy CVE filesystem scan, govulncheck, Gitleaks |
 | **Worktree Discipline** | **Adopted** | Isolated branch/worktree execution in the workstation's central `worktrees/` folder outside the checkout; never run parallel agents in main |
 | **Working Sequence & Prose Bar** | **Adopted** | Standardized 7-step working sequence and technical information density in `AGENTS.md` |
 | **Schema-Validated SSOT** | **Adopted** | Declarative `versions.schema.json` dynamically enforcing `versions.json` integrity |

@@ -26,6 +26,7 @@ env:
     Pytest Verification Suite
     Strict MkDocs Build
     Semgrep SAST
+    Govulncheck Reachable Go Vulnerabilities
     Trivy Filesystem CVE Scan
 
 jobs:
