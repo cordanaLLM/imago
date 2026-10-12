@@ -184,6 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The `required-checks` aggregator no longer counts every skipped check as passed (ADR-0026). A skip is accepted only for the nine jobs a change detector gates, listed by name in `MAY_SKIP` of `.github/workflows/required-aggregator.yml`; every other check must succeed. `tests/test_required_aggregator.py` holds the list equal to the detector-gated jobs of all workflows and refuses planted conditions that could skip a job on another ground.
 - The CDI container test and the container cleanup no longer fail because of host
   load. The CDI test ran `apt-get` and its check under one 40-second timeout, and the
   cleanup gave `docker rm -f` one attempt, so a loaded host turned both into failures
