@@ -94,8 +94,13 @@ def test_planted_conditions_are_not_detector_decided(job):
     [
         "needs.changes.outputs.go == 'true'",
         "github.event_name == 'push' || needs.changes.outputs.docs == 'true'",
-        "github.event_name == 'push' ||\nneeds.changes.outputs.python == 'true' ||\n"
-        "needs.changes.outputs.shell == 'true'",
+        " ||\n".join(
+            [
+                "github.event_name == 'push'",
+                "needs.changes.outputs.python == 'true'",
+                "needs.changes.outputs.shell == 'true'",
+            ]
+        ),
     ],
 )
 def test_detector_conditions_are_accepted(condition):
