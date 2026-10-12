@@ -63,6 +63,8 @@ jobs:
           scan-type: "fs"
           ignore-unfixed: true
           format: "table"
+          # trivy exits 0 on findings unless an exit code is given.
+          exit-code: "1"
           severity: "CRITICAL,HIGH"
 
   gitleaks:
