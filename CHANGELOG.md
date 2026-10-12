@@ -184,6 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The `Trivy Filesystem CVE Scan` job of `security-scans.yml` now scans the pinned pip lockfiles under `.github/requirements/`; trivy reads pip dependencies only from files named `requirements.txt`, so they were never scanned. `.github/trivy.yaml` names them, and `tools/ci/trivy_coverage.py` fails the job when the JSON report does not list exactly the tracked lockfiles. `tests/test_trivy_coverage.py` refuses a report without the pip lockfiles, one with an unexpected target and empty reports.
 - `dispatch-kernel-requirements.yml` now fails when the `KERNEL_FORGE_TOKEN` secret is missing; before, the dispatch step was skipped and the job passed without sending the requirement to `nucleus`. `tests/test_kernel_dispatch.py` runs the new guard step with and without a token.
 - The `Trivy Filesystem CVE Scan` job of `security-scans.yml` now fails on a fixed CRITICAL or HIGH finding (`exit-code: "1"`); before, trivy exited 0 and the job passed with findings. `tests/test_security_scans.py` checks that Trivy, Semgrep and Gitleaks each fail their job on a finding.
 - The live tests no longer pass in CI without running. A missing Docker daemon, a missing bash or a preparation step past its bound still skips a test locally, but fails it when `IMAGO_REQUIRE_LIVE_TESTS=1`, which the pytest job of `ci.yml` sets (`tests/harness/live.py`). `tests/test_live_prerequisites.py` plants each missing prerequisite and checks both outcomes.
