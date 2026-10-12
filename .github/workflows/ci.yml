@@ -208,9 +208,7 @@ jobs:
           # tests/test_python_lint_gate.py runs ruff on the files ruff.toml exempts.
           pip install --require-hashes -r .github/requirements/lint.txt
       - name: Run Pytest Suite
-        # Planted for the proof of this pull request: no Docker daemon answers here.
         env:
-          DOCKER_HOST: unix:///nonexistent/docker.sock
           # A missing Docker daemon, bash or slow preparation step fails a live test
           # here instead of skipping it (tests/harness/live.py).
           IMAGO_REQUIRE_LIVE_TESTS: "1"
