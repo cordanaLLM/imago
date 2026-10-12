@@ -5,20 +5,27 @@ Verifies runtime execution under 'set -euo pipefail', environment variable expan
 package installation commands, service masking, and generated system configurations.
 """
 
+import os
 from pathlib import Path
 
 import pytest
 
+from tests.harness.live import skip_or_fail
 from tests.harness.mock_runner import GIT_BASH, MockSandbox
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
 
+def check_bash(bash: Path | None) -> None:
+    """Skip, or in CI fail, when no bash runs the mock sandbox."""
+    if not bash or not bash.exists():
+        skip_or_fail(f"Bash required for mock execution tests, not found (got {bash})", os.environ)
+
+
 @pytest.fixture
 def require_bash():
-    if not GIT_BASH or not GIT_BASH.exists():
-        pytest.skip(f"Bash required for mock execution tests, not found (got {GIT_BASH})")
+    check_bash(GIT_BASH)
 
 
 class TestProvisionersExecution:

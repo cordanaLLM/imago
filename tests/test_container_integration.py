@@ -5,6 +5,7 @@ Validates hardened configurations (OpenSSH daemon syntax, sysctl file parsing,
 and rootfs filesystem contracts) inside an ephemeral Ubuntu 24.04 container.
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,8 @@ from typing import NamedTuple
 
 import pytest
 
+from tests.harness.live import REQUIRE_LIVE_ENV, skip_or_fail
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
@@ -24,6 +27,7 @@ UBUNTU_IMAGE = "ubuntu:24.04"
 # Bounds in seconds. Starting a container and installing a package depend on
 # the host's disk, network and load, so each has its own bound and a host that
 # exceeds one skips the tests that need the container, with the measured time.
+# In CI (IMAGO_REQUIRE_LIVE_TESTS=1, tests/harness/live.py) it fails them instead.
 # The checks themselves return in well under a second and keep a short budget.
 CONTAINER_START_BOUND_S = 120
 INSTALL_BOUND_S = 300
@@ -89,10 +93,19 @@ def is_docker_available() -> bool:
         return False
 
 
-docker_required = pytest.mark.skipif(
-    not is_docker_available(),
-    reason="Docker daemon is required for live container integration tests",
-)
+def check_docker(available: bool) -> None:
+    """Skip, or in CI fail, when no Docker daemon answers."""
+    if not available:
+        skip_or_fail("Docker daemon is required for live container integration tests", os.environ)
+
+
+@pytest.fixture(scope="session")
+def require_docker() -> None:
+    """Session scope, so it runs before the class-scoped container fixtures."""
+    check_docker(is_docker_available())
+
+
+docker_required = pytest.mark.usefixtures("require_docker")
 
 
 class PreparedContainer(NamedTuple):
@@ -101,16 +114,17 @@ class PreparedContainer(NamedTuple):
 
 
 def run_preparation(cmd: list[str], bound_s: float, what: str) -> subprocess.CompletedProcess[str]:
-    """Run a host-dependent preparation step; skip the test when it exceeds its bound."""
+    """Run a host-dependent preparation step; skip (in CI fail) the test when it exceeds its bound."""
     started = time.monotonic()
     try:
         return subprocess.run(cmd, capture_output=True, text=True, timeout=bound_s, check=False)
     except subprocess.TimeoutExpired:
         elapsed = time.monotonic() - started
-        raise pytest.skip.Exception(
-            f"{what} did not finish within {bound_s:g} s on this host "
-            f"(stopped after {elapsed:.1f} s); the check that needs it was not run"
-        ) from None
+    skip_or_fail(
+        f"{what} did not finish within {bound_s:g} s on this host "
+        f"(stopped after {elapsed:.1f} s); the check that needs it was not run",
+        os.environ,
+    )
 
 
 def start_container(name: str) -> None:
@@ -333,8 +347,11 @@ class TestContainerIntegration:
         assert "ImagoNoSuchDirective" in res.stderr
         assert "SSHD_SYNTAX_VALID" not in res.stdout
 
-    def test_openssh_installation_timeout_skips(self, sshd_container: PreparedContainer) -> None:
-        """An installation that exceeds its bound skips; it neither passes nor fails."""
+    def test_openssh_installation_timeout_skips(
+        self, sshd_container: PreparedContainer, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Outside CI, an installation that exceeds its bound skips; it does not pass."""
+        monkeypatch.delenv(REQUIRE_LIVE_ENV, raising=False)
         with pytest.raises(pytest.skip.Exception, match="openssh-server installation did not finish within"):
             install_openssh(sshd_container.name, 0.01)
 
@@ -398,8 +415,11 @@ echo "SYSCTL_SYNTAX_VALID"
         assert "example.com/other" in res.stderr
         assert "CDI_SPEC_VALID" not in res.stdout
 
-    def test_yaml_installation_timeout_skips(self, yaml_container: PreparedContainer) -> None:
-        """An installation that exceeds its bound skips with the measured time; it neither passes nor fails."""
+    def test_yaml_installation_timeout_skips(
+        self, yaml_container: PreparedContainer, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Outside CI, an installation that exceeds its bound skips with the measured time; it does not pass."""
+        monkeypatch.delenv(REQUIRE_LIVE_ENV, raising=False)
         pattern = r"python3-yaml installation did not finish within 0\.01 s on this host \(stopped after \d+\.\d s\)"
         with pytest.raises(pytest.skip.Exception, match=pattern):
             install_python_yaml(yaml_container.name, 0.01)
