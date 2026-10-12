@@ -32,6 +32,9 @@ jobs:
               - 'versions.json'
               - 'Makefile'
               - 'pyproject.toml'
+              - 'go.mod'
+              - 'go.sum'
+              - 'tools/**'
               - '.github/**'
             go:
               - 'go.mod'
@@ -91,10 +94,20 @@ jobs:
         with:
           scan-type: "fs"
           ignore-unfixed: true
-          format: "table"
+          # JSON for the coverage step below, which also prints every finding.
+          format: "json"
+          output: "trivy-results.json"
+          # Names the pip lockfiles under .github/requirements/ for trivy.
+          trivy-config: ".github/trivy.yaml"
           # trivy exits 0 on findings unless an exit code is given.
           exit-code: "1"
           severity: "CRITICAL,HIGH"
+
+      # A lockfile trivy does not recognise is neither scanned nor reported; the
+      # job fails unless the report lists every tracked lockfile.
+      - name: Check Trivy scanned every lockfile
+        if: ${{ !cancelled() }}
+        run: python3 -I tools/ci/trivy_coverage.py --report trivy-results.json
 
   gitleaks:
     name: Gitleaks History Scan

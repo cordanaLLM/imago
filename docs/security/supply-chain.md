@@ -25,6 +25,8 @@ Every release provides a complete catalog of installed deb packages, container l
 
 Images and repository code are continuously scanned via **Trivy** and **Semgrep** in CI, halting releases if unpatched `CRITICAL` CVEs are detected.
 
+The Trivy job reads its file patterns from [`.github/trivy.yaml`](https://github.com/cordanaLLM/imago/blob/main/.github/trivy.yaml), which adds the pinned pip lockfiles under `.github/requirements/`; trivy itself reads pip dependencies only from files named `requirements.txt`. After the scan, `tools/ci/trivy_coverage.py` compares the targets of the JSON report with the lockfiles `git ls-files` lists (`go.mod`, `package-lock.json`, `.github/requirements/*.txt`) and fails the job when a lockfile was not scanned. A new lockfile type needs a pattern in both files.
+
 Go code is also checked by **govulncheck**, which reports only vulnerabilities the code can reach. The `Govulncheck Reachable Go Vulnerabilities` job runs it on every Go change, on every push to `main` and on the weekly schedule, so a newly published advisory turns the job red without a code change. The scanner is pinned in its own module, [`tools/govulncheck/go.mod`](https://github.com/cordanaLLM/imago/blob/main/tools/govulncheck/go.mod), so its dependencies do not change the versions imago builds with, and Renovate updates it. To run the same scan locally: `go -C tools/govulncheck tool govulncheck -C "$PWD" ./...`.
 
 ---
