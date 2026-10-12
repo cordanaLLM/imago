@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-26.04
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      go: ${{ steps.filter.outputs.go }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -35,6 +36,13 @@ jobs:
               - 'go.sum'
               - 'tools/**'
               - '.github/**'
+            go:
+              - 'go.mod'
+              - 'go.sum'
+              - 'cmd/**'
+              - 'pkg/**'
+              - 'tools/govulncheck/**'
+              - '.github/workflows/security-scans.yml'
 
   semgrep:
     name: Semgrep SAST
@@ -51,6 +59,27 @@ jobs:
       - name: Run semgrep security rules
         run: |
           semgrep --error --config p/ci --config p/security-audit .
+
+  govulncheck:
+    name: Govulncheck Reachable Go Vulnerabilities
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'schedule' || needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.x"
+          check-latest: true
+      # tools/govulncheck/go.mod pins the scanner. The text output exits 3 on a
+      # reachable vulnerability and 1 when the scan cannot run (no database, a
+      # package that does not load); -json, -format json, sarif or openvex exit 0
+      # whatever they find (tests/test_security_scans.py).
+      - name: Run govulncheck
+        run: |
+          set -euo pipefail
+          go -C tools/govulncheck tool govulncheck -C "$PWD" ./...
 
   trivy:
     name: Trivy Filesystem CVE Scan
