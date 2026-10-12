@@ -208,6 +208,9 @@ jobs:
           # tests/test_python_lint_gate.py runs ruff on the files ruff.toml exempts.
           pip install --require-hashes -r .github/requirements/lint.txt
       - name: Run Pytest Suite
+        # Planted for the proof of this pull request: no Docker daemon answers here.
+        env:
+          DOCKER_HOST: unix:///nonexistent/docker.sock
         run: pytest tests/ -v
 
   docs-strict:
