@@ -57,6 +57,8 @@ This project follows **Trunk-Based Development** with protected `main` branch. D
    All checks in `.github/workflows/ci.yml` and `.github/workflows/security-scans.yml` must pass. The branch protection gate requires `required-checks` from `.github/workflows/required-aggregator.yml`.
    `required-checks` accepts a skipped check only when a change detector skipped it: the job needs the `changes` job of its workflow and is named in `MAY_SKIP` in `required-aggregator.yml` (ADR-0026). Every other check must succeed. When you add a job gated by a change detector, add its name to `MAY_SKIP`; `tests/test_required_aggregator.py` fails until you do.
 
+   The live tests need Docker and bash. On a host without them, or when a preparation step runs past its bound, they skip. The pytest job of `ci.yml` sets `IMAGO_REQUIRE_LIVE_TESTS=1`, and there the same condition fails the test (`tests/harness/live.py`). Set the variable locally to check that every live test runs.
+
 ---
 
 ## Documentation Synchrony

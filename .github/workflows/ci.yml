@@ -211,6 +211,9 @@ jobs:
         # Planted for the proof of this pull request: no Docker daemon answers here.
         env:
           DOCKER_HOST: unix:///nonexistent/docker.sock
+          # A missing Docker daemon, bash or slow preparation step fails a live test
+          # here instead of skipping it (tests/harness/live.py).
+          IMAGO_REQUIRE_LIVE_TESTS: "1"
         run: pytest tests/ -v
 
   docs-strict:
