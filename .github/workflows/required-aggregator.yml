@@ -1,6 +1,11 @@
 # Aggregating status check. It waits for every other check on the commit and fails if
 # one failed. The rule set in .github/rulesets/main.json requires it by name, next to
 # nine checks it also waits for.
+#
+# A skipped check counts as passed only when it is named in MAY_SKIP: a job that needs
+# the change detector of its workflow and skips only on that detector's decision
+# (ADR-0026). Every other check must succeed. tests/test_required_aggregator.py holds
+# MAY_SKIP equal to the detector-gated jobs of all workflows.
 
 name: required-aggregator
 on:
@@ -11,18 +16,52 @@ on:
 permissions:
   contents: read
 
+env:
+  MAY_SKIP: |-
+    Packer Format & Validate
+    ShellCheck & Shfmt Provisioners
+    Actionlint & Yamllint
+    Ruff Lint & Format
+    Go 1.27 Build & Unit Tests
+    Pytest Verification Suite
+    Strict MkDocs Build
+    Semgrep SAST
+    Trivy Filesystem CVE Scan
+
 jobs:
   required-checks:
     name: required-checks
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
-      - name: Wait for upstream workflows
+      # Names hold only letters, digits, spaces, '&' and '.' (enforced by the test), so
+      # a comma list and an anchored pattern with '.' escaped match them exactly.
+      - name: List the checks a change detector may skip
+        id: may-skip
+        shell: bash
+        run: |
+          set -euo pipefail
+          ignore="$(printf '%s\n' "$MAY_SKIP" | paste -sd, -)"
+          regexp="^($(printf '%s\n' "$MAY_SKIP" | sed 's/[.]/\\./g' | paste -sd'|' -))\$"
+          {
+            echo "ignore=${ignore}"
+            echo "regexp=${regexp}"
+          } >> "$GITHUB_OUTPUT"
+      - name: Wait for every other check; each must succeed
         uses: lewagon/wait-on-check-action@369769072fe522a3a8a85c03c96af1e5242a1994 # v1.9.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           running-workflow-name: required-checks
+          ignore-checks: ${{ steps.may-skip.outputs.ignore }}
+          allowed-conclusions: success
+          wait-interval: 20
+      - name: Wait for the detector-gated checks; each must succeed or be skipped
+        uses: lewagon/wait-on-check-action@369769072fe522a3a8a85c03c96af1e5242a1994 # v1.9.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          check-regexp: ${{ steps.may-skip.outputs.regexp }}
           allowed-conclusions: success,skipped
           wait-interval: 20
       - name: All required checks passed
