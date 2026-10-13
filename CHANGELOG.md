@@ -145,9 +145,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The pinned key for gate receipts is the one `cordanaLLM/praetor` pins and the signing
   workstation holds. It replaces the key generated on another workstation during the
   migration. The receipt file is no longer tracked, because every gate run rewrites it.
-- The release tool releases the package as `imago` and starts at 1.0.0. No version was
+- The release tool releases the package as `imago` and starts at 0.1.0. No version was
   ever tagged or published, so the release manifest is empty and `initial-version`
-  states the first one. The release pull request moves to a branch named after the new
+  states the first one. Version 1.0.0 waits until the milestone `1.0 — First release` is
+  closed; a governance test refuses `initial-version`, the manifest entry or `VERSION`
+  from 1.0.0 up while it is open. The release pull request moves to a branch named after the new
   package.
 - Every workflow action that ran on the Node 20 runtime is pinned to its current release,
   which runs on Node 24: `checkout` v7.0.1, `setup-go` v7.0.0, `setup-python` v7.0.0,
