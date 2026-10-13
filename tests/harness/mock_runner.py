@@ -330,6 +330,16 @@ usermod() {
   mock_status usermod
 }
 export -f usermod
+
+# ctr also fails when its arguments contain MOCK_FAIL_IMAGE, so a test can fail one pull.
+ctr() {
+  echo "ctr $*" >> "$SANDBOX_ROOT/journal_cmds.log"
+  case " $* " in
+    *" ${MOCK_FAIL_IMAGE:-mock-fail-image-unset} "*) return 1 ;;
+  esac
+  mock_status ctr
+}
+export -f ctr
 """
 
 
