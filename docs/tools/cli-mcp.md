@@ -98,6 +98,18 @@ imago cloud-init generate --flavor=docker-generic --platform=truenas
 imago cloud-init generate --flavor=base-generic --platform=macos
 ```
 
+Every value written into the YAML passes an allow-list first, and the generator refuses the whole document when one does not match ([`pkg/cloudinit/cloudinit.go`](../../pkg/cloudinit/cloudinit.go), tests in [`pkg/cloudinit/validate_test.go`](../../pkg/cloudinit/validate_test.go)):
+
+| Value | Accepted |
+| :--- | :--- |
+| `--hostname` | one RFC 1123 label: 1 to 63 letters, digits and inner hyphens, no dots |
+| `--user` | `^[a-z][a-z0-9_-]{0,31}$`, never `root` |
+| `--platform` | `proxmox`, `unraid`, `truenas`, `macos`, `utm`, `windows`, `hyperv`, in any case |
+| `--flavor` | a flavor of the catalog |
+| timezone, SSH keys, packages (library and MCP callers) | an IANA zone name; a single-line OpenSSH public key; a Debian package name |
+
+Accepted values are written as double-quoted YAML scalars, so a value can never open a new key. `cloud-init metadata` applies the same hostname rule.
+
 ### 2.4 Multi-Backend Build Dispatcher (`build`)
 
 Dispatches builds to local Packer or remote CI backends:
@@ -134,6 +146,8 @@ Generates direct kernel/initramfs boot commands for QEMU, Cloud-Hypervisor, or F
 ```bash
 imago boot --flavor=ai-infer-generic --kernel=/boot/vmlinuz --initrd=/boot/initrd.img
 ```
+
+The kernel and initrd paths must be absolute, the root device must be a single kernel parameter value (no spaces, quotes or control characters), and no value may carry control characters. The printed command quotes each path and the kernel command line as one POSIX shell word, so pasting it into a shell runs `qemu-system-x86_64` and nothing else ([`pkg/imageless/boot_quoting_test.go`](../../pkg/imageless/boot_quoting_test.go) runs it through `sh` to check).
 
 ### 2.7 Machine-Verifiable Hardening Standards (`standards`)
 
@@ -261,7 +275,7 @@ imago mcp --transport=http --addr=:8899
 | **`list_flavors`** | `tier` (optional string) | List available flavors filtered by workload tier |
 | **`get_flavor`** | `flavor_id` (string) | Return hardware stack, kernel profile, and provisioners |
 | **`validate_manifest`** | `path` (optional string) | Validate `versions.json` Single Source of Truth |
-| **`generate_cloudinit`** | `flavor`, `hostname`, `platform` | Generate hardened cloud-init YAML user-data |
+| **`generate_cloudinit`** | `flavor`, `hostname`, `user`, `platform` | Generate hardened cloud-init YAML user-data; refuses values outside the allow-lists of §2.3 |
 | **`get_standards`** | `flavor_id` (string) | Query machine-readable CIS/BSI hardening requirements |
 | **`list_epics`** | None | List recurring operational and architectural epics |
 | **`get_milestones`** | None | List release milestones with state and due date |
