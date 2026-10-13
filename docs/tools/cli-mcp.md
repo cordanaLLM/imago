@@ -276,16 +276,16 @@ imago mcp --transport=http --addr=:8899
 
 | Tool Identifier | Parameters | Description |
 | :--- | :--- | :--- |
-| **`list_flavors`** | `tier` (optional string) | List available flavors filtered by workload tier |
+| **`list_flavors`** | `tier` (optional string) | List available flavors filtered by workload tier; an unknown tier is an error that names the known tiers |
 | **`get_flavor`** | `flavor_id` (string) | Return hardware stack, kernel profile, and provisioners |
-| **`validate_manifest`** | `path` (optional string) | Validate `versions.json` Single Source of Truth |
+| **`validate_manifest`** | `path` (optional, repository-relative) | Validate `versions.json` Single Source of Truth; an absolute path or one leaving the repository is refused |
 | **`generate_cloudinit`** | `flavor`, `hostname`, `user`, `platform` | Generate hardened cloud-init YAML user-data; refuses values outside the allow-lists of §2.3 |
 | **`get_standards`** | `flavor_id` (string) | Query machine-readable CIS/BSI hardening requirements |
 | **`list_epics`** | None | List recurring operational and architectural epics |
 | **`get_milestones`** | None | List release milestones with state and due date |
-| **`trigger_build`** | `flavor`, `backend`, `dry_run`, `confirmed` | Dispatch build to local or remote CI backends (supports staging) |
+| **`trigger_build`** | `flavor`, `backend`, `dry_run`, `confirmed` | Dispatch build to local or remote CI backends (supports staging); an unknown flavor or backend is refused before a dry run or staging |
 | **`apply_flavor`** | `flavor_id`, `dry_run` | Generate in-place host provisioning bash script |
-| **`inspect_compliance`** | None | Inspect declarative CIS/NIST compliance profile |
+| **`inspect_compliance`** | `path` (optional, repository-relative; default `tests/compliance/goss.yaml`) | Inspect declarative CIS/NIST compliance profile; an absolute path or one leaving the repository is refused |
 | **`list_staged_actions`** | None | List pending staged actions requiring operator confirmation |
 | **`confirm_action`** | `action_id` (string) | Confirm and execute a pending staged mutation |
 | **`discard_staged_action`** | `action_id` (string) | Discard and abort a pending staged mutation |
