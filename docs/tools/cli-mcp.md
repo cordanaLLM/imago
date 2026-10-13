@@ -98,7 +98,7 @@ imago cloud-init generate --flavor=docker-generic --platform=truenas
 imago cloud-init generate --flavor=base-generic --platform=macos
 ```
 
-Every value written into the YAML passes an allow-list first, and the generator refuses the whole document when one does not match ([`pkg/cloudinit/cloudinit.go`](../../pkg/cloudinit/cloudinit.go), tests in [`pkg/cloudinit/validate_test.go`](../../pkg/cloudinit/validate_test.go)):
+Every value written into the YAML passes an allow-list first, and the generator refuses the whole document when one does not match ([`pkg/cloudinit/cloudinit.go`](https://github.com/cordanaLLM/imago/blob/main/pkg/cloudinit/cloudinit.go), tests in [`pkg/cloudinit/validate_test.go`](https://github.com/cordanaLLM/imago/blob/main/pkg/cloudinit/validate_test.go)):
 
 | Value | Accepted |
 | :--- | :--- |
@@ -147,7 +147,7 @@ Generates direct kernel/initramfs boot commands for QEMU, Cloud-Hypervisor, or F
 imago boot --flavor=ai-infer-generic --kernel=/boot/vmlinuz --initrd=/boot/initrd.img
 ```
 
-The kernel and initrd paths must be absolute, the root device must be a single kernel parameter value (no spaces, quotes or control characters), and no value may carry control characters. The printed command quotes each path and the kernel command line as one POSIX shell word, so pasting it into a shell runs `qemu-system-x86_64` and nothing else ([`pkg/imageless/boot_quoting_test.go`](../../pkg/imageless/boot_quoting_test.go) runs it through `sh` to check).
+The kernel and initrd paths must be absolute, the root device must be a single kernel parameter value (no spaces, quotes or control characters), and no value may carry control characters. The printed command quotes each path and the kernel command line as one POSIX shell word, so pasting it into a shell runs `qemu-system-x86_64` and nothing else ([`pkg/imageless/boot_quoting_test.go`](https://github.com/cordanaLLM/imago/blob/main/pkg/imageless/boot_quoting_test.go) runs it through `sh` to check).
 
 ### 2.7 Machine-Verifiable Hardening Standards (`standards`)
 
