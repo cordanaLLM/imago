@@ -67,7 +67,6 @@ jobs:
               - '.github/workflows/**'
               - '.github/*.json'
               - '.yamllint.yml'
-              - '.codespellrc'
               - 'Makefile'
               - '.github/requirements/lint.txt'
 
@@ -117,11 +116,20 @@ jobs:
           sudo apt-get install -y yamllint
           bash -c "$(curl -sSfL --max-time 60 https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)"
           sudo mv ./actionlint /usr/local/bin/
-          pip install --require-hashes -r .github/requirements/lint.txt
       - name: Run Actionlint
         run: actionlint .github/workflows/*.yml
       - name: Run Yamllint
         run: yamllint -c .yamllint.yml .github/ packer/http/
+
+  # codespell reads every tracked text file, so a change detector cannot tell which
+  # changes it must see; it runs on every event.
+  lint-spelling:
+    name: Codespell
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Install Codespell
+        run: pip install --require-hashes -r .github/requirements/lint.txt
       - name: Run Codespell
         run: codespell
 
