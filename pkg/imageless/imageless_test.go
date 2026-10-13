@@ -48,7 +48,7 @@ func TestGenerateBootCommand(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, cmd, "qemu-system-x86_64")
-	assert.Contains(t, cmd, "-kernel /custom/vmlinuz")
-	assert.Contains(t, cmd, "-initrd /custom/initrd.img")
+	assert.Contains(t, cmd, "-kernel '/custom/vmlinuz'")
+	assert.Contains(t, cmd, "-initrd '/custom/initrd.img'")
 	assert.Contains(t, cmd, "transparent_hugepage=madvise")
 }

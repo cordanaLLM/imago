@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -185,6 +186,30 @@ func TestMCPProtocolToolExecution(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.True(t, res.IsError)
+	})
+
+	t.Run("generate_cloudinit_planted_values", func(t *testing.T) {
+		for _, args := range []map[string]any{
+			{"flavor": "base-generic", "hostname": "x\nruncmd: [planted]"},
+			{"flavor": "base-generic", "user": "root"},
+			{"flavor": "base-generic", "platform": "esxi"},
+		} {
+			res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{Name: "generate_cloudinit", Arguments: args})
+			require.NoError(t, err)
+			assert.True(t, res.IsError, args)
+			assert.NotContains(t, res.Content[0].(*sdkmcp.TextContent).Text, "#cloud-config", args)
+		}
+	})
+
+	t.Run("generate_cloudinit_boundary", func(t *testing.T) {
+		host := strings.Repeat("h", 63)
+		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
+			Name:      "generate_cloudinit",
+			Arguments: map[string]any{"flavor": "base-generic", "hostname": host, "platform": "UTM"},
+		})
+		require.NoError(t, err)
+		assert.False(t, res.IsError)
+		assert.Contains(t, res.Content[0].(*sdkmcp.TextContent).Text, `hostname: "`+host+`"`)
 	})
 
 	t.Run("get_standards_valid", func(t *testing.T) {

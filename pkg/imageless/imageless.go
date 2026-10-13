@@ -96,6 +96,10 @@ func GenerateBootCommand(cfg MicroVMBootConfig) (string, error) {
 		cfg.RootDevice = "/dev/vda1"
 	}
 
+	if err := validateBootPaths(cfg); err != nil {
+		return "", err
+	}
+
 	cmdline := []string{
 		fmt.Sprintf("root=%s", cfg.RootDevice),
 		"ro",
@@ -115,6 +119,32 @@ func GenerateBootCommand(cfg MicroVMBootConfig) (string, error) {
 
 	cmdlineStr := strings.Join(cmdline, " ")
 
-	return fmt.Sprintf("qemu-system-x86_64 -enable-kvm -m 4096 -smp 4 -kernel %s -initrd %s -append %q -nographic",
-		cfg.KernelPath, cfg.InitrdPath, cmdlineStr), nil
+	return fmt.Sprintf("qemu-system-x86_64 -enable-kvm -m 4096 -smp 4 -kernel %s -initrd %s -append %s -nographic",
+		shellQuote(cfg.KernelPath), shellQuote(cfg.InitrdPath), shellQuote(cmdlineStr)), nil
+}
+
+// validateBootPaths refuses paths that are not absolute or carry control characters, and a
+// root device that would split into several kernel parameters.
+func validateBootPaths(cfg MicroVMBootConfig) error {
+	for _, p := range []struct{ name, value string }{{"kernel", cfg.KernelPath}, {"initrd", cfg.InitrdPath}} {
+		if !strings.HasPrefix(p.value, "/") || hasControl(p.value) {
+			return fmt.Errorf("imageless: %s path %q must be absolute and free of control characters", p.name, p.value)
+		}
+	}
+	if strings.ContainsAny(cfg.RootDevice, " \"") || hasControl(cfg.RootDevice) {
+		return fmt.Errorf("imageless: root device %q must be one kernel parameter value without spaces, quotes or control characters", cfg.RootDevice)
+	}
+	if hasControl(cfg.ExtraCmdline) {
+		return fmt.Errorf("imageless: extra kernel command line carries control characters")
+	}
+	return nil
+}
+
+func hasControl(s string) bool {
+	return strings.ContainsFunc(s, func(r rune) bool { return r < 0x20 || r == 0x7f })
+}
+
+// shellQuote renders s as one POSIX shell word in single quotes; an inner single quote closes the word, is escaped and reopens it.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
