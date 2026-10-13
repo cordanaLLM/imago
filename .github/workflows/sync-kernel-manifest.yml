@@ -178,11 +178,35 @@ jobs:
           go run ./cmd/imago manifest validate --path versions.json
           pytest tests/test_manifest.py -v
 
+      # pr-project-gate.yml refuses a pull request without a milestone, so the pin
+      # pull request takes the lowest-numbered open milestone, the current release.
+      - name: Resolve Pull Request Milestone
+        id: milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          OPEN="${RUNNER_TEMP}/open-milestones.json"
+          gh api "repos/${GITHUB_REPOSITORY}/milestones?state=open&per_page=100" > "${OPEN}"
+          NUMBER="$(python3 -c 'import json, sys; print(min((m["number"] for m in json.load(open(sys.argv[1]))), default=""))' "${OPEN}")"
+          if [[ -z "${NUMBER}" ]]; then
+            echo "::error::the repository has no open milestone for the kernel pin pull request" >&2
+            exit 1
+          fi
+          echo "number=${NUMBER}" >> "$GITHUB_OUTPUT"
+
+      # The repository requires signed commits, so the action commits through the
+      # forge API (sign-commits) instead of pushing an unsigned git commit.
       - name: Propose Kernel Pin PR
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           add-paths: versions.json
           branch: chore/sync-kernel-${{ steps.meta.outputs.stream }}
+          sign-commits: true
+          milestone: ${{ steps.milestone.outputs.number }}
+          labels: |
+            kind/chore
+            area/fleet-contract
           title: "chore(kernel): pin ${{ steps.meta.outputs.stream }} to ${{ steps.meta.outputs.version }}"
           body: |
             Verified kernel release from `${{ steps.meta.outputs.provider }}`.
@@ -193,4 +217,6 @@ jobs:
             - **Artifact digest (SHA256SUMS)**: `${{ steps.pin.outputs.artifact_digest }}`
             - **Verification**: cosign keyless bundle, SHA256SUMS digest, per-artifact digests and sizes (`imago kernel artifact verify`)
             - **Trigger**: `${{ github.event_name }}`
+
+            Ref #34
           commit-message: "chore(kernel): pin ${{ steps.meta.outputs.stream }} to ${{ steps.meta.outputs.version }}"
