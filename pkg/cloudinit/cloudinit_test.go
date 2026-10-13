@@ -18,7 +18,7 @@ func TestGenerateUserDataDefault(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, userData, "#cloud-config")
-	assert.Contains(t, userData, "hostname: lusoris-node")
+	assert.Contains(t, userData, `hostname: "lusoris-node"`)
 	assert.Contains(t, userData, "disable_root: true")
 	assert.Contains(t, userData, "ssh_pwauth: false")
 	assert.Contains(t, userData, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGenericKeyForTestingOnly")
@@ -56,6 +56,6 @@ func TestGenerateMetaData(t *testing.T) {
 	cfg.Hostname = "custom-host"
 	metaData, err := cloudinit.GenerateMetaData(cfg)
 	require.NoError(t, err)
-	assert.Contains(t, metaData, "instance-id: custom-host-01")
-	assert.Contains(t, metaData, "local-hostname: custom-host")
+	assert.Contains(t, metaData, `instance-id: "custom-host-01"`)
+	assert.Contains(t, metaData, `local-hostname: "custom-host"`)
 }

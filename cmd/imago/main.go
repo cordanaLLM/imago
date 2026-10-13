@@ -114,7 +114,7 @@ func newFlavorsCmd() *cobra.Command {
 				return enc.Encode(list)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%-28s %-12s %-24s %s\n", "FLAVOR ID", "TIER", "HARDWARE", "DESCRIPTION")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 100)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 100))
 			for _, f := range list {
 				fmt.Fprintf(cmd.OutOrStdout(), "%-28s %-12s %-24s %s\n", f.ID, f.TierID, f.HardwareStack, f.Description)
 			}
@@ -210,7 +210,7 @@ func newCloudInitCmd() *cobra.Command {
 	genCmd.Flags().StringVarP(&flavor, "flavor", "f", "base-generic", "Target flavor")
 	genCmd.Flags().StringVar(&hostname, "hostname", "lusoris-node", "Virtual machine hostname")
 	genCmd.Flags().StringVar(&user, "user", "ubuntu", "Default non-root operator user")
-	genCmd.Flags().StringVarP(&platform, "platform", "p", "proxmox", "Platform target (proxmox, unraid, macos, windows)")
+	genCmd.Flags().StringVarP(&platform, "platform", "p", "proxmox", "Platform target (proxmox, unraid, truenas, macos, utm, windows, hyperv)")
 
 	metaCmd := &cobra.Command{
 		Use:   "metadata",
@@ -336,7 +336,7 @@ func newStandardsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stds := standards.All()
 			fmt.Fprintf(cmd.OutOrStdout(), "%-28s %-12s %-40s %s\n", "FLAVOR ID", "TIER", "SECURITY BASELINE", "CDI")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 100)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 100))
 			for _, s := range stds {
 				cdiStr := "no"
 				if s.CDISpecRequired {
@@ -387,7 +387,7 @@ func newEpicsCmd() *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%-10s %-12s %-50s %s\n", "ID", "CADENCE", "TITLE", "STATUS")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 85)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 85))
 			for _, e := range epics {
 				fmt.Fprintf(cmd.OutOrStdout(), "%-10s %-12s %-50s %s\n", e.ID, e.Cadence, e.Title, e.Status)
 			}
@@ -421,7 +421,7 @@ func newMilestonesCmd() *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%-14s %-8s %-22s %s\n", "TITLE", "STATE", "DUE ON", "DESCRIPTION")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 85)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 85))
 			for _, m := range ms {
 				fmt.Fprintf(cmd.OutOrStdout(), "%-14s %-8s %-22s %s\n", m.Title, m.State, m.DueOn, m.Description)
 			}
@@ -440,24 +440,25 @@ func newLintCmd() *cobra.Command {
 		Use:   "lint",
 		Short: "Run specialized static analyzers and linters",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("==> Running imago static analyzers...")
+			out := cmd.OutOrStdout()
+			fmt.Fprintln(out, "==> Running imago static analyzers...")
 			// 1. Manifest
 			if _, err := manifest.Load("versions.json"); err != nil {
 				return fmt.Errorf("manifest lint failed: %w", err)
 			}
-			fmt.Println("  ✓ versions.json schema valid")
+			fmt.Fprintln(out, "  ✓ versions.json schema valid")
 
 			// 2. Epics & Milestones
 			if _, err := tracker.LoadEpics(".github/epics.json"); err != nil {
 				return fmt.Errorf("epics lint failed: %w", err)
 			}
-			fmt.Println("  ✓ .github/epics.json valid")
+			fmt.Fprintln(out, "  ✓ .github/epics.json valid")
 			if _, err := tracker.LoadMilestones(".github/milestones.json"); err != nil {
 				return fmt.Errorf("milestones lint failed: %w", err)
 			}
-			fmt.Println("  ✓ .github/milestones.json valid")
+			fmt.Fprintln(out, "  ✓ .github/milestones.json valid")
 
-			fmt.Println("==> All internal linter checks passed.")
+			fmt.Fprintln(out, "==> All internal linter checks passed.")
 			return nil
 		},
 	}
@@ -466,6 +467,10 @@ func newLintCmd() *cobra.Command {
 // auditScriptTimeout bounds the repository health audit, which reads the tree and runs
 // local linters only; a run that exceeds it is stuck, not slow.
 const auditScriptTimeout = 5 * time.Minute
+
+// auditWaitDelay bounds the wait for the script's output after the deadline: a child the
+// script started can hold the output open after the script itself is killed.
+const auditWaitDelay = 5 * time.Second
 
 func newAuditCmd() *cobra.Command {
 	return &cobra.Command{
@@ -480,8 +485,9 @@ func newAuditCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), auditScriptTimeout)
 			defer cancel()
 			c := exec.CommandContext(ctx, "bash", "scripts/audit-repository-health.sh")
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
+			c.Stdout = cmd.OutOrStdout()
+			c.Stderr = cmd.ErrOrStderr()
+			c.WaitDelay = auditWaitDelay
 			return c.Run()
 		},
 	}
