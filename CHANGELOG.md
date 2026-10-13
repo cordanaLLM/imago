@@ -93,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
 
 ### Changed
+- The Gitleaks and Semgrep jobs run `tools/ci/scanner_canary.py` before their scan: it scans planted findings outside the checkout and fails the job unless the scanner exits non-zero and reports each planted rule, including the custom `no-cosign-private-key` rule. The privacy tests now prove their patterns with planted leaks and pass documentation placeholders and near misses.
 - The Praetor engine pin moves from `6622361940dc` to `3bbde0734` (`PRAETOR_REF` in
   `.github/workflows/ci.yml`). The new engine's audit fails when a linter the profile or a
   facet declares runs in no CI workflow; all nine declared linters already run, so the
