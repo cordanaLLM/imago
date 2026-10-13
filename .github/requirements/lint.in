@@ -1,5 +1,5 @@
 # Copyright 2026 Lusoris
-# Spelling check and Python lint: the lint-workflows, lint-python and test-python jobs
+# Spelling check and Python lint: the lint-spelling, lint-python and test-python jobs
 # of ci.yml install the lock compiled from this file.
 codespell
 ruff

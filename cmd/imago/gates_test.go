@@ -65,7 +65,7 @@ func TestLintRefusesPlantedDefects(t *testing.T) {
 		{"epics-no-list", ".github/epics.json", `{}`, "epics lint failed"},
 		{"epic-without-id", ".github/epics.json", `{"epics": [{"title": "no id"}]}`, "epics lint failed"},
 		{"epics-extra-key", ".github/epics.json", `{"epics": [], "epicz": []}`, "epics lint failed"},
-		{"epic-unknown-field", ".github/epics.json", `{"epics": [{"id": "E", "title": "t", "statuss": "x"}]}`, "epics lint failed"},
+		{"epic-unknown-field", ".github/epics.json", `{"epics": [{"id": "E", "title": "t", "statuss": "x"}]}`, "epics lint failed"}, // codespell:ignore statuss
 		{"epics-trailing-data", ".github/epics.json", `{"epics": []} {}`, "epics lint failed"},
 		{"epics-missing", ".github/epics.json", "", "epics lint failed"},
 		{"milestone-unknown-state", ".github/milestones.json", `{"milestones": [{"title": "x", "state": "draft"}]}`, "milestones lint failed"},

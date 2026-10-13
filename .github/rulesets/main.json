@@ -50,6 +50,9 @@
             "context": "Secret \u0026 Privacy Leak Scan"
           },
           {
+            "context": "Codespell"
+          },
+          {
             "context": "CodeQL (go)"
           },
           {
