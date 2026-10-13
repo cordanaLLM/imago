@@ -440,24 +440,25 @@ func newLintCmd() *cobra.Command {
 		Use:   "lint",
 		Short: "Run specialized static analyzers and linters",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("==> Running imago static analyzers...")
+			out := cmd.OutOrStdout()
+			fmt.Fprintln(out, "==> Running imago static analyzers...")
 			// 1. Manifest
 			if _, err := manifest.Load("versions.json"); err != nil {
 				return fmt.Errorf("manifest lint failed: %w", err)
 			}
-			fmt.Println("  ✓ versions.json schema valid")
+			fmt.Fprintln(out, "  ✓ versions.json schema valid")
 
 			// 2. Epics & Milestones
 			if _, err := tracker.LoadEpics(".github/epics.json"); err != nil {
 				return fmt.Errorf("epics lint failed: %w", err)
 			}
-			fmt.Println("  ✓ .github/epics.json valid")
+			fmt.Fprintln(out, "  ✓ .github/epics.json valid")
 			if _, err := tracker.LoadMilestones(".github/milestones.json"); err != nil {
 				return fmt.Errorf("milestones lint failed: %w", err)
 			}
-			fmt.Println("  ✓ .github/milestones.json valid")
+			fmt.Fprintln(out, "  ✓ .github/milestones.json valid")
 
-			fmt.Println("==> All internal linter checks passed.")
+			fmt.Fprintln(out, "==> All internal linter checks passed.")
 			return nil
 		},
 	}
@@ -466,6 +467,10 @@ func newLintCmd() *cobra.Command {
 // auditScriptTimeout bounds the repository health audit, which reads the tree and runs
 // local linters only; a run that exceeds it is stuck, not slow.
 const auditScriptTimeout = 5 * time.Minute
+
+// auditWaitDelay bounds the wait for the script's output after the deadline: a child the
+// script started can hold the output open after the script itself is killed.
+const auditWaitDelay = 5 * time.Second
 
 func newAuditCmd() *cobra.Command {
 	return &cobra.Command{
@@ -480,8 +485,9 @@ func newAuditCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), auditScriptTimeout)
 			defer cancel()
 			c := exec.CommandContext(ctx, "bash", "scripts/audit-repository-health.sh")
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
+			c.Stdout = cmd.OutOrStdout()
+			c.Stderr = cmd.ErrOrStderr()
+			c.WaitDelay = auditWaitDelay
 			return c.Run()
 		},
 	}
