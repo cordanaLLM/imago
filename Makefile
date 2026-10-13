@@ -1,6 +1,6 @@
 -include .config/praetor/engine.mk
 .PHONY: help init fmt fmt-check lint test clean compress docs-serve docs-build \
-        build-cli test-go fuzz audit lint-workflows lint-manifest \
+        build-cli test-go fuzz audit prove-hooks lint-workflows lint-manifest \
         build-base-generic build-base-intel build-base-amd \
         build-base-nvidia-legacy build-base-nvidia-mainstream build-base-nvidia-modern build-base-nvidia-bleeding build-base-nvidia-datacenter \
         build-docker-generic build-docker-intel build-docker-amd build-docker-nvidia build-docker-nvidia-modern build-docker-nvidia-bleeding \
@@ -82,6 +82,9 @@ test: test-go ## Run automated configuration, SSOT, privacy, execution, and cont
 	@pytest tests/ -v
 
 test-all: lint test test-bench ## Run full enterprise verification suite (lints, unit tests, mock execution, live docker, benchmarks)
+
+prove-hooks: ## Show in a temporary clone that the pre-commit hooks refuse planted defects (issue #80)
+	@python3 -I tools/ci/prove_hooks.py
 
 compress: ## Compress generated output images with zstd (sparse)
 	@echo "==> Compressing output images with zstd (sparse, -19)..."
