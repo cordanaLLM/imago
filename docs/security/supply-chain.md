@@ -83,9 +83,3 @@ flowchart TD
     style MergeGate fill:none,stroke:#059669,stroke-width:2px,stroke-dasharray: 4 4
     style ReleaseChain fill:none,stroke:#7c3aed,stroke-width:2px,stroke-dasharray: 4 4
 ```
-
-#Planted heading without a space
-
-
-
-Planted line with trailing spaces   
