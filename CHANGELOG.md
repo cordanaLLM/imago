@@ -94,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
 
 ### Changed
+- The Gitleaks and Semgrep jobs run `tools/ci/scanner_canary.py` before their scan: it scans planted findings outside the checkout and fails the job unless the scanner exits non-zero and reports each planted rule, including the custom `no-cosign-private-key` rule. The privacy tests now prove their patterns with planted leaks and pass documentation placeholders and near misses.
 - The Praetor engine pin moves from `6622361940dc` to `3bbde0734` (`PRAETOR_REF` in
   `.github/workflows/ci.yml`). The new engine's audit fails when a linter the profile or a
   facet declares runs in no CI workflow; all nine declared linters already run, so the
@@ -189,6 +190,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `pr-project-gate.yml` now re-runs when a pull request is reopened or its milestone is set or removed (`reopened`, `milestoned`, `demilestoned`); before, removing the milestone left the last green result in place. `tests/test_pr_project_gate.py` runs the gate's step script with planted metadata: a missing milestone, reference or `tier/*`/`area/*` label each fail with their own error, near misses such as `ref#6` or a `subarea/*` label fail, and cross-repository, epic and title-only references pass.
 - Go dependencies are now checked for known vulnerabilities in CI: the `Govulncheck Reachable Go Vulnerabilities` job of `security-scans.yml` runs govulncheck, pinned in its own module `tools/govulncheck/go.mod`, on every Go change, every push to `main` and the weekly schedule. It fails on a reachable vulnerability and when the scan cannot run; before, govulncheck ran only in the local pre-push hook and was skipped when not installed. `tests/test_security_scans.py` refuses planted steps that would pass with findings (`-json`, `-format sarif`, `|| true`, a skip when the tool is missing, an unpinned `@latest`).
 - The `Trivy Filesystem CVE Scan` job of `security-scans.yml` now scans the pinned pip lockfiles under `.github/requirements/`; trivy reads pip dependencies only from files named `requirements.txt`, so they were never scanned. `.github/trivy.yaml` names them, and `tools/ci/trivy_coverage.py` fails the job when the JSON report does not list exactly the tracked lockfiles. `tests/test_trivy_coverage.py` refuses a report without the pip lockfiles, one with an unexpected target and empty reports.
 - `dispatch-kernel-requirements.yml` now fails when the `KERNEL_FORGE_TOKEN` secret is missing; before, the dispatch step was skipped and the job passed without sending the requirement to `nucleus`. `tests/test_kernel_dispatch.py` runs the new guard step with and without a token.
