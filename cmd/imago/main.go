@@ -114,7 +114,7 @@ func newFlavorsCmd() *cobra.Command {
 				return enc.Encode(list)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%-28s %-12s %-24s %s\n", "FLAVOR ID", "TIER", "HARDWARE", "DESCRIPTION")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 100)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 100))
 			for _, f := range list {
 				fmt.Fprintf(cmd.OutOrStdout(), "%-28s %-12s %-24s %s\n", f.ID, f.TierID, f.HardwareStack, f.Description)
 			}
@@ -210,7 +210,7 @@ func newCloudInitCmd() *cobra.Command {
 	genCmd.Flags().StringVarP(&flavor, "flavor", "f", "base-generic", "Target flavor")
 	genCmd.Flags().StringVar(&hostname, "hostname", "lusoris-node", "Virtual machine hostname")
 	genCmd.Flags().StringVar(&user, "user", "ubuntu", "Default non-root operator user")
-	genCmd.Flags().StringVarP(&platform, "platform", "p", "proxmox", "Platform target (proxmox, unraid, macos, windows)")
+	genCmd.Flags().StringVarP(&platform, "platform", "p", "proxmox", "Platform target (proxmox, unraid, truenas, macos, utm, windows, hyperv)")
 
 	metaCmd := &cobra.Command{
 		Use:   "metadata",
@@ -336,7 +336,7 @@ func newStandardsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stds := standards.All()
 			fmt.Fprintf(cmd.OutOrStdout(), "%-28s %-12s %-40s %s\n", "FLAVOR ID", "TIER", "SECURITY BASELINE", "CDI")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 100)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 100))
 			for _, s := range stds {
 				cdiStr := "no"
 				if s.CDISpecRequired {
@@ -387,7 +387,7 @@ func newEpicsCmd() *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%-10s %-12s %-50s %s\n", "ID", "CADENCE", "TITLE", "STATUS")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 85)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 85))
 			for _, e := range epics {
 				fmt.Fprintf(cmd.OutOrStdout(), "%-10s %-12s %-50s %s\n", e.ID, e.Cadence, e.Title, e.Status)
 			}
@@ -421,7 +421,7 @@ func newMilestonesCmd() *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%-14s %-8s %-22s %s\n", "TITLE", "STATE", "DUE ON", "DESCRIPTION")
-			fmt.Fprintln(cmd.OutOrStdout(), string(make([]byte, 85)))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 85))
 			for _, m := range ms {
 				fmt.Fprintf(cmd.OutOrStdout(), "%-14s %-8s %-22s %s\n", m.Title, m.State, m.DueOn, m.Description)
 			}
