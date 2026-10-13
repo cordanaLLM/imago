@@ -93,6 +93,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
 
 ### Changed
+- The Praetor engine pin moves from `6622361940dc` to `3bbde0734` (`PRAETOR_REF` in
+  `.github/workflows/ci.yml`). The new engine's audit fails when a linter the profile or a
+  facet declares runs in no CI workflow; all nine declared linters already run, so the
+  re-adoption wrote no exception and changed no other file.
 - The Praetor engine pin moves from `4ae6247c` to `6622361940dc` (`PRAETOR_REF` in
   `.github/workflows/ci.yml`). The new engine's audit refused the earlier texts of
   `tools/markdownlint/verify.mjs`, `tools/markdownlint/no-private-scratch-links.mjs` and
