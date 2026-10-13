@@ -4,6 +4,7 @@
 package tracker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -30,42 +31,74 @@ type Milestone struct {
 	Description string `json:"description"`
 }
 
+// The catalogs carry a schema pointer and a version beside their list. Decoding
+// refuses any other key, so a misspelled list key fails instead of reading as empty.
 type epicsFile struct {
-	Epics []Epic `json:"epics"`
+	Schema  string  `json:"$schema"`
+	Version string  `json:"version"`
+	Epics   *[]Epic `json:"epics"`
 }
 
 type milestonesFile struct {
-	Milestones []Milestone `json:"milestones"`
+	Schema     string       `json:"$schema"`
+	Version    string       `json:"version"`
+	Milestones *[]Milestone `json:"milestones"`
 }
 
 var (
 	issueRefRegex = regexp.MustCompile(`(?i)(?:fixes|closes|resolves|relates to|ref)\s+(?:#\d+|[a-zA-Z0-9_\-\.\/]+#\d+|EPIC-\d+)`)
 )
 
-// LoadEpics parses an epics catalog JSON file.
-func LoadEpics(path string) ([]Epic, error) {
+// decodeCatalog reads path and decodes it into v, refusing unknown keys and trailing data.
+func decodeCatalog(kind, path string, v any) error {
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
-		return nil, fmt.Errorf("tracker: read epics %s: %w", path, err)
+		return fmt.Errorf("tracker: read %s %s: %w", kind, path, err)
 	}
-	var f epicsFile
-	if err := json.Unmarshal(data, &f); err != nil {
-		return nil, fmt.Errorf("tracker: parse epics %s: %w", path, err)
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(v); err != nil {
+		return fmt.Errorf("tracker: parse %s %s: %w", kind, path, err)
 	}
-	return f.Epics, nil
+	if dec.More() {
+		return fmt.Errorf("tracker: parse %s %s: trailing data after the catalog", kind, path)
+	}
+	return nil
 }
 
-// LoadMilestones parses a milestones catalog JSON file.
+// LoadEpics parses an epics catalog JSON file. Every epic needs an id and a title.
+func LoadEpics(path string) ([]Epic, error) {
+	var f epicsFile
+	if err := decodeCatalog("epics", path, &f); err != nil {
+		return nil, err
+	}
+	if f.Epics == nil {
+		return nil, fmt.Errorf("tracker: epics %s has no epics list", path)
+	}
+	for i, e := range *f.Epics {
+		if e.ID == "" || e.Title == "" {
+			return nil, fmt.Errorf("tracker: epics %s entry %d needs an id and a title", path, i)
+		}
+	}
+	return *f.Epics, nil
+}
+
+// LoadMilestones parses a milestones catalog JSON file. Every milestone needs a
+// title and a state of open or closed.
 func LoadMilestones(path string) ([]Milestone, error) {
-	data, err := os.ReadFile(filepath.Clean(path))
-	if err != nil {
-		return nil, fmt.Errorf("tracker: read milestones %s: %w", path, err)
-	}
 	var f milestonesFile
-	if err := json.Unmarshal(data, &f); err != nil {
-		return nil, fmt.Errorf("tracker: parse milestones %s: %w", path, err)
+	if err := decodeCatalog("milestones", path, &f); err != nil {
+		return nil, err
 	}
-	return f.Milestones, nil
+	if f.Milestones == nil {
+		return nil, fmt.Errorf("tracker: milestones %s has no milestones list", path)
+	}
+	for i, m := range *f.Milestones {
+		if m.Title == "" || (m.State != "open" && m.State != "closed") {
+			return nil, fmt.Errorf("tracker: milestones %s entry %d needs a title and a state of open or closed", path, i)
+		}
+	}
+	return *f.Milestones, nil
 }
 
 // PRMetadata encapsulates the fields required for the PR hard gate.

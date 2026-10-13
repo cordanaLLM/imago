@@ -180,6 +180,10 @@ imago lint
 imago audit
 ```
 
+`imago lint` decodes `versions.json`, `.github/epics.json` and `.github/milestones.json` and fails on a malformed or missing file. The two catalogs are read strictly: unknown keys, trailing data and a missing `epics` or `milestones` list are refused, every epic needs an `id` and a `title`, and every milestone needs a `title` and the state `open` or `closed`. An explicitly empty list passes.
+
+`imago audit` runs `scripts/audit-repository-health.sh` and fails when the script is missing or exits non-zero. The run stops at its five-minute deadline (`auditScriptTimeout` in `cmd/imago/main.go`) even when a process the script started still holds the output open.
+
 ### 2.11 Aegis Product-Input Acceptance (`aegis`)
 
 ```bash
