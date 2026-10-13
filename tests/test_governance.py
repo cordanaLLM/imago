@@ -196,7 +196,6 @@ class TestGovernanceIntegrity:
             "release-please.yml",
             "scorecard.yml",
             "security-scans.yml",
-            "supply-chain.yml",
             "pr-project-gate.yml",
             "codeql.yml",
         ]

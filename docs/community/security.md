@@ -128,8 +128,8 @@ The repository runs the OpenSSF Scorecard supply-chain security analysis via Git
 All official release artifacts produced by the release matrix are fortified with verifiable provenance:
 
 1. **Cryptographic Keyless Signatures (Cosign)**:
-   Release images (`.qcow2.zst`, `.raw.zst`, `.vmdk.zst`) are signed using Sigstore Cosign via GitHub Actions OIDC identity tokens, linking signatures directly to workflow runs.
+   Each published release carries one `SHA256SUMS` over every image (`.qcow2.zst`) and SBOM, signed with Sigstore Cosign through the GitHub Actions OIDC identity of `release-matrix.yml` at the release tag (`SHA256SUMS.bundle`). The verification command is in [Supply Chain Security](../security/supply-chain.md).
 2. **Software Bill of Materials (SBOM)**:
-   Every image build generates CycloneDX and SPDX format SBOMs via Syft, detailing every installed package, kernel module, and container image layer.
-3. **Artifact Attestation**:
-   GitHub artifact attestations are published with SHA-256 digests allowing users to verify build authenticity via `gh attestation verify`.
+   Every image build generates CycloneDX and SPDX SBOMs with Syft from the image's root file system, listing every installed Debian package; a build whose SBOM lists fewer than 100 fails.
+3. **Build Provenance**:
+   No SLSA build provenance or GitHub artifact attestation is published yet. The gap is a dated HISS-11 exception in `.standards.yaml`.

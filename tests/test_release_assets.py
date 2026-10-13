@@ -1,0 +1,337 @@
+# Copyright 2026 Lusoris
+"""Verification of the release SBOM and signing path.
+
+`tools/ci/release_assets.py` attaches a built qcow2 image read-only so Syft can catalogue its
+root file system, refuses an SBOM with too few Debian packages and merges the per-flavor
+checksum files into the SHA256SUMS a release signs. The tests replace the system tools
+(sudo, qemu-nbd, lsblk, blkid, mount) with a recorder, cover the failure and boundary cases,
+and check that release-matrix.yml generates the SBOMs, signs SHA256SUMS and verifies the
+signature before it uploads anything.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import re
+from pathlib import Path
+
+import pytest
+import yaml
+
+ROOT = Path(__file__).resolve().parent.parent
+SCRIPT = ROOT / "tools" / "ci" / "release_assets.py"
+WORKFLOWS = ROOT / ".github" / "workflows"
+RELEASE = WORKFLOWS / "release-matrix.yml"
+DEVICE = "/dev/nbd7"
+
+_spec = importlib.util.spec_from_file_location("release_assets", SCRIPT)
+assets = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(assets)
+
+
+class Tools:
+    """Stand-in for the system tools: records each command and answers as configured."""
+
+    def __init__(self, mount_dir: Path) -> None:
+        self.mount_dir = mount_dir
+        self.calls: list[list[str]] = []
+        self.labels = {f"{DEVICE}p1": assets.ROOT_LABEL, f"{DEVICE}p15": "UEFI"}
+        self.fail: set[str] = set()
+        self.dpkg_status = True
+
+    def run(self, command: list[str]) -> str:
+        self.calls.append(command)
+        verb = command[1] if command[0] == "sudo" else command[0]
+        if verb in self.fail:
+            raise assets.AssetError(f"{verb} failed")
+        if verb == "lsblk":
+            return "\n".join([DEVICE, *self.labels]) + "\n"
+        if verb == "blkid":
+            return self.labels.get(command[-1], "") + "\n"
+        if verb == "mount" and self.dpkg_status:
+            (self.mount_dir / "var/lib/dpkg").mkdir(parents=True, exist_ok=True)
+            (self.mount_dir / "var/lib/dpkg/status").write_text("Package: base-files\n", encoding="utf-8")
+        return ""
+
+    def verbs(self) -> list[str]:
+        return [c[1] if c[0] == "sudo" else c[0] for c in self.calls if c[0] != "lsblk" and "blkid" not in c]
+
+
+@pytest.fixture
+def tools(tmp_path, monkeypatch):
+    stub = Tools(tmp_path / "root")
+    monkeypatch.setattr(assets, "run", stub.run)
+    monkeypatch.setattr(assets.time, "sleep", lambda _s: None)
+    return stub
+
+
+@pytest.fixture
+def image(tmp_path):
+    path = tmp_path / "imago-base-generic.qcow2"
+    path.write_bytes(b"QFI\xfb")
+    return path
+
+
+def attach(image: Path, tools: Tools) -> int:
+    return assets.main(["attach", "--image", str(image), "--at", str(tools.mount_dir), "--device", DEVICE])
+
+
+def test_attach_mounts_the_labelled_partition_read_only(image, tools):
+    assert attach(image, tools) == 0
+    assert tools.verbs() == ["modprobe", "qemu-nbd", "mount"]
+    connect, mount = tools.calls[1], tools.calls[-1]
+    assert "--read-only" in connect and f"--connect={DEVICE}" in connect
+    assert mount[2:] == ["-o", "ro,noload", f"{DEVICE}p1", str(tools.mount_dir)]
+
+
+def test_detach_unmounts_then_disconnects(tools):
+    assert assets.main(["detach", "--at", str(tools.mount_dir), "--device", DEVICE]) == 0
+    assert tools.verbs() == ["umount", "qemu-nbd"]
+    assert tools.calls[-1][2:] == ["--disconnect", DEVICE]
+
+
+def test_detach_tries_both_and_fails_when_umount_fails(tools, capsys):
+    tools.fail.add("umount")
+    assert assets.main(["detach", "--at", str(tools.mount_dir), "--device", DEVICE]) == 1
+    assert tools.verbs() == ["umount", "qemu-nbd"]
+    assert "umount failed" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        (lambda t: t.fail.add("qemu-nbd"), "qemu-nbd failed", ["modprobe", "qemu-nbd"]),
+        (lambda t: t.labels.update({f"{DEVICE}p1": "data"}), "no partition", ["modprobe", "qemu-nbd", "qemu-nbd"]),
+        (
+            lambda t: t.labels.update({f"{DEVICE}p2": assets.ROOT_LABEL}),
+            "2 partitions",
+            ["modprobe", "qemu-nbd", "qemu-nbd"],
+        ),
+        (lambda t: t.fail.add("mount"), "mount failed", ["modprobe", "qemu-nbd", "mount", "qemu-nbd"]),
+        (
+            lambda t: setattr(t, "dpkg_status", False),
+            "dpkg/status",
+            ["modprobe", "qemu-nbd", "mount", "umount", "qemu-nbd"],
+        ),
+    ],
+    ids=["connect-fails", "no-root-label", "two-root-labels", "mount-fails", "no-dpkg-status"],
+)
+def test_attach_fails_and_releases_the_device(image, tools, capsys, case):
+    setup, message, verbs = case
+    setup(tools)
+    assert attach(image, tools) == 1
+    assert message in capsys.readouterr().err
+    assert tools.verbs() == verbs
+    if "qemu-nbd" in verbs[2:]:
+        assert tools.calls[-1][1:] == ["qemu-nbd", "--disconnect", DEVICE]
+
+
+def test_attach_waits_a_bounded_time_for_the_partition(image, tools):
+    tools.labels = {}
+    assert attach(image, tools) == 1
+    assert sum(c[0] == "lsblk" for c in tools.calls) == assets.PARTITION_POLLS
+
+
+@pytest.mark.parametrize("name", ["missing.qcow2", "imago-base-generic.raw"])
+def test_attach_refuses_a_missing_or_foreign_image(tmp_path, tools, name):
+    path = tmp_path / name
+    if name.endswith(".raw"):
+        path.write_bytes(b"\0")
+    assert attach(path, tools) == 1
+    assert tools.calls == []
+
+
+def sboms(tmp_path: Path, debs: int, others: int = 5) -> tuple[Path, Path]:
+    deb = [f"pkg:deb/ubuntu/pkg{i}@1.0?arch=amd64" for i in range(debs)]
+    other = [f"pkg:pypi/mod{i}@1.0" for i in range(others)]
+    cdx = tmp_path / "sbom-base-generic.cdx.json"
+    spdx = tmp_path / "sbom-base-generic.spdx.json"
+    cdx.write_text(json.dumps({"components": [{"purl": p} for p in deb + other]}), encoding="utf-8")
+    packages = [{"externalRefs": [{"referenceType": "purl", "referenceLocator": p}]} for p in deb + other]
+    spdx.write_text(json.dumps({"packages": packages}), encoding="utf-8")
+    return cdx, spdx
+
+
+def check(cdx: Path, spdx: Path) -> int:
+    return assets.main(["check", "--cdx", str(cdx), "--spdx", str(spdx)])
+
+
+def test_check_accepts_the_floor(tmp_path):
+    assert check(*sboms(tmp_path, assets.MIN_DEB_PACKAGES)) == 0
+
+
+def test_check_refuses_one_below_the_floor(tmp_path, capsys):
+    assert check(*sboms(tmp_path, assets.MIN_DEB_PACKAGES - 1, others=500)) == 1
+    assert "fewer than" in capsys.readouterr().err
+
+
+def test_check_refuses_an_empty_catalogue(tmp_path):
+    """The SBOM Syft writes for a qcow2 file it cannot read: valid, and empty."""
+    assert check(*sboms(tmp_path, 0, others=0)) == 1
+
+
+@pytest.mark.parametrize("broken", ["cdx", "spdx"])
+def test_check_refuses_a_document_without_its_list(tmp_path, broken):
+    cdx, spdx = sboms(tmp_path, assets.MIN_DEB_PACKAGES)
+    (cdx if broken == "cdx" else spdx).write_text('{"bomFormat": "CycloneDX"}', encoding="utf-8")
+    assert check(cdx, spdx) == 1
+
+
+def test_check_refuses_an_spdx_short_of_debs(tmp_path):
+    cdx, spdx = sboms(tmp_path, assets.MIN_DEB_PACKAGES)
+    spdx.write_text(json.dumps({"packages": [{"name": "x"}] * 500}), encoding="utf-8")
+    assert check(cdx, spdx) == 1
+
+
+def test_check_refuses_invalid_json(tmp_path):
+    cdx, spdx = sboms(tmp_path, assets.MIN_DEB_PACKAGES)
+    cdx.write_text("{", encoding="utf-8")
+    assert check(cdx, spdx) == 1
+
+
+def checksum_file(path: Path, names: list[str]) -> Path:
+    path.write_text("".join(f"{hashlib.sha256(n.encode()).hexdigest()}  {n}\n" for n in names), encoding="utf-8")
+    return path
+
+
+def test_merge_joins_and_sorts_every_flavor(tmp_path):
+    a = checksum_file(tmp_path / "checksums-k8s.sha256", ["imago-k8s.qcow2.zst", "sbom-k8s.cdx.json"])
+    b = checksum_file(tmp_path / "checksums-base.sha256", ["imago-base.qcow2.zst", "sbom-base.cdx.json"])
+    out = tmp_path / "SHA256SUMS"
+    assert assets.main(["merge", "--out", str(out), str(a), str(b)]) == 0
+    names = [line.split("  ")[1] for line in out.read_text().splitlines()]
+    assert names == sorted(names) and len(names) == 4
+    assert all(re.fullmatch(r"[0-9a-f]{64}  \S+", line) for line in out.read_text().splitlines())
+
+
+def test_merge_accepts_binary_mode_lines(tmp_path):
+    part = tmp_path / "checksums-x.sha256"
+    part.write_text(f"{'a' * 64} *imago-x.qcow2.zst\n", encoding="utf-8")
+    out = tmp_path / "SHA256SUMS"
+    assert assets.main(["merge", "--out", str(out), str(part)]) == 0
+    assert out.read_text() == f"{'a' * 64}  imago-x.qcow2.zst\n"
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        f"{'a' * 64}  ./imago-x.qcow2.zst",
+        f"{'a' * 64}  sub/imago-x.qcow2.zst",
+        f"{'a' * 63}  imago-x.qcow2.zst",
+        f"{'A' * 64}  imago-x.qcow2.zst",
+        f"{'a' * 64}  ",
+        "",
+    ],
+    ids=["dot-slash", "path", "short-digest", "upper-hex", "no-name", "blank"],
+)
+def test_merge_refuses_a_malformed_line(tmp_path, line):
+    part = tmp_path / "checksums-x.sha256"
+    part.write_text(line + "\n", encoding="utf-8")
+    out = tmp_path / "SHA256SUMS"
+    assert assets.main(["merge", "--out", str(out), str(part)]) == 1
+    assert not out.exists()
+
+
+def test_merge_refuses_a_name_listed_twice(tmp_path):
+    a = checksum_file(tmp_path / "checksums-a.sha256", ["sbom.cdx.json"])
+    b = checksum_file(tmp_path / "checksums-b.sha256", ["sbom.cdx.json"])
+    assert assets.main(["merge", "--out", str(tmp_path / "SHA256SUMS"), str(a), str(b)]) == 1
+
+
+@pytest.mark.parametrize("parts", [[], ["empty"]], ids=["no-files", "empty-file"])
+def test_merge_refuses_an_empty_set(tmp_path, parts):
+    paths = []
+    for name in parts:
+        (tmp_path / name).write_text("", encoding="utf-8")
+        paths.append(str(tmp_path / name))
+    assert assets.main(["merge", "--out", str(tmp_path / "SHA256SUMS"), *paths]) == 1
+
+
+# --- workflow wiring -------------------------------------------------------------------
+
+
+def load(path: Path) -> dict:
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def steps(job: dict) -> list[dict]:
+    return job["steps"]
+
+
+def index(job: dict, predicate) -> int:
+    found = [i for i, step in enumerate(steps(job)) if predicate(step)]
+    assert len(found) == 1, found
+    return found[0]
+
+
+def runs(step: dict, pattern: str) -> bool:
+    return re.search(pattern, step.get("run", "")) is not None
+
+
+def test_build_job_generates_and_checks_sboms_before_compressing():
+    job = load(RELEASE)["jobs"]["build-matrix"]
+    sbom = index(job, lambda s: runs(s, r"(?m)^\s*syft scan .*-o \"?cyclonedx-json=.*-o \"?spdx-json="))
+    compress = index(job, lambda s: runs(s, r"zstd "))
+    assert sbom < compress
+    lines = steps(job)[sbom]["run"].splitlines()
+    wanted = [
+        r"python3 -I tools/ci/release_assets\.py attach ",
+        r"syft scan .* \|\| status=\$\?$",
+        r"python3 -I tools/ci/release_assets\.py detach ",
+        r'test "\$\{status\}" -eq 0$',
+        r"python3 -I tools/ci/release_assets\.py check ",
+    ]
+    order = [[i for i, line in enumerate(lines) if re.match(w, line)] for w in wanted]
+    assert all(len(found) == 1 for found in order), order
+    assert [found[0] for found in order] == sorted(found[0] for found in order)
+    assert runs(steps(job)[compress], r"sha256sum -- \*\.qcow2\.zst sbom-\*\.json > \"checksums-")
+
+
+def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
+    job = load(RELEASE)["jobs"]["build-matrix"]
+    keep = steps(job)[index(job, lambda s: s.get("uses", "").startswith("actions/upload-artifact@"))]
+    assert keep["with"]["name"] == "checksums-${{ matrix.flavor }}"
+    assert keep["with"]["if-no-files-found"] == "error"
+    upload = steps(job)[index(job, lambda s: s.get("uses", "").startswith("softprops/action-gh-release@"))]
+    assert "SHA256SUMS" not in upload["with"]["files"]
+    assert "sbom-*.json" in upload["with"]["files"]
+
+
+def test_sign_job_signs_verifies_then_uploads_on_release_only():
+    job = load(RELEASE)["jobs"]["sign"]
+    assert job["needs"] == "build-matrix"
+    assert job["if"] == "github.event_name == 'release'"
+    assert job["permissions"] == {"contents": "write", "id-token": "write"}
+    merge = index(job, lambda s: runs(s, r"release_assets\.py merge --out SHA256SUMS "))
+    sign = index(job, lambda s: runs(s, r"^cosign sign-blob --yes --bundle SHA256SUMS\.bundle SHA256SUMS$"))
+    verify = index(job, lambda s: runs(s, r"cosign verify-blob --bundle SHA256SUMS\.bundle"))
+    upload = index(job, lambda s: s.get("uses", "").startswith("softprops/action-gh-release@"))
+    assert merge < sign < verify < upload
+    verify_run = steps(job)[verify]["run"]
+    assert '--certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}"' in verify_run
+    assert "--certificate-oidc-issuer https://token.actions.githubusercontent.com" in verify_run
+    assert steps(job)[upload]["with"]["files"].split() == ["SHA256SUMS", "SHA256SUMS.bundle"]
+
+
+def test_every_action_is_pinned_to_a_commit():
+    for name, job in load(RELEASE)["jobs"].items():
+        for step in steps(job):
+            if "uses" in step:
+                assert re.fullmatch(r"[\w./-]+@[0-9a-f]{40}", step["uses"]), (name, step["uses"])
+
+
+def test_no_workflow_stands_in_for_signing_with_echo():
+    assert not (WORKFLOWS / "supply-chain.yml").exists()
+    for path in WORKFLOWS.glob("*.yml"):
+        for job in (load(path).get("jobs") or {}).values():
+            for step in job.get("steps", []):
+                if re.search(r"sign|sbom|attest", step.get("name", ""), re.I) and "run" in step:
+                    assert not re.fullmatch(r"\s*echo .*", step["run"].strip(), re.S), (path.name, step["name"])
+
+
+def test_readme_scorecard_badge_points_at_scorecard():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "supply-chain.yml" not in readme
+    assert re.search(r"\[!\[Scorecard\]\([^)]*scorecard\.yml[^)]*\)\]\([^)]*actions/workflows/scorecard\.yml\)", readme)

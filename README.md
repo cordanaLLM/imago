@@ -32,7 +32,7 @@ private scratch-link policy.
 
 [![CI Quality Gates](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/ci.yml?branch=main&label=CI%20Gates&logo=githubactions&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/ci.yml)
 [![Security Scans](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/security-scans.yml?branch=main&label=Security%20Scans&logo=github&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/security-scans.yml)
-[![Supply Chain](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/supply-chain.yml?branch=main&label=Scorecard&logo=securityscorecards&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/supply-chain.yml)
+[![Scorecard](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/scorecard.yml?branch=main&label=Scorecard&logo=securityscorecards&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/scorecard.yml)
 [![Release Matrix](https://img.shields.io/github/actions/workflow/status/cordanaLLM/imago/release-matrix.yml?branch=main&label=Release%20Engine&logo=packer&logoColor=white&style=flat-square)](https://github.com/cordanaLLM/imago/actions/workflows/release-matrix.yml)
 
 [![Flavors](https://img.shields.io/badge/Flavors-44%20Production%20Targets-blue?logo=linux&logoColor=white&style=flat-square)](FLAVORS.md)
