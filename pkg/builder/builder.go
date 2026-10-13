@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -56,10 +57,28 @@ type Result struct {
 	ArtifactURL string    `json:"artifact_url,omitempty"`
 }
 
+// backends lists every backend Dispatch routes; Validate refuses any other.
+var backends = []Backend{
+	BackendLocal, BackendGitea, BackendProxmox, BackendGitLab, BackendWoodpecker,
+	BackendHarbor, BackendMinIO, BackendJenkins, BackendGitHub,
+}
+
+// Validate refuses an unknown flavor or backend. Dispatch calls it before a dry
+// run too, and the MCP server calls it before staging a build for confirmation.
+func Validate(backend Backend, flavor string) error {
+	if _, err := flavors.Get(flavor); err != nil {
+		return fmt.Errorf("builder: invalid flavor: %w", err)
+	}
+	if !slices.Contains(backends, backend) {
+		return fmt.Errorf("builder: unsupported backend %q", backend)
+	}
+	return nil
+}
+
 // Dispatch validates the build request and routes it to the selected backend.
 func Dispatch(ctx context.Context, req Request) (Result, error) {
-	if _, err := flavors.Get(req.Flavor); err != nil {
-		return Result{}, fmt.Errorf("builder: invalid flavor: %w", err)
+	if err := Validate(req.Backend, req.Flavor); err != nil {
+		return Result{}, err
 	}
 
 	if req.Clock == nil {

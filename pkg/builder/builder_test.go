@@ -44,6 +44,27 @@ func TestDispatchInvalidFlavor(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid flavor")
 }
 
+// A dry run validates like a real dispatch: an unknown backend or flavor is
+// refused, not reported as a successful plan.
+func TestDispatchDryRunRefusesUnknownInput(t *testing.T) {
+	cases := map[string]builder.Request{
+		"unknown-backend": {Backend: "bogus", Flavor: "base-generic"},
+		"empty-backend":   {Backend: "", Flavor: "base-generic"},
+		"backend-case":    {Backend: "LOCAL", Flavor: "base-generic"},
+		"unknown-flavor":  {Backend: builder.BackendLocal, Flavor: "invalid-flavor-name"},
+	}
+	for name, req := range cases {
+		t.Run(name, func(t *testing.T) {
+			req.DryRun = true
+			req.Clock = clock.NewFake()
+			res, err := builder.Dispatch(context.Background(), req)
+			require.Error(t, err)
+			assert.False(t, res.Success)
+		})
+	}
+	require.NoError(t, builder.Validate(builder.BackendGitHub, "appliance-game-server"))
+}
+
 func TestDispatchRequiresClock(t *testing.T) {
 	_, err := builder.Dispatch(context.Background(), builder.Request{
 		Backend: builder.BackendLocal,

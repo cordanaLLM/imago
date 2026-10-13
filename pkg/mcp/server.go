@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/golusoris/golusoris/core/clock"
 	coremcp "github.com/golusoris/golusoris/core/mcp"
@@ -107,10 +108,23 @@ func listFlavorsHandler(_ context.Context, req *coremcp.CallToolRequest) (*corem
 	if err := decodeArgs(req, &args); err != nil {
 		return nil, err
 	}
-	if args.Tier != "" {
-		return jsonResult(flavors.FilterByTier(args.Tier))
+	if args.Tier == "" {
+		return jsonResult(flavors.All())
 	}
-	return jsonResult(flavors.All())
+	list := flavors.FilterByTier(args.Tier)
+	if len(list) == 0 {
+		return errorResult(fmt.Errorf("mcp: unknown tier %q; known tiers: %s", args.Tier, tierIDs())), nil
+	}
+	return jsonResult(list)
+}
+
+func tierIDs() string {
+	tiers := flavors.Tiers()
+	ids := make([]string, 0, len(tiers))
+	for _, t := range tiers {
+		ids = append(ids, t.ID)
+	}
+	return strings.Join(ids, ", ")
 }
 
 func getFlavorHandler(_ context.Context, req *coremcp.CallToolRequest) (*coremcp.CallToolResult, error) {
@@ -141,9 +155,9 @@ func validateManifestHandler(_ context.Context, req *coremcp.CallToolRequest) (*
 	if err := decodeArgs(req, &args); err != nil {
 		return nil, err
 	}
-	p := args.Path
-	if p == "" {
-		p = "versions.json"
+	p, err := repoRelativePath(args.Path, "versions.json")
+	if err != nil {
+		return errorResult(err), nil
 	}
 	m, err := manifest.Load(p)
 	if err != nil {
@@ -249,11 +263,11 @@ func inspectComplianceHandler(_ context.Context, req *coremcp.CallToolRequest) (
 	if err := decodeArgs(req, &args); err != nil {
 		return nil, err
 	}
-	p := args.Path
-	if p == "" {
-		p = filepath.Join("tests", "compliance", "goss.yaml")
+	p, err := repoRelativePath(args.Path, filepath.Join("tests", "compliance", "goss.yaml"))
+	if err != nil {
+		return errorResult(err), nil
 	}
-	data, err := os.ReadFile(filepath.Clean(p))
+	data, err := os.ReadFile(p)
 	if err != nil {
 		return errorResult(err), nil
 	}
@@ -283,6 +297,9 @@ func triggerBuildHandler(deps Deps) coremcp.ToolHandler {
 		}
 		if err := decodeArgs(req, &args); err != nil {
 			return nil, err
+		}
+		if err := builder.Validate(builder.Backend(args.Backend), args.Flavor); err != nil {
+			return errorResult(err), nil
 		}
 		if !args.DryRun && !args.Confirmed {
 			preview := fmt.Sprintf("Trigger image build for flavor %q via backend %q", args.Flavor, args.Backend)
