@@ -120,7 +120,7 @@ func TestCloudInitGenerate(t *testing.T) {
 func TestCloudInitMetadata(t *testing.T) {
 	out, err := executeCommand("cloud-init", "metadata", "--hostname=test-node")
 	require.NoError(t, err)
-	assert.Contains(t, out, "instance-id: test-node-01")
+	assert.Contains(t, out, `instance-id: "test-node-01"`)
 }
 
 func TestApplyCommand(t *testing.T) {
