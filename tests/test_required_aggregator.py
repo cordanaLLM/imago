@@ -67,6 +67,30 @@ def test_may_skip_equals_detector_gated_jobs():
     assert set(listed) == detector_gated_names()
 
 
+def jobs_running(command: str) -> list[dict]:
+    starts = re.compile(rf"^\s*{command}\b", re.M)
+    return [
+        job
+        for path in sorted(WORKFLOWS.glob("*.yml"))
+        for job in (load(path).get("jobs") or {}).values()
+        if any(starts.search(step.get("run", "")) for step in job.get("steps", []))
+    ]
+
+
+def test_codespell_runs_on_every_event():
+    """codespell reads the whole tree, so no path filter may skip it.
+
+    Inside the workflow-gated job it was skipped on a pull request that changed only Go
+    files, and the misspelling reached main.
+    """
+    jobs = jobs_running("codespell")
+    assert len(jobs) == 1, f"{len(jobs)} jobs run codespell"
+    job = jobs[0]
+    assert "if" not in job, job.get("if")
+    assert "needs" not in job, job.get("needs")
+    assert job["name"] not in may_skip()
+
+
 def test_may_skip_names_hold_only_safe_characters():
     for name in may_skip():
         assert NAME_CHARS.fullmatch(name), f"{name!r} needs escaping in the aggregator step"
