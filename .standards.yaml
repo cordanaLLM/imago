@@ -82,11 +82,10 @@ exceptions:
     - rule: HISS-11
       path: .github/workflows/release-matrix.yml
       reason: >-
-          the release workflow publishes images without a cosign signature, an SBOM or build
-          provenance, and supply-chain.yml holds no signing step (SLSA Build Level 3 declared,
-          Level 0 measured; enforce_cosign without a cosign signing step; require_sbom without an
-          SBOM step); raise the workflows as docs/guides/releasing.md in Praetor describes, then
-          remove this entry
+          the release workflow signs SHA256SUMS with cosign and ships Syft SBOMs, but publishes
+          no build provenance (SLSA Build Level 3 declared, Level 0 measured); move the build and
+          actions/attest-build-provenance into a reusable workflow as docs/guides/releasing.md in
+          Praetor describes, then remove this entry
       expires: "2027-01-09"
 register:
     sources:

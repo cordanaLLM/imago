@@ -103,17 +103,85 @@ jobs:
           cd packer
           packer init .
           packer build -only="${{ matrix.flavor }}.qemu.image" .
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+      - name: Generate SBOMs from the Image Root File System
+        # Syft reads no qcow2 disk: pointed at the file it writes a valid, empty SBOM. The
+        # image is attached read-only through qemu-nbd and its root file system mounted
+        # read-only, Syft catalogues that tree, and the check refuses an SBOM that lists
+        # fewer Debian packages than tools/ci/release_assets.py requires.
+        env:
+          FLAVOR: ${{ matrix.flavor }}
+        run: |
+          out="packer/output-images/${FLAVOR}"
+          root="${RUNNER_TEMP}/image-root"
+          python3 -I tools/ci/release_assets.py attach --image "${out}"/*.qcow2 --at "${root}"
+          status=0
+          syft scan "dir:${root}" --base-path "${root}" --source-name "imago-${FLAVOR}" -o "cyclonedx-json=${out}/sbom-${FLAVOR}.cdx.json" -o "spdx-json=${out}/sbom-${FLAVOR}.spdx.json" || status=$?
+          python3 -I tools/ci/release_assets.py detach --at "${root}"
+          test "${status}" -eq 0
+          python3 -I tools/ci/release_assets.py check --cdx "${out}/sbom-${FLAVOR}.cdx.json" --spdx "${out}/sbom-${FLAVOR}.spdx.json"
       - name: Compress Image with Zstandard
         # The build runs inside packer/, so the artifacts land there rather than at the
-        # repository root where this step and the upload used to look for them.
+        # repository root where this step and the upload used to look for them. Each flavor
+        # writes its own checksum file; the sign job merges them into the one SHA256SUMS of
+        # the release, so the uploads no longer overwrite each other's SHA256SUMS.
+        env:
+          FLAVOR: ${{ matrix.flavor }}
         run: |
-          cd "packer/output-images/${{ matrix.flavor }}"
+          cd "packer/output-images/${FLAVOR}"
           zstd -T0 -19 --rm ./*.qcow2
-          sha256sum ./*.qcow2.zst > SHA256SUMS
+          sha256sum -- *.qcow2.zst sbom-*.json > "checksums-${FLAVOR}.sha256"
+      - name: Keep the Checksums and SBOMs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: checksums-${{ matrix.flavor }}
+          path: |
+            packer/output-images/${{ matrix.flavor }}/checksums-${{ matrix.flavor }}.sha256
+            packer/output-images/${{ matrix.flavor }}/sbom-*.json
+          if-no-files-found: error
       - name: Upload Release Artifacts
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             packer/output-images/${{ matrix.flavor }}/*.qcow2.zst
-            packer/output-images/${{ matrix.flavor }}/SHA256SUMS
+            packer/output-images/${{ matrix.flavor }}/sbom-*.json
+
+  sign:
+    # Runs only when every flavor built, so the signed SHA256SUMS covers the whole release.
+    # Keyless signing writes a public transparency-log entry, so it runs on a published
+    # release only, never on the schedule or a manual run.
+    name: Sign the Release Checksums
+    needs: build-matrix
+    if: github.event_name == 'release'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: checksums-*
+          path: checksums
+          merge-multiple: true
+      - name: Merge the Flavor Checksums
+        run: python3 -I tools/ci/release_assets.py merge --out SHA256SUMS checksums/checksums-*.sha256
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+      - name: Sign SHA256SUMS
+        run: cosign sign-blob --yes --bundle SHA256SUMS.bundle SHA256SUMS
+      - name: Verify the Signature
+        # The identity is this workflow at the release tag, as a downloader checks it.
+        run: >-
+          cosign verify-blob --bundle SHA256SUMS.bundle
+          --certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}"
+          --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          SHA256SUMS
+      - name: Upload the Signed Checksums
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: |
+            SHA256SUMS
+            SHA256SUMS.bundle
