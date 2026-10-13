@@ -250,4 +250,5 @@ jobs:
             "${base}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
           (cd /tmp && grep " ${archive}$" gitleaks_checksums.txt | sha256sum -c -)
           tar -xzf "/tmp/${archive}" -C /tmp gitleaks
+          python3 -I tools/ci/scanner_canary.py gitleaks --binary /tmp/gitleaks
           /tmp/gitleaks git --redact --no-banner --exit-code 1 .
