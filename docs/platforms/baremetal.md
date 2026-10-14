@@ -18,6 +18,8 @@ Or using the built-in helper utility:
 lusoris-install-to-disk https://releases.lusoris.org/lusoris-base-generic.raw.zst /dev/nvme0n1
 ```
 
+The helper refuses a target that is not a block device. After the write it reads the first sector of the target and fails unless it ends with the boot signature `0x55 0xAA` that an MBR disk and the protective MBR of a GPT disk both carry, so a `.qcow2.zst` or any other non-raw image is reported instead of announced as ready to boot. `tests/test_install_to_disk.py` flashes images onto a loop device to check this.
+
 ```mermaid
 flowchart LR
     %% Semantic class definitions with vibrant, high-contrast jewel palettes
