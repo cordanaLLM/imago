@@ -92,6 +92,15 @@ else
   zstdcat "${SRC}" | sudo dd of="${DEST}" bs=4M status=progress conv=fsync
 fi
 
+# A qcow2 image or any other container is written byte for byte as well, and the disk
+# then holds no partition table. An MBR disk and the protective MBR of a GPT disk both end
+# their first sector with the boot signature 0x55 0xAA.
+mbr="$(sudo dd if="${DEST}" bs=1 skip=510 count=2 status=none | od -An -tx1 | tr -d ' \n')"
+if [ "${mbr}" != "55aa" ]; then
+  echo "Error: '${DEST}' holds no partition table after the write; '${SRC}' is not a raw disk image." >&2
+  exit 1
+fi
+
 echo "==> Flash complete. Re-reading partition table..."
 sudo partprobe "${DEST}" || true
 echo "==> Ready to boot."
