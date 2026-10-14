@@ -204,6 +204,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The usage text of `lusoris-install-to-disk` gave as its example `releases.lusoris.org`, a host that serves no images, and an asset name no release ships. It now names `lusoris-cloud-base-generic.raw.zst` on the forge release of the reader's own fork, with `<owner>` and `<tag>` as placeholders; `tests/test_install_to_disk.py` runs the helper and holds that address.
 - `docs/platforms/baremetal.md` downloaded images from `releases.lusoris.org`, a host that serves none, and flashed a qcow2 file the helper cannot write. The guide now downloads the raw image, `SHA256SUMS` and its bundle from the forge release of the reader's own fork, verifies them with the release workflow's certificate identity, and names only `boot.example.com` as a placeholder netboot host.
 - The `Actionlint & Yamllint` job of `ci.yml` ran the actionlint install script from the main branch of its repository, so two runs of one commit could lint with different code. It now downloads release 1.7.12 and checks it against a SHA-256 written in the workflow; `tests/test_action_pins.py` requires every download in a workflow to name a release, to match a checksum and never to be piped into a shell.
 - `lusoris-install-to-disk` reported "Ready to boot." after writing any stream, a `.qcow2.zst` included, which leaves a disk without a partition table. It now reads the first sector after the write and fails unless it carries the `0x55 0xAA` boot signature.

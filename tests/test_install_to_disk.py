@@ -220,3 +220,12 @@ def test_wrong_argument_count_prints_usage(helper: Path, args: tuple[str, ...]) 
     done = flash(helper, *args)
     assert done.returncode == 1
     assert done.stdout.startswith("Usage: ")
+
+
+def test_usage_example_downloads_from_the_readers_fork(helper: Path) -> None:
+    # The example names the raw asset the release workflow uploads, on the forge release
+    # of the reader's own fork; the project runs no download host of its own.
+    done = flash(helper)
+    example = done.stdout.splitlines()[1].split()
+    assert example[0] == "Example:"
+    assert example[2] == "https://github.com/<owner>/imago/releases/download/<tag>/lusoris-cloud-base-generic.raw.zst"

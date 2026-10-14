@@ -73,7 +73,7 @@ set -euo pipefail
 
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <image-url-or-file.raw.zst> <target-disk-dev>"
-  echo "Example: $0 https://releases.lusoris.org/lusoris-base-generic.raw.zst /dev/nvme0n1"
+  echo "Example: $0 https://github.com/<owner>/imago/releases/download/<tag>/lusoris-cloud-base-generic.raw.zst /dev/nvme0n1"
   exit 1
 fi
 
