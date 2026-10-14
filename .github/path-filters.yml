@@ -1,0 +1,86 @@
+---
+# Copyright 2026 Lusoris
+# Path filters of the pull request jobs in ci.yml and security-scans.yml (ADR-0027).
+# Each job begins with the draft step, then runs dorny/paths-filter on this file and
+# gates its later steps on the filter named after the job: a pull request that
+# changes none of its paths passes the job without running the work. A push or a
+# scheduled run does not read the filters and runs every step.
+#
+# The anchored filters are building blocks; the job filters below combine them.
+# tests/test_path_filters.py holds every job filter equal to the job reading it.
+
+packer: &packer
+  - 'packer/**'
+  - 'versions.json'
+shell: &shell
+  - 'packer/provisioners/*.sh'
+  - 'scripts/*.sh'
+go: &go
+  - 'go.mod'
+  - 'go.sum'
+  - 'cmd/**'
+  - 'pkg/**'
+python: &python
+  - 'tests/**'
+  - '**/*.py'
+  - 'pyproject.toml'
+  - 'ruff.toml'
+  - '.github/requirements/test.txt'
+  - '.github/requirements/lint.txt'
+docs: &docs
+  - 'docs/**'
+  - 'mkdocs.yml'
+  - 'README.md'
+  - 'FLAVORS.md'
+  - 'CHANGELOG.md'
+  - '.github/requirements/docs.txt'
+workflows: &workflows
+  - '.github/workflows/**'
+  - '.github/*.json'
+  - '.github/path-filters.yml'
+  - '.yamllint.yml'
+  - 'Makefile'
+  - '.github/requirements/lint.txt'
+
+# ci.yml
+lint-packer:
+  - *packer
+  - *workflows
+lint-shell:
+  - *shell
+  - *workflows
+lint-workflows:
+  - *workflows
+lint-python:
+  - *python
+  - *workflows
+test-go:
+  - *go
+  - *workflows
+test-python:
+  - *python
+  - *packer
+  - *shell
+  - *workflows
+docs-strict:
+  - *docs
+  - *workflows
+
+# security-scans.yml
+semgrep: &scan-code
+  - 'packer/**'
+  - 'tests/**'
+  - 'versions.json'
+  - 'Makefile'
+  - 'pyproject.toml'
+  - 'go.mod'
+  - 'go.sum'
+  - 'tools/**'
+  - '.github/**'
+trivy:
+  - *scan-code
+govulncheck:
+  - *go
+  - 'tools/govulncheck/**'
+  - '.github/workflows/security-scans.yml'
+  - '.github/path-filters.yml'

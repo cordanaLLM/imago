@@ -55,7 +55,8 @@ This project follows **Trunk-Based Development** with protected `main` branch. D
 
 6. **CI Gate**:
    All checks in `.github/workflows/ci.yml` and `.github/workflows/security-scans.yml` must pass. The branch protection gate requires `required-checks` from `.github/workflows/required-aggregator.yml`.
-   `required-checks` accepts a skipped check only when a change detector skipped it: the job needs the `changes` job of its workflow and is named in `MAY_SKIP` in `required-aggregator.yml` (ADR-0026). Every other check must succeed. When you add a job gated by a change detector, add its name to `MAY_SKIP`; `tests/test_required_aggregator.py` fails until you do.
+   `required-checks` accepts no skipped check (ADR-0027). Every job a pull request starts begins with the `Stop on a draft pull request` step, carries no job `if:` and no `needs`, and its workflow lists `ready_for_review` in its `pull_request` types: on a draft every gate fails with a notice, and marking the pull request ready reruns them. A job that tests only some paths runs `dorny/paths-filter` on `.github/path-filters.yml` and gates its later steps on the filter named after the job id; when no tested path changed it passes without doing the work. `tests/test_required_aggregator.py` and `tests/test_path_filters.py` hold every job to this shape.
+   The rule set in `.github/rulesets/main.json` requires each of these jobs by name. A new or renamed job changes that list in the same pull request; `praetorctl audit` fails until it matches the workflows. Job names carry no toolchain version, so a version bump never renames a required check.
 
    The live tests need Docker and bash. On a host without them, or when a preparation step runs past its bound, they skip. The pytest job of `ci.yml` sets `IMAGO_REQUIRE_LIVE_TESTS=1`, and there the same condition fails the test (`tests/harness/live.py`). Set the variable locally to check that every live test runs.
 

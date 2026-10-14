@@ -2,7 +2,8 @@
 name: pr-project-gate
 "on":
   pull_request:
-    types: [opened, reopened, edited, labeled, unlabeled, milestoned, demilestoned, synchronize]
+    # ready_for_review starts the run a draft's stopped job did not make.
+    types: [opened, reopened, edited, labeled, unlabeled, milestoned, demilestoned, synchronize, ready_for_review]
 
 permissions:
   pull-requests: read # read the milestone, labels and body under check
@@ -17,6 +18,19 @@ jobs:
     name: Validate PR Milestone & Metadata
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:

@@ -4,7 +4,7 @@ Date: 2026-10-12
 
 ## Status
 
-Accepted
+Superseded by [ADR-0027](0027-pull-request-jobs-never-skip-path-filter-per-job.md).
 
 ## Context
 

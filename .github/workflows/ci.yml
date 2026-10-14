@@ -22,69 +22,41 @@ env:
   PRAETOR_REF: 3bbde07342bdece12c46f74b0ee2c1f51129478f
 
 jobs:
-  changes:
-    name: Detect Changed Paths
-    runs-on: ubuntu-26.04
-    outputs:
-      packer: ${{ steps.filter.outputs.packer }}
-      shell: ${{ steps.filter.outputs.shell }}
-      go: ${{ steps.filter.outputs.go }}
-      python: ${{ steps.filter.outputs.python }}
-      docs: ${{ steps.filter.outputs.docs }}
-      workflows: ${{ steps.filter.outputs.workflows }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
-        id: filter
-        with:
-          filters: |
-            packer:
-              - 'packer/**'
-              - 'versions.json'
-            shell:
-              - 'packer/provisioners/*.sh'
-              - 'scripts/*.sh'
-            go:
-              - 'go.mod'
-              - 'go.sum'
-              - 'cmd/**'
-              - 'pkg/**'
-            python:
-              - 'tests/**'
-              - '**/*.py'
-              - 'pyproject.toml'
-              - 'ruff.toml'
-              - '.github/requirements/test.txt'
-              - '.github/requirements/lint.txt'
-            docs:
-              - 'docs/**'
-              - 'mkdocs.yml'
-              - 'README.md'
-              - 'FLAVORS.md'
-              - 'CHANGELOG.md'
-              - '.github/requirements/docs.txt'
-            workflows:
-              - '.github/workflows/**'
-              - '.github/*.json'
-              - '.yamllint.yml'
-              - 'Makefile'
-              - '.github/requirements/lint.txt'
-
   lint-packer:
     name: Packer Format & Validate
-    needs: changes
-    if: github.event_name == 'push' || needs.changes.outputs.packer == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.lint-packer != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter lint-packer in .github/path-filters.yml changed."
       - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789  # v3.4.0
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-packer == 'true'
         with:
           version: "1.11.2"
       - name: Validate Packer
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-packer == 'true'
         run: |
           cd packer
           packer init .
@@ -93,35 +65,79 @@ jobs:
 
   lint-shell:
     name: ShellCheck & Shfmt Provisioners
-    needs: changes
-    if: github.event_name == 'push' || needs.changes.outputs.shell == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.lint-shell != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter lint-shell in .github/path-filters.yml changed."
       - name: Install Shell Analyzers
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-shell == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck shfmt
       - name: Run ShellCheck
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-shell == 'true'
         run: shellcheck packer/provisioners/*.sh scripts/*.sh
       - name: Check Formatting (shfmt)
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-shell == 'true'
         run: shfmt -d -i 2 -ci packer/provisioners/*.sh scripts/*.sh
 
   lint-workflows:
     name: Actionlint & Yamllint
-    needs: changes
-    if: github.event_name == 'push' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.lint-workflows != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter lint-workflows in .github/path-filters.yml changed."
       # actionlint comes from a pinned release and must match the checksum written here,
       # not one fetched next to the archive: the install script on the main branch it used
       # to run could change between two runs of the same commit.
       - name: Install Workflow Linters
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-workflows == 'true'
         env:
           ACTIONLINT_VERSION: "1.7.12"
           ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
@@ -135,16 +151,30 @@ jobs:
           echo "${ACTIONLINT_SHA256}  /tmp/${archive}" | sha256sum -c -
           sudo tar -xzf "/tmp/${archive}" -C /usr/local/bin actionlint
       - name: Run Actionlint
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-workflows == 'true'
         run: actionlint .github/workflows/*.yml
       - name: Run Yamllint
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-workflows == 'true'
         run: yamllint -c .yamllint.yml .github/ packer/http/
 
-  # codespell reads every tracked text file, so a change detector cannot tell which
+  # codespell reads every tracked text file, so a path filter cannot tell which
   # changes it must see; it runs on every event.
   lint-spelling:
     name: Codespell
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
@@ -155,8 +185,6 @@ jobs:
 
   lint-python:
     name: Ruff Lint & Format
-    needs: changes
-    if: github.event_name == 'push' || needs.changes.outputs.python == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
@@ -173,65 +201,116 @@ jobs:
           echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
           exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        if: github.event.pull_request.draft != true
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.lint-python != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter lint-python in .github/path-filters.yml changed."
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        if: github.event.pull_request.draft != true
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-python == 'true'
         with:
           python-version: "3.12"
       - name: Install Ruff
-        if: github.event.pull_request.draft != true
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-python == 'true'
         run: pip install --require-hashes -r .github/requirements/lint.txt
       # The same two commands as `make lint`, over every Python file of the repository.
       - name: Run Ruff Lint
-        if: github.event.pull_request.draft != true
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-python == 'true'
         run: ruff check .
       - name: Check Ruff Formatting
-        if: github.event.pull_request.draft != true
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-python == 'true'
         run: ruff format --check .
 
   test-go:
-    name: Go 1.27 Build & Unit Tests
-    needs: changes
-    if: github.event_name == 'push' || needs.changes.outputs.go == 'true' || needs.changes.outputs.workflows == 'true'
+    name: Go Build & Unit Tests
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.test-go != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter test-go in .github/path-filters.yml changed."
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-go == 'true'
         with:
           go-version: "1.27.x"
           check-latest: true
       - name: Run Go Vet
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-go == 'true'
         run: go vet ./...
       - name: Run Go Unit Tests
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-go == 'true'
         run: go test ./... -v
       - name: Compile imago
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-go == 'true'
         run: go build -o bin/imago ./cmd/imago
 
   test-python:
     name: Pytest Verification Suite
-    needs: changes
-    if: >-
-      github.event_name == 'push' ||
-      needs.changes.outputs.python == 'true' ||
-      needs.changes.outputs.packer == 'true' ||
-      needs.changes.outputs.shell == 'true' ||
-      needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.test-python != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter test-python in .github/path-filters.yml changed."
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         with:
           python-version: "3.12"
       - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789  # v3.4.0
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         with:
           version: "1.11.2"
       - name: Install Dependencies
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
@@ -240,6 +319,7 @@ jobs:
           # tests/test_python_lint_gate.py runs ruff on the files ruff.toml exempts.
           pip install --require-hashes -r .github/requirements/lint.txt
       - name: Run Pytest Suite
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         env:
           # A missing Docker daemon, bash or slow preparation step fails a live test
           # here instead of skipping it (tests/harness/live.py).
@@ -248,25 +328,60 @@ jobs:
 
   docs-strict:
     name: Strict MkDocs Build
-    needs: changes
-    if: github.event_name == 'push' || needs.changes.outputs.docs == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.docs-strict != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter docs-strict in .github/path-filters.yml changed."
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        if: github.event_name != 'pull_request' || steps.filter.outputs.docs-strict == 'true'
         with:
           python-version: "3.12"
       - name: Install MkDocs Dependencies
+        if: github.event_name != 'pull_request' || steps.filter.outputs.docs-strict == 'true'
         run: pip install --require-hashes -r .github/requirements/docs.txt
       - name: Build MkDocs Strict
+        if: github.event_name != 'pull_request' || steps.filter.outputs.docs-strict == 'true'
         run: mkdocs build --strict
 
   gitleaks:
     name: Secret & Privacy Leak Scan
     runs-on: ubuntu-26.04
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
