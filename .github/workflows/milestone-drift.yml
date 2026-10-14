@@ -1,0 +1,63 @@
+---
+# Copyright 2026 Lusoris
+# Milestone drift: the forge is the source of the milestones and
+# .github/milestones.json is its copy (GOVERNANCE.md). The job fetches every
+# milestone from the forge and tools/ci/milestone_drift.py fails on a milestone
+# that only one side has, a title listed twice, and a different state, due date
+# or description. A milestone edit on the forge changes no file, so the daily run
+# is the part that sees it; the pull request run covers edits to the copy.
+name: milestone-drift
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - .github/milestones.json
+      - .github/workflows/milestone-drift.yml
+      - tools/ci/milestone_drift.py
+      - tests/test_milestone_drift.py
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: milestone-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: Milestone Copy Matches the Forge
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read # reads .github/milestones.json and the check script
+      issues: read # milestones belong to the issues API
+    steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The script uses only the standard library, so the runner's python3 serves.
+      - name: Compare the milestone copy with the forge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" > "${RUNNER_TEMP}/forge-milestones.json"
+          python3 -I tools/ci/milestone_drift.py --forge "${RUNNER_TEMP}/forge-milestones.json" --file .github/milestones.json
