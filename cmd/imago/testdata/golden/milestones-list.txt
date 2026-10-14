@@ -1,0 +1,4 @@
+TITLE          STATE    DUE ON                 DESCRIPTION
+-------------------------------------------------------------------------------------
+0.1            closed   2026-10-01T00:00:00Z   Fits every column.
+1.0 — First release open                            Title overflows its column and the due date is empty.
