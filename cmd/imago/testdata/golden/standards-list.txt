@@ -1,0 +1,46 @@
+FLAVOR ID                    TIER         SECURITY BASELINE                        CDI
+----------------------------------------------------------------------------------------------------
+base-generic                 base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+base-intel                   base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+base-amd                     base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+base-nvidia-legacy           base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+base-nvidia-mainstream       base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+base-nvidia-modern           base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+base-nvidia-bleeding         base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+base-nvidia-datacenter       base         CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+docker-generic               containers   CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+docker-intel                 containers   CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+docker-amd                   containers   CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+docker-nvidia                containers   CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+docker-nvidia-modern         containers   CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+docker-nvidia-bleeding       containers   CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+podman-generic               containers   CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+k8s-node-generic             kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-cilium              kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-calico              kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-flannel             kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-intel               kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-amd                 kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-nvidia              kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-nvidia-modern       kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k8s-node-nvidia-bleeding     kubernetes   CIS Kubernetes Benchmark v1.37 / CIS OS L2 no
+k3s-agent-generic            k3s          CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+k3s-agent-intel              k3s          CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+k3s-agent-amd                k3s          CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+k3s-agent-nvidia             k3s          CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+k3s-server-generic           k3s          CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+cloudnative-generic          cloudnative  CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+cloudnative-k8s              cloudnative  CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+cloudnative-storage          cloudnative  CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+cloudnative-pg               cloudnative  CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+ai-infer-generic             ai-infer     CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+ai-infer-intel               ai-infer     CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+ai-infer-amd                 ai-infer     CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+ai-infer-nvidia              ai-infer     CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+ai-infer-nvidia-modern       ai-infer     CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+ai-infer-nvidia-bleeding     ai-infer     CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+appliance-vision-nvr         homelab      CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 yes
+appliance-gateway-dns        homelab      CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+appliance-media-server       homelab      CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+appliance-ci-runner          homelab      CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no
+appliance-game-server        homelab      CIS Ubuntu Linux 24.04 Benchmark L2 / BSI IT-Grundschutz SYS.1.3 no

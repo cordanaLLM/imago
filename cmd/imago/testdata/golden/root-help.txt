@@ -1,0 +1,28 @@
+Imago — Unified CLI & AI MCP Server for cloud images
+
+Usage:
+  imago [command]
+
+Available Commands:
+  aegis       Accept Aegis product-input manifests (aegis.p01.product-input.v1) and emit product results (imago.p01.product-result.v1)
+  apply       In-place live host / SSH provisioning (imageless execution)
+  audit       Execute repository health audit script
+  boot        Generate microVM direct kernel boot command
+  build       Dispatch an image build locally or to self-hosted CI backends
+  cloud-init  Generate hardened cloud-init configuration
+  completion  Generate the autocompletion script for the specified shell
+  epics       Inspect tracked architectural and operational recurring epics
+  flavors     Inspect and query the 44-flavor catalog
+  help        Help about any command
+  kernel      Validate the Aegis kernel requirement and verify nucleus kernel artifacts
+  lint        Run specialized static analyzers and linters
+  manifest    Inspect and validate versions.json
+  mcp         Start the Model Context Protocol (MCP) server (stdio or streamable-HTTP)
+  milestones  Inspect release milestones
+  plan        Validate and route the tracked planning graph (planning/plan.json)
+  standards   Inspect machine-verifiable CIS and BSI hardening standards
+
+Flags:
+  -h, --help   help for imago
+
+Use "imago [command] --help" for more information about a command.
