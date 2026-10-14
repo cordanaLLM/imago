@@ -3,16 +3,19 @@
 
 `tools/ci/action_pins.py` runs zizmor online over the workflows (`action-pins.yml`) and
 fails on an action reference that is not pinned to a commit of its repository, and on the
-template-injection, permission and job-name audits. The tests below run the check against
-a stub zizmor: it passes a clean scan, fails on each gated finding, refuses to run without a token or with the offline switches, refuses a zizmor
-that does not report the planted workflow for every named audit, and accepts only the
-exit codes zizmor documents. They also hold the workflow wiring and the hash-pinned
-install, and require every tool a workflow downloads to come from a release and to match a
-checksum.
+template-injection, permission, job-name, credential, concurrency and superfluous-action
+audits. The tests below run the check against a stub zizmor: it passes a clean scan, fails
+on each gated finding, refuses to run without a token or with the offline switches,
+refuses a zizmor that does not report the planted workflow for every named audit, and
+accepts only the exit codes zizmor documents. The exception file excuses a finding only
+while its entry is valid: an expired, overlong, malformed, repeated or unmatched entry
+fails the check. The tests also hold the workflow wiring and the hash-pinned install, and
+require every tool a workflow downloads to come from a release and to match a checksum.
 """
 
 from __future__ import annotations
 
+import datetime
 import importlib.util
 import json
 import re
@@ -27,6 +30,7 @@ SCRIPT = ROOT / "tools" / "ci" / "action_pins.py"
 WORKFLOWS = ROOT / ".github" / "workflows"
 WORKFLOW = WORKFLOWS / "action-pins.yml"
 REQUIREMENTS = ROOT / ".github" / "requirements"
+EXCEPTIONS = ROOT / ".github" / "zizmor-exceptions.json"
 
 _spec = importlib.util.spec_from_file_location("action_pins", SCRIPT)
 pins = importlib.util.module_from_spec(_spec)
@@ -66,18 +70,27 @@ def stub(tmp_path, monkeypatch):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("GH_TOKEN", "planted-token")
 
+    exceptions = tmp_path / "exceptions.json"
+    exceptions.write_text("[]", encoding="utf-8")
+
     def reply(canary: str = ALL_PLANTED, target: str = "", canary_exit: int = 14, target_exit: int = 0) -> None:
         monkeypatch.setenv("STUB_CANARY_FINDINGS", canary)
         monkeypatch.setenv("STUB_TARGET_FINDINGS", target)
         monkeypatch.setenv("STUB_CANARY_EXIT", str(canary_exit))
         monkeypatch.setenv("STUB_TARGET_EXIT", str(target_exit))
 
+    def excepting(*entries: dict) -> None:
+        exceptions.write_text(json.dumps(list(entries)), encoding="utf-8")
+
+    reply.args = ["--binary", "unused", "--exceptions", str(exceptions), ".github/workflows"]
+    reply.excepting = excepting
+    reply.file = exceptions
     return reply
 
 
 def test_clean_workflows_pass(stub, capsys):
     stub()
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 0
+    assert pins.main(stub.args) == 0
     out = capsys.readouterr().out
     assert f"refused {', '.join(pins.AUDITS)}" in out
     assert "0 finding(s)" in out
@@ -86,9 +99,12 @@ def test_clean_workflows_pass(stub, capsys):
 def test_gated_audits_are_the_pin_and_workflow_audits():
     assert set(pins.AUDITS) == {
         "anonymous-definition",
+        "artipacked",
+        "concurrency-limits",
         "excessive-permissions",
         "impostor-commit",
         "ref-version-mismatch",
+        "superfluous-actions",
         "template-injection",
         "undocumented-permissions",
         "unpinned-uses",
@@ -98,52 +114,52 @@ def test_gated_audits_are_the_pin_and_workflow_audits():
 @pytest.mark.parametrize("audit", pins.AUDITS)
 def test_each_gated_finding_fails_with_its_file_line_and_fix(stub, capsys, audit):
     stub(target=f"{audit}@42", target_exit=13)
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 1
+    assert pins.main(stub.args) == 1
     assert f"::error file=.github/workflows/ci.yml,line=42::{audit}: {pins.ADVICE[audit]}" in capsys.readouterr().out
 
 
 def test_findings_of_other_audits_do_not_fail(stub):
-    stub(target="artipacked@3,concurrency-limits@9", target_exit=14)
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 0
+    stub(target="dangerous-triggers@3,cache-poisoning@9", target_exit=14)
+    assert pins.main(stub.args) == 0
 
 
 @pytest.mark.parametrize("audit", pins.AUDITS)
 def test_canary_missing_an_audit_fails(stub, capsys, audit):
     stub(canary=",".join(f"{other}@1" for other in pins.AUDITS if other != audit))
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 1
+    assert pins.main(stub.args) == 1
     assert f"did not report the planted workflow for: {audit}" in capsys.readouterr().err
 
 
 def test_unknown_audit_name_fails_closed(stub, monkeypatch, capsys):
     monkeypatch.setattr(pins, "AUDITS", (*pins.AUDITS, "renamed-audit"))
     stub()
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 1
+    assert pins.main(stub.args) == 1
     assert "for: renamed-audit" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("status", [1, 2, 3, 10, 15])
 def test_undocumented_or_error_exit_fails(stub, capsys, status):
     stub(target_exit=status)
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 1
+    assert pins.main(stub.args) == 1
     assert f"exit {status}" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("status", [0, 11, 12, 13, 14])
 def test_documented_exit_codes_are_accepted(stub, status):
     stub(target_exit=status)
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 0
+    assert pins.main(stub.args) == 0
 
 
 def test_canary_error_exit_fails(stub, capsys):
     stub(canary_exit=1)
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 1
+    assert pins.main(stub.args) == 1
     assert "action-pins-canary-" in capsys.readouterr().err
 
 
 def test_missing_token_fails(stub, monkeypatch, capsys):
     stub()
     monkeypatch.delenv("GH_TOKEN")
-    assert pins.main(["--binary", "unused", ".github/workflows"]) == 1
+    assert pins.main(stub.args) == 1
     assert "no GitHub token" in capsys.readouterr().err
 
 
@@ -182,13 +198,177 @@ def test_plant_holds_one_defect_per_audit():
     plant = yaml.safe_load(pins.PLANT)
     job = plant["jobs"]["plant"]
     uses = [step["uses"] for step in job["steps"] if "uses" in step]
-    assert len(uses) == 3
+    assert len(uses) == 4
     assert any(ref.endswith("@0000000000000000000000000000000000000001") for ref in uses)
     assert any(len(ref.split("@")[1]) != 40 for ref in uses), "no tag-pinned step for unpinned-uses"
     assert plant["permissions"] == "write-all", "no grant for excessive-permissions"
     assert "name" not in job, "no anonymous job for anonymous-definition"
     assert "contents: write\n" in pins.PLANT, "no uncommented grant for undocumented-permissions"
     assert any("${{" in step.get("run", "") for step in job["steps"]), "no expansion for template-injection"
+    checkouts = [step for step in job["steps"] if step.get("uses", "").startswith("actions/checkout@")]
+    assert any("with" not in step for step in checkouts), "no token-keeping checkout for artipacked"
+    assert "concurrency" not in plant and "concurrency" not in job, "a concurrency group hides concurrency-limits"
+    assert any(ref.startswith("peter-evans/create-pull-request@") for ref in uses), "no step for superfluous-actions"
+
+
+TODAY = datetime.date(2026, 10, 14)
+
+
+def entry(**fields: str) -> dict:
+    """An exception for the stub finding, valid on TODAY unless a field overrides it."""
+    return {
+        "rule": "artipacked",
+        "path": ".github/workflows/ci.yml",
+        "reason": "category D: the engine renders this file",
+        "expires": str(TODAY + datetime.timedelta(days=30)),
+    } | fields
+
+
+def live(**fields: str) -> dict:
+    """The same exception, valid on the day the test runs."""
+    today = datetime.datetime.now(datetime.UTC).date()
+    return entry(expires=str(today + datetime.timedelta(days=30))) | fields
+
+
+def test_excepted_finding_passes_with_a_warning(stub, capsys):
+    stub(target="artipacked@32", target_exit=13)
+    stub.excepting(live())
+    assert pins.main(stub.args) == 0
+    out = capsys.readouterr().out
+    assert "::warning file=.github/workflows/ci.yml,line=32::artipacked excepted until" in out
+    assert "0 finding(s) in .github/workflows, 1 excepted" in out
+
+
+def test_exception_covers_only_its_audit(stub, capsys):
+    stub(target="artipacked@32,concurrency-limits@4", target_exit=13)
+    stub.excepting(live())
+    assert pins.main(stub.args) == 1
+    assert "line=4::concurrency-limits: " in capsys.readouterr().out
+
+
+def test_exception_covers_only_its_path(stub, capsys):
+    stub(target="artipacked@32", target_exit=13)
+    stub.excepting(live(path=".github/workflows/other.yml"))
+    assert pins.main(stub.args) == 1
+    assert "matches no finding, remove it: artipacked on .github/workflows/other.yml" in capsys.readouterr().err
+
+
+def test_unmatched_exception_fails(stub, capsys):
+    stub()
+    stub.excepting(live())
+    assert pins.main(stub.args) == 1
+    assert "matches no finding, remove it: artipacked on .github/workflows/ci.yml" in capsys.readouterr().err
+
+
+def test_expired_exception_fails(stub, capsys):
+    stub(target="artipacked@32", target_exit=13)
+    stub.excepting(live(expires="2026-01-01"))
+    assert pins.main(stub.args) == 1
+    assert "expired on 2026-01-01" in capsys.readouterr().err
+
+
+def test_repeated_exception_fails(stub, capsys):
+    stub(target="artipacked@32", target_exit=13)
+    stub.excepting(live(), live(reason="category D: listed again"))
+    assert pins.main(stub.args) == 1
+    assert "artipacked on .github/workflows/ci.yml is listed twice" in capsys.readouterr().err
+
+
+def test_repeated_key_fails(stub, capsys):
+    stub(target="artipacked@32", target_exit=13)
+    stub.file.write_text(json.dumps([live()])[:-2] + ', "rule": "artipacked"}]', encoding="utf-8")
+    assert pins.main(stub.args) == 1
+    assert "repeats the key rule" in capsys.readouterr().err
+
+
+def test_exception_file_must_be_a_list(stub, capsys):
+    stub()
+    stub.file.write_text(json.dumps(live()), encoding="utf-8")
+    assert pins.main(stub.args) == 1
+    assert "must be a JSON list" in capsys.readouterr().err
+
+
+def test_missing_exception_file_fails(stub, capsys):
+    stub()
+    stub.file.unlink()
+    assert pins.main(stub.args) == 1
+
+
+@pytest.mark.parametrize("field", pins.EXCEPTION_FIELDS)
+def test_exception_missing_a_field_fails(field):
+    planted = entry()
+    del planted[field]
+    with pytest.raises(pins.PinCheckError, match="needs exactly the fields"):
+        pins.check_entry(planted, TODAY)
+
+
+def test_exception_with_an_extra_field_fails():
+    with pytest.raises(pins.PinCheckError, match="needs exactly the fields"):
+        pins.check_entry(entry(owner="someone"), TODAY)
+
+
+@pytest.mark.parametrize("field", pins.EXCEPTION_FIELDS)
+def test_exception_with_an_empty_field_fails(field):
+    with pytest.raises(pins.PinCheckError, match="empty or non-text"):
+        pins.check_entry(entry(**{field: " "}), TODAY)
+
+
+def test_exception_for_an_ungated_audit_fails():
+    with pytest.raises(pins.PinCheckError, match="does not gate"):
+        pins.check_entry(entry(rule="dangerous-triggers"), TODAY)
+
+
+@pytest.mark.parametrize("reason", ["the engine renders this file", "category E: other", "see category D: later"])
+def test_exception_reason_without_its_category_fails(reason):
+    with pytest.raises(pins.PinCheckError, match="must start with 'category"):
+        pins.check_entry(entry(reason=reason), TODAY)
+
+
+def test_exception_with_a_malformed_date_fails():
+    with pytest.raises(ValueError):
+        pins.check_entry(entry(expires="next spring"), TODAY)
+
+
+@pytest.mark.parametrize(
+    ("category", "days", "valid"),
+    [
+        ("A", 90, True),
+        ("A", 91, False),
+        ("B", 3, True),
+        ("B", 4, False),
+        ("C", 10, True),
+        ("C", 11, False),
+        ("D", 90, True),
+        ("D", 91, False),
+        ("D", 0, True),
+        ("D", -1, False),
+    ],
+)
+def test_exception_expiry_bounds_by_category(category, days, valid):
+    planted = entry(reason=f"category {category}: planted", expires=str(TODAY + datetime.timedelta(days=days)))
+    if valid:
+        assert pins.check_entry(planted, TODAY) == ("artipacked", ".github/workflows/ci.yml")
+    else:
+        with pytest.raises(pins.PinCheckError, match="expired|runs past"):
+            pins.check_entry(planted, TODAY)
+
+
+def test_exception_path_is_normalised():
+    assert pins.check_entry(entry(path=".github//workflows/./ci.yml"), TODAY)[1] == ".github/workflows/ci.yml"
+
+
+def test_committed_exceptions_are_valid_and_point_at_real_files():
+    today = datetime.datetime.now(datetime.UTC).date()
+    excepted = pins.load_exceptions(EXCEPTIONS, today)
+    assert set(excepted) == {
+        ("artipacked", ".github/workflows/praetor-docs.yml"),
+        ("concurrency-limits", ".github/workflows/praetor-docs.yml"),
+        ("superfluous-actions", ".github/workflows/sync-kernel-manifest.yml"),
+    }
+    for (_rule, path), item in excepted.items():
+        assert (ROOT / path).is_file()
+        if path.endswith("praetor-docs.yml"):
+            assert "cordanaLLM/praetor#" in item["reason"], "an engine-owned finding names its engine issue"
 
 
 def test_location_is_one_based():
@@ -211,9 +391,12 @@ def load_workflow() -> dict:
 
 def test_workflow_triggers_on_workflow_changes_weekly_and_by_hand():
     on = load_workflow()[True]  # PyYAML reads the unquoted key `on` as True.
-    assert {".github/workflows/**", ".github/requirements/pins.txt", "tools/ci/action_pins.py"} <= set(
-        on["pull_request"]["paths"]
-    )
+    assert {
+        ".github/workflows/**",
+        ".github/requirements/pins.txt",
+        ".github/zizmor-exceptions.json",
+        "tools/ci/action_pins.py",
+    } <= set(on["pull_request"]["paths"])
     assert on["schedule"] and "workflow_dispatch" in on
 
 
@@ -228,6 +411,7 @@ def test_workflow_runs_the_check_with_the_run_token_and_least_privilege():
     assert any(step.get("run") == "pip install --require-hashes -r .github/requirements/pins.txt" for step in steps)
     check = next(step for step in steps if "tools/ci/action_pins.py" in step.get("run", ""))
     assert check["env"] == {"GH_TOKEN": "${{ github.token }}"}
+    assert "--exceptions .github/zizmor-exceptions.json" in check["run"]
     assert "continue-on-error" not in check and "continue-on-error" not in job
 
 
