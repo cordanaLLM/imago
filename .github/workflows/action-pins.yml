@@ -1,0 +1,62 @@
+---
+# Copyright 2026 Lusoris
+# Action pins: tools/ci/action_pins.py runs zizmor online over the workflows and
+# fails on an action that is not pinned to a commit, a commit that is not in the
+# action's repository, or a version comment that names another release. The check
+# asks the forge about every pinned commit, so it is no part of the local gate. It
+# runs on a pull request that changes a workflow or the check, once a week, and by
+# hand; the weekly run sees a release tag that moved after the pin was written.
+name: action-pins
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - .github/workflows/**
+      - .github/requirements/pins.txt
+      - tools/ci/action_pins.py
+  schedule:
+    - cron: "41 5 * * 3"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: action-pins-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pins:
+    name: Action Pins Impostor and Version Check
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install --require-hashes -r .github/requirements/pins.txt
+
+      # The run token reads the public repositories of the actions. The script
+      # refuses to run without it, and audits a planted workflow first.
+      - name: Check action pins against their repositories
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -I tools/ci/action_pins.py --binary zizmor .github/workflows
