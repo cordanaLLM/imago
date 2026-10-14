@@ -88,6 +88,7 @@ nav:
       - Imago CLI & MCP: tools/cli-mcp.md
       - Planning Graph & Todo Routing: tools/planning-graph.md
       - Hook Refusal Proof: tools/hook-proof.md
+      - Boot Smoke Test: tools/boot-smoke.md
       - Maintenance Cadences & SOPs: operations/maintenance-cadence.md
       - AI Studio & Managed Agents Fleet: operations/managed-agents.md
       - Sister Repo Kernel Forge Blueprint: operations/sister-repo-kernel-forge-blueprint.md
