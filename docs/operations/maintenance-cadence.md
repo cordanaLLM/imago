@@ -48,8 +48,10 @@ The monthly cadence is overseen by release maintainers following standard SOPs:
      carries the next `CHANGELOG.md` section, the `VERSION` file and the version constant in
      `cmd/imago/main.go`.
    - Merge it to publish. The next run of the `release-please` workflow tags the merge
-     commit `vX.Y.Z` and creates the GitHub release. The first release is `v1.0.0`
-     (`initial-version` in `release-please-config.json`); later versions follow from the
+     commit `vX.Y.Z` and creates the GitHub release. The first release is `v0.1.0`
+     (`initial-version` in `release-please-config.json`); `v1.0.0` follows only once the
+     milestone `1.0 — First release` is closed, and `tests/test_governance.py` refuses any
+     version from 1.0.0 up while it is open. Later versions follow from the
      Conventional Commits merged since the last tag.
 2. **CVE Drift Reconciliation**:
    - Run Trivy and Grype against base image rootfs artifacts.

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Tests that run the built `imago` program (`cmd/imago/binary_test.go`): `--help`, `flavors list --json` parsed as one JSON document, an unknown command that must exit 1 with the message on stderr and nothing on stdout, `imago mcp --transport` with an unknown value that must fail before writing to the protocol stream, and `imago mcp` spoken to over stdin and stdout by an MCP client, which checks the server name, the 14 tools and one tool call. A line printed to stdout before the server starts breaks the handshake and fails the test.
 - Action pin check: the `action-pins` workflow runs `tools/ci/action_pins.py`, which runs zizmor 1.30.1 (pinned with hashes in `.github/requirements/pins.txt`) online and fails on an action not pinned to a commit (`unpinned-uses`), a commit outside the action's repository (`impostor-commit`) or a version comment naming another release (`ref-version-mismatch`). It loads no zizmor configuration, honours no ignore comments, refuses to run without a token or offline, and fails unless each audit reports a planted workflow first. It runs on workflow changes, weekly and by hand.
 - Regression tests for the build fixes of #39 to #44: `tests/test_regression_guards.py` runs the shutdown command with stubbed `sudo`, `rm`, `passwd` and `shutdown` and checks the seal order and that a failed seal never powers off; checks that no provisioner seals the account early; runs `55-k8s-precache.sh` in the mock sandbox with one image failing to pull per profile and plugin; compares every precache fallback pin with the `versions.json` value the build passes; runs `packer validate` with a valid and an invalid accelerator; and reads `release-matrix.yml` for the emulated accelerator, the flavor output directory and an ISO authoring tool installed before Packer. Each test fails against the files from before its fix. The `ctr` mock in `tests/harness/mock_runner.py` replaces the host's `ctr` and fails one pull named by `MOCK_FAIL_IMAGE`.
 - Hook refusal proof (issue #80): `make prove-hooks` runs `tools/ci/prove_hooks.py`, which clones the committed tree into a temporary directory, installs the hooks of `lefthook.yml` and shows that `compile-context --verify` and the offline audit pass, that a commit with a hand edit to `CLAUDE.md` is refused, and that a commit adding a banned `eval` call to a touched file is refused as HISS-08 with `.standards-baseline.json` unchanged. A refusal counts only when the commit fails, HEAD stays put and the output names the reason. `tests/test_prove_hooks.py` covers each failure mode with scripted replies, since CI does not install the engine.
@@ -145,9 +146,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The pinned key for gate receipts is the one `cordanaLLM/praetor` pins and the signing
   workstation holds. It replaces the key generated on another workstation during the
   migration. The receipt file is no longer tracked, because every gate run rewrites it.
-- The release tool releases the package as `imago` and starts at 1.0.0. No version was
+- The release tool releases the package as `imago` and starts at 0.1.0. No version was
   ever tagged or published, so the release manifest is empty and `initial-version`
-  states the first one. The release pull request moves to a branch named after the new
+  states the first one. Version 1.0.0 waits until the milestone `1.0 — First release` is
+  closed; a governance test refuses `initial-version`, the manifest entry or `VERSION`
+  from 1.0.0 up while it is open. The release pull request moves to a branch named after the new
   package.
 - Every workflow action that ran on the Node 20 runtime is pinned to its current release,
   which runs on Node 24: `checkout` v7.0.1, `setup-go` v7.0.0, `setup-python` v7.0.0,
