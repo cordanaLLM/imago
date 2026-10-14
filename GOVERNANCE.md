@@ -27,5 +27,5 @@ may be nominated by an existing Maintainer.
 
 ## Epics, Milestones & PR Hard Gates
 
-- Recurring and cross-cutting architectural work is tracked through declarative epics in [`.github/epics.json`](.github/epics.json) and release milestones in [`.github/milestones.json`](.github/milestones.json). The file follows the milestones on the forge: the forge is the source, the file is its copy.
+- Recurring and cross-cutting architectural work is tracked through declarative epics in [`.github/epics.json`](.github/epics.json) and release milestones in [`.github/milestones.json`](.github/milestones.json). The file follows the milestones on the forge: the forge is the source, the file is its copy. The `milestone-drift` workflow (`tools/ci/milestone_drift.py`) compares the two daily and on every pull request that changes the file, and fails on a milestone that only one side has, a title listed twice, or a different state, due date or description; copy the forge values into the file to fix it.
 - Every Pull Request must satisfy automated governance hard gates (`.github/workflows/pr-project-gate.yml`) requiring assignment to an active open milestone, explicit reference to a tracked issue/epic, and appropriate workload/area labels.
