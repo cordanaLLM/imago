@@ -4,7 +4,7 @@ Date: 2026-09-15
 
 ## Status
 
-Accepted
+Accepted. Amended by [ADR-0028](0028-one-reason-bound-for-every-contract-parser.md).
 
 ## Context
 

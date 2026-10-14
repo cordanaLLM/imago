@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/cordanaLLM/imago/pkg/kernel"
+	"github.com/cordanaLLM/imago/pkg/reason"
 )
 
 // FuzzParseRequirement feeds arbitrary bytes to the requirement parser. The
@@ -25,11 +27,14 @@ func FuzzParseRequirement(f *testing.F) {
 	}
 	f.Add([]byte(`{"schema":"aegis.p01-nucleus.kernel-requirement.v1","features":[]}`))
 	f.Add([]byte(`{"unknown":1}`))
+	f.Add([]byte(`{"` + strings.Repeat("u", 2*reason.MaxLen) + `":1}`))
+	f.Add([]byte(`{"schema":"aegis.p01-nucleus.kernel-requirement.v1","correlation-id":"` + strings.Repeat("c", 2*reason.MaxLen) + `"}`))
 	f.Add([]byte(`{} {}`))
 	f.Add([]byte{})
 	f.Fuzz(func(t *testing.T, data []byte) {
 		q, err := kernel.ParseRequirement(bytes.NewReader(data))
 		if err != nil {
+			requireBoundedText(t, err)
 			if q != nil {
 				t.Fatalf("a rejected requirement returned a value: %+v", q)
 			}
@@ -58,11 +63,14 @@ func FuzzParseArtifactManifest(f *testing.F) {
 	f.Add(valid)
 	f.Add([]byte(`{"schema":"imago.nucleus.kernel-artifact.v1","artifacts":[]}`))
 	f.Add([]byte(`{"unknown":1}`))
+	f.Add([]byte(`{"` + strings.Repeat("u", 2*reason.MaxLen) + `":1}`))
+	f.Add([]byte(`{"schema":"imago.nucleus.kernel-artifact.v1","provider":"a/b","stream":"` + strings.Repeat("s", 2*reason.MaxLen) + `"}`))
 	f.Add([]byte(`{} {}`))
 	f.Add([]byte{})
 	f.Fuzz(func(t *testing.T, data []byte) {
 		m, err := kernel.ParseArtifactManifest(bytes.NewReader(data))
 		if err != nil {
+			requireBoundedText(t, err)
 			if m != nil {
 				t.Fatalf("a rejected manifest returned a value: %+v", m)
 			}
@@ -79,6 +87,15 @@ func FuzzParseArtifactManifest(f *testing.F) {
 			t.Fatalf("round trip changed the manifest:\n first %+v\nsecond %+v", m, again)
 		}
 	})
+}
+
+// requireBoundedText fails when a rejection's text exceeds the reason bound
+// (ADR-0028): no input may make the reported text arbitrarily long.
+func requireBoundedText(t *testing.T, err error) {
+	t.Helper()
+	if n := len(err.Error()); n > reason.MaxLen {
+		t.Fatalf("rejection text is %d bytes, bound %d", n, reason.MaxLen)
+	}
 }
 
 // encode marshals an accepted document; a value the parser returned must encode.

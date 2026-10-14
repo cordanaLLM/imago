@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cordanaLLM/imago/pkg/reason"
 )
 
 // Bounds and names of the result side. Each one is a contract constant
@@ -75,11 +77,11 @@ func digestReader(ctx context.Context, cid string, r io.Reader, limit int64) (st
 	ended := false
 	for i := int64(0); i <= limit/imageChunkSize+1 && !ended; i++ {
 		if err := ctx.Err(); err != nil {
-			return "", rejectResult(rcid, "image", boundReason("read image: "+err.Error()), fmt.Errorf("read image: %w", err))
+			return "", rejectResult(rcid, "image", reason.Bound("read image: "+err.Error()), fmt.Errorf("read image: %w", err))
 		}
 		n, end, err := hashChunk(h, r, buf)
 		if err != nil {
-			return "", rejectResult(rcid, "image", boundReason("read image: "+err.Error()), err)
+			return "", rejectResult(rcid, "image", reason.Bound("read image: "+err.Error()), err)
 		}
 		total += int64(n)
 		if total > limit {
@@ -206,7 +208,7 @@ func readImageFileDigest(ctx context.Context, cid, path string) (string, error) 
 	rcid := reportedCorrelationID(cid)
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		return "", rejectResult(rcid, "image", boundReason("open image: "+err.Error()), err)
+		return "", rejectResult(rcid, "image", reason.Bound("open image: "+err.Error()), err)
 	}
 	digest, err := DigestImage(ctx, cid, f)
 	cerr := f.Close()
@@ -214,7 +216,7 @@ func readImageFileDigest(ctx context.Context, cid, path string) (string, error) 
 		return "", err
 	}
 	if cerr != nil {
-		return "", rejectResult(rcid, "image", boundReason("close image: "+cerr.Error()), cerr)
+		return "", rejectResult(rcid, "image", reason.Bound("close image: "+cerr.Error()), cerr)
 	}
 	return digest, nil
 }
@@ -226,15 +228,15 @@ func readChecksumsFile(cid, path string) ([]byte, error) {
 	rcid := reportedCorrelationID(cid)
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		return nil, rejectResult(rcid, "checksums", boundReason("open checksums: "+err.Error()), err)
+		return nil, rejectResult(rcid, "checksums", reason.Bound("open checksums: "+err.Error()), err)
 	}
 	data, err := io.ReadAll(io.LimitReader(f, MaxChecksumsBytes+1))
 	cerr := f.Close()
 	if err != nil {
-		return nil, rejectResult(rcid, "checksums", boundReason("read checksums: "+err.Error()), err)
+		return nil, rejectResult(rcid, "checksums", reason.Bound("read checksums: "+err.Error()), err)
 	}
 	if cerr != nil {
-		return nil, rejectResult(rcid, "checksums", boundReason("close checksums: "+cerr.Error()), cerr)
+		return nil, rejectResult(rcid, "checksums", reason.Bound("close checksums: "+cerr.Error()), cerr)
 	}
 	return data, nil
 }
@@ -276,7 +278,7 @@ func ParseResult(data []byte) (*Result, error) {
 func DecodeResult(r io.Reader) (*Result, error) {
 	data, err := io.ReadAll(io.LimitReader(r, MaxInputBytes+1))
 	if err != nil {
-		return nil, rejectResult(MissingCorrelationID, "input", boundReason("read result: "+err.Error()), err)
+		return nil, rejectResult(MissingCorrelationID, "input", reason.Bound("read result: "+err.Error()), err)
 	}
 	return ParseResult(data)
 }
@@ -286,7 +288,7 @@ func DecodeResult(r io.Reader) (*Result, error) {
 func LoadResult(path string) (*Result, error) {
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		return nil, rejectResult(MissingCorrelationID, "input", boundReason("open result: "+err.Error()), err)
+		return nil, rejectResult(MissingCorrelationID, "input", reason.Bound("open result: "+err.Error()), err)
 	}
 	r, err := DecodeResult(f)
 	cerr := f.Close()
@@ -294,7 +296,7 @@ func LoadResult(path string) (*Result, error) {
 		return nil, err
 	}
 	if cerr != nil {
-		return nil, rejectResult(r.CorrelationID, "input", boundReason("close result: "+cerr.Error()), cerr)
+		return nil, rejectResult(r.CorrelationID, "input", reason.Bound("close result: "+cerr.Error()), cerr)
 	}
 	return r, nil
 }

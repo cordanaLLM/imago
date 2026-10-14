@@ -21,6 +21,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/cordanaLLM/imago/pkg/reason"
 )
 
 // Schema is the only product-input schema identifier this package accepts.
@@ -45,8 +47,9 @@ const (
 	// RevisionLen is the exact length of the lowercase hex git revision.
 	RevisionLen = 40
 	// MaxReasonLen bounds Error.Reason in bytes. A reason built from decoder or
-	// I/O error text is cut to this length and marked as truncated.
-	MaxReasonLen = 256
+	// I/O error text is cut to this length and marked as truncated. It is the
+	// repository-wide bound of pkg/reason (ADR-0028).
+	MaxReasonLen = reason.MaxLen
 )
 
 // ProductInput mirrors build/product-input.json field for field. JSON keys are
@@ -94,7 +97,7 @@ type Retries struct {
 func Load(path string) (*ProductInput, error) {
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: boundReason("open manifest: " + err.Error()), Err: err}
+		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: reason.Bound("open manifest: " + err.Error()), Err: err}
 	}
 	p, err := Decode(f)
 	cerr := f.Close()
@@ -102,7 +105,7 @@ func Load(path string) (*ProductInput, error) {
 		return nil, err
 	}
 	if cerr != nil {
-		return nil, &Error{CorrelationID: p.CorrelationID, Field: "input", Reason: boundReason("close manifest: " + cerr.Error()), Err: cerr}
+		return nil, &Error{CorrelationID: p.CorrelationID, Field: "input", Reason: reason.Bound("close manifest: " + cerr.Error()), Err: cerr}
 	}
 	return p, nil
 }
@@ -112,7 +115,7 @@ func Load(path string) (*ProductInput, error) {
 func Decode(r io.Reader) (*ProductInput, error) {
 	data, err := io.ReadAll(io.LimitReader(r, MaxInputBytes+1))
 	if err != nil {
-		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: boundReason("read manifest: " + err.Error()), Err: err}
+		return nil, &Error{CorrelationID: MissingCorrelationID, Field: "input", Reason: reason.Bound("read manifest: " + err.Error()), Err: err}
 	}
 	return Parse(data)
 }
@@ -145,7 +148,7 @@ func strictDecode(data []byte, what string, v any) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
-		return &Error{CorrelationID: cid, Field: "input", Reason: boundReason("strict decode: " + err.Error()), Err: fmt.Errorf("%w: %w", ErrDecode, err)}
+		return &Error{CorrelationID: cid, Field: "input", Reason: reason.Bound("strict decode: " + err.Error()), Err: fmt.Errorf("%w: %w", ErrDecode, err)}
 	}
 	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
 		return &Error{CorrelationID: cid, Field: "input", Reason: "trailing content after the " + what, Err: ErrTrailingContent}

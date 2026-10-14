@@ -104,7 +104,7 @@ type Policy struct {
 func LoadArtifactManifest(path string) (*ArtifactManifest, error) {
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		return nil, fmt.Errorf("kernel artifact: open %s: %w", path, err)
+		return nil, bounded(fmt.Errorf("kernel artifact: open %s: %w", path, err))
 	}
 	defer f.Close()
 	return ParseArtifactManifest(f)
@@ -114,7 +114,7 @@ func LoadArtifactManifest(path string) (*ArtifactManifest, error) {
 func ParseArtifactManifest(r io.Reader) (*ArtifactManifest, error) {
 	var m ArtifactManifest
 	if err := decodeStrict(r, MaxArtifactManifestBytes, &m); err != nil {
-		return nil, fmt.Errorf("kernel artifact: %w", err)
+		return nil, bounded(fmt.Errorf("kernel artifact: %w", err))
 	}
 	if err := m.Validate(); err != nil {
 		return nil, err
@@ -172,11 +172,15 @@ func (m *ArtifactManifest) fieldErr(field, reason string) error {
 	return m.fieldWrap(field, errors.New(reason))
 }
 
+// fieldWrap keeps err in the chain so callers can test sentinels with errors.Is.
+// An invalid stream or version is reported as a placeholder, and the text is bounded.
 func (m *ArtifactManifest) fieldWrap(field string, err error) error {
 	if m.Stream == "" && m.Version == "" {
-		return fmt.Errorf("kernel artifact: %s: %w", field, err)
+		return bounded(fmt.Errorf("kernel artifact: %s: %w", field, err))
 	}
-	return fmt.Errorf("kernel artifact %s@%s: %s: %w", m.Stream, m.Version, field, err)
+	stream := reported(m.Stream, knownStream(m.Stream))
+	version := reported(m.Version, boundedToken(m.Version, maxVersionLen, versionRegex))
+	return bounded(fmt.Errorf("kernel artifact %s@%s: %s: %w", stream, version, field, err))
 }
 
 func (m *ArtifactManifest) validateArtifacts() error {
