@@ -12,11 +12,16 @@ list at least MIN_DEB_PACKAGES Debian packages, so an empty catalogue never ship
 The merge command joins the checksum files of all flavors into the one SHA256SUMS the release
 signs. It refuses an empty set, a malformed line, a path in a name and a name listed twice.
 
+The sizes command lists the size of each compressed image, appends the list to the step
+summary when one is given, and fails when an asset reaches ASSET_LIMIT_BYTES: the forge
+refuses a release asset of 2 GiB or more, and a raw disk image grows with the disk size.
+
 Usage:
   python3 -I tools/ci/release_assets.py attach --image IMG.qcow2 --at DIR [--device /dev/nbd0]
   python3 -I tools/ci/release_assets.py detach --at DIR [--device /dev/nbd0]
   python3 -I tools/ci/release_assets.py check --cdx sbom.cdx.json --spdx sbom.spdx.json
   python3 -I tools/ci/release_assets.py merge --out SHA256SUMS checksums/*.sha256
+  python3 -I tools/ci/release_assets.py sizes [--summary FILE] IMG.qcow2.zst IMG.raw.zst
 """
 
 import argparse
@@ -33,6 +38,10 @@ MAX_PACKAGES = 100_000
 MAX_CHECKSUM_LINES = 4096
 PARTITION_POLLS = 30
 COMMAND_TIMEOUT_S = 120
+# "Each file included in a release must be under 2 GiB" (docs.github.com, About releases,
+# checked 2026-10-14).
+ASSET_LIMIT_BYTES = 2 * 1024**3
+MAX_ASSETS = 1000
 CHECKSUM_LINE = re.compile(r"^([0-9a-f]{64}) [ *]([A-Za-z0-9._+-]{1,255})$")
 
 
@@ -155,6 +164,23 @@ def merge(parts: list[pathlib.Path], out: pathlib.Path) -> None:
     print(f"{out.name}: {len(lines)} assets from {len(parts)} checksum files")
 
 
+def sizes(paths: list[pathlib.Path], summary: pathlib.Path | None) -> None:
+    if not paths:
+        raise AssetError("no release assets to measure")
+    if len(paths) > MAX_ASSETS:
+        raise AssetError(f"{len(paths)} assets, more than the {MAX_ASSETS} a release holds")
+    measured = [(path.name, path.stat().st_size) for path in paths]
+    rows = [f"| `{name}` | {size} | {size / 1024**3:.2f} GiB |" for name, size in measured]
+    table = ["| Asset | Bytes | Size |", "| :--- | ---: | ---: |", *rows]
+    if summary is not None:
+        with summary.open("a", encoding="utf-8") as out:
+            out.write("\n".join(table) + "\n")
+    print("\n".join(table))
+    too_large = [name for name, size in measured if size >= ASSET_LIMIT_BYTES]
+    if too_large:
+        raise AssetError(f"{', '.join(too_large)} reach the forge limit of {ASSET_LIMIT_BYTES} bytes per asset")
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     commands = root.add_subparsers(dest="command", required=True)
@@ -170,6 +196,9 @@ def parser() -> argparse.ArgumentParser:
     sub = commands.add_parser("merge")
     sub.add_argument("--out", type=pathlib.Path, required=True)
     sub.add_argument("parts", type=pathlib.Path, nargs="*")
+    sub = commands.add_parser("sizes")
+    sub.add_argument("--summary", type=pathlib.Path)
+    sub.add_argument("assets", type=pathlib.Path, nargs="*")
     return root
 
 
@@ -180,6 +209,7 @@ def main(argv: list[str] | None = None) -> int:
         "detach": lambda: detach(args.at, args.device),
         "check": lambda: check(args.cdx, args.spdx),
         "merge": lambda: merge(args.parts, args.out),
+        "sizes": lambda: sizes(args.assets, args.summary),
     }
     try:
         actions[args.command]()

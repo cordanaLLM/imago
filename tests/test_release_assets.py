@@ -3,10 +3,11 @@
 
 `tools/ci/release_assets.py` attaches a built qcow2 image read-only so Syft can catalogue its
 root file system, refuses an SBOM with too few Debian packages and merges the per-flavor
-checksum files into the SHA256SUMS a release signs. The tests replace the system tools
-(sudo, qemu-nbd, lsblk, blkid, mount) with a recorder, cover the failure and boundary cases,
-and check that release-matrix.yml generates the SBOMs, signs SHA256SUMS and verifies the
-signature before it uploads anything.
+checksum files into the SHA256SUMS a release signs, and refuses an asset the forge would
+refuse for its size. The tests replace the system tools (sudo, qemu-nbd, lsblk, blkid, mount)
+with a recorder, cover the failure and boundary cases, and check that release-matrix.yml
+generates the SBOMs, ships each image as qcow2 and as raw disk under the signed checksums,
+signs SHA256SUMS and verifies the signature before it uploads anything.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "tools" / "ci" / "release_assets.py"
 WORKFLOWS = ROOT / ".github" / "workflows"
 RELEASE = WORKFLOWS / "release-matrix.yml"
+BAREMETAL = ROOT / "docs" / "platforms" / "baremetal.md"
 DEVICE = "/dev/nbd7"
 
 _spec = importlib.util.spec_from_file_location("release_assets", SCRIPT)
@@ -249,6 +251,47 @@ def test_merge_refuses_an_empty_set(tmp_path, parts):
     assert assets.main(["merge", "--out", str(tmp_path / "SHA256SUMS"), *paths]) == 1
 
 
+def sparse(path: Path, size: int) -> Path:
+    with path.open("wb") as f:
+        f.truncate(size)
+    return path
+
+
+def test_sizes_accepts_one_byte_under_the_limit_and_writes_the_summary(tmp_path, capsys):
+    raw = sparse(tmp_path / "lusoris-cloud-base-generic.raw.zst", assets.ASSET_LIMIT_BYTES - 1)
+    qcow2 = sparse(tmp_path / "lusoris-cloud-base-generic.qcow2.zst", 1024)
+    summary = tmp_path / "summary.md"
+    summary.write_text("earlier step\n", encoding="utf-8")
+    assert assets.main(["sizes", "--summary", str(summary), str(qcow2), str(raw)]) == 0
+    lines = summary.read_text(encoding="utf-8").splitlines()
+    assert lines[0] == "earlier step"
+    assert f"| `{raw.name}` | {assets.ASSET_LIMIT_BYTES - 1} | 2.00 GiB |" in lines
+    assert f"| `{qcow2.name}` | 1024 | 0.00 GiB |" in lines
+    assert raw.name in capsys.readouterr().out
+
+
+def test_sizes_refuses_an_asset_of_exactly_the_limit_and_still_lists_it(tmp_path, capsys):
+    raw = sparse(tmp_path / "big.raw.zst", assets.ASSET_LIMIT_BYTES)
+    small = sparse(tmp_path / "small.qcow2.zst", 1)
+    summary = tmp_path / "summary.md"
+    assert assets.main(["sizes", "--summary", str(summary), str(small), str(raw)]) == 1
+    assert "big.raw.zst" in summary.read_text(encoding="utf-8")
+    err = capsys.readouterr().err
+    assert "big.raw.zst reach the forge limit" in err and "small" not in err
+
+
+def test_sizes_limit_is_the_forge_limit():
+    assert assets.ASSET_LIMIT_BYTES == 2_147_483_648
+
+
+def test_sizes_refuses_no_asset_a_missing_asset_and_too_many(tmp_path):
+    assert assets.main(["sizes"]) == 1
+    assert assets.main(["sizes", str(tmp_path / "absent.raw.zst")]) == 1
+    one = sparse(tmp_path / "a.raw.zst", 1)
+    assert assets.main(["sizes", *[str(one)] * (assets.MAX_ASSETS + 1)]) == 1
+    assert assets.main(["sizes", *[str(one)] * assets.MAX_ASSETS]) == 0
+
+
 # --- workflow wiring -------------------------------------------------------------------
 
 
@@ -286,17 +329,53 @@ def test_build_job_generates_and_checks_sboms_before_compressing():
     order = [[i for i, line in enumerate(lines) if re.match(w, line)] for w in wanted]
     assert all(len(found) == 1 for found in order), order
     assert [found[0] for found in order] == sorted(found[0] for found in order)
-    assert runs(steps(job)[compress], r"sha256sum -- \*\.qcow2\.zst sbom-\*\.json > \"checksums-")
+    assert runs(steps(job)[compress], r"sha256sum -- \*\.qcow2\.zst \*\.raw\.zst sbom-\*\.json > \"checksums-")
+
+
+def test_compress_step_converts_to_raw_then_checks_sizes_before_the_checksums():
+    job = load(RELEASE)["jobs"]["build-matrix"]
+    lines = steps(job)[index(job, lambda s: runs(s, r"zstd "))]["run"].splitlines()
+    wanted = [
+        r"qcow2=\(\./\*\.qcow2\)$",
+        r'test "\$\{#qcow2\[@\]\}" -eq 1$',
+        r'qemu-img convert -O raw "\$\{qcow2\[0\]\}" "\$\{qcow2\[0\]%\.qcow2\}\.raw"$',
+        r"zstd -T0 -19 --rm \./\*\.qcow2 \./\*\.raw$",
+        r'python3 -I "\$\{GITHUB_WORKSPACE\}/tools/ci/release_assets\.py" sizes --summary "\$\{GITHUB_STEP_SUMMARY\}"'
+        r" \./\*\.qcow2\.zst \./\*\.raw\.zst$",
+        r"sha256sum -- ",
+    ]
+    order = [[i for i, line in enumerate(lines) if re.match(w, line)] for w in wanted]
+    assert all(len(found) == 1 for found in order), order
+    assert [found[0] for found in order] == sorted(found[0] for found in order)
+
+
+def upload_artifact(job: dict, name: str) -> dict:
+    return steps(job)[
+        index(job, lambda s: s.get("uses", "").startswith("actions/upload-artifact@") and s["with"]["name"] == name)
+    ]
+
+
+def test_manual_run_keeps_the_raw_image_for_a_day():
+    job = load(RELEASE)["jobs"]["build-matrix"]
+    keep = upload_artifact(job, "raw-${{ matrix.flavor }}")
+    assert keep["if"] == "github.event_name == 'workflow_dispatch'"
+    assert keep["with"]["path"] == "packer/output-images/${{ matrix.flavor }}/*.raw.zst"
+    assert keep["with"]["retention-days"] == 1
+    assert keep["with"]["if-no-files-found"] == "error"
 
 
 def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
     job = load(RELEASE)["jobs"]["build-matrix"]
-    keep = steps(job)[index(job, lambda s: s.get("uses", "").startswith("actions/upload-artifact@"))]
-    assert keep["with"]["name"] == "checksums-${{ matrix.flavor }}"
+    keep = upload_artifact(job, "checksums-${{ matrix.flavor }}")
     assert keep["with"]["if-no-files-found"] == "error"
     upload = steps(job)[index(job, lambda s: s.get("uses", "").startswith("softprops/action-gh-release@"))]
+    assert upload["if"] == "github.event_name == 'release'"
     assert "SHA256SUMS" not in upload["with"]["files"]
-    assert "sbom-*.json" in upload["with"]["files"]
+    assert upload["with"]["files"].splitlines() == [
+        "packer/output-images/${{ matrix.flavor }}/*.qcow2.zst",
+        "packer/output-images/${{ matrix.flavor }}/*.raw.zst",
+        "packer/output-images/${{ matrix.flavor }}/sbom-*.json",
+    ]
 
 
 def test_sign_job_signs_verifies_then_uploads_on_release_only():
@@ -335,3 +414,32 @@ def test_readme_scorecard_badge_points_at_scorecard():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "supply-chain.yml" not in readme
     assert re.search(r"\[!\[Scorecard\]\([^)]*scorecard\.yml[^)]*\)\]\([^)]*actions/workflows/scorecard\.yml\)", readme)
+
+
+# --- bare-metal guide ------------------------------------------------------------------
+
+RELEASE_URL = "https://github.com/${OWNER}/imago/releases/download/${TAG}/"
+
+
+def test_baremetal_guide_downloads_a_raw_image_the_release_ships():
+    guide = BAREMETAL.read_text(encoding="utf-8")
+    hcl = (ROOT / "packer" / "variables.pkr.hcl").read_text(encoding="utf-8")
+    image_name = re.search(r'variable "image_name" \{[^}]*default\s*=\s*"([^"]+)"', hcl)
+    flavors = load(RELEASE)["jobs"]["build-matrix"]["strategy"]["matrix"]["flavor"]
+    shipped = {f"{image_name[1]}-{flavor}.raw.zst" for flavor in flavors}
+    loop = re.search(r"for asset in ([^;]+); do\n\s*curl -fsSLO \"" + re.escape(RELEASE_URL + "${asset}") + '"', guide)
+    assert loop, "no download loop over release assets"
+    fetched = loop[1].split()
+    assert fetched[1:] == ["SHA256SUMS", "SHA256SUMS.bundle"]
+    streamed = re.findall(re.escape(RELEASE_URL) + r"([\w.-]+\.raw\.zst)", guide)
+    assert streamed and {fetched[0], *streamed} <= shipped, (fetched, streamed, shipped)
+    assert (
+        '--certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-matrix.yml@refs/tags/${TAG}"'
+        in guide
+    )
+
+
+def test_baremetal_guide_names_no_host_that_does_not_serve_the_images():
+    guide = BAREMETAL.read_text(encoding="utf-8")
+    hosts = set(re.findall(r"https?://([\w.-]+)", guide))
+    assert hosts <= {"github.com", "token.actions.githubusercontent.com", "boot.example.com"}, hosts
