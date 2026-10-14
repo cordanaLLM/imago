@@ -14,6 +14,10 @@ name: REUSE
 permissions:
   contents: read
 
+concurrency:
+  group: reuse-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   reuse:
     name: REUSE lint

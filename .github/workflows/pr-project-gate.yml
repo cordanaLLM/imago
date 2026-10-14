@@ -5,8 +5,12 @@ name: pr-project-gate
     types: [opened, reopened, edited, labeled, unlabeled, milestoned, demilestoned, synchronize]
 
 permissions:
-  pull-requests: read
+  pull-requests: read # read the milestone, labels and body under check
   contents: read
+
+concurrency:
+  group: pr-project-gate-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate-metadata:
@@ -15,6 +19,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Verify PR Milestone, Issue Reference and Labels
         env:
