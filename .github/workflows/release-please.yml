@@ -6,12 +6,18 @@ on:
 permissions:
   contents: read
 
+# A release run is never cancelled: a half-finished run can leave a tag without its release.
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
 jobs:
   release-please:
+    name: Release Please
     runs-on: ubuntu-26.04
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # push the release branch, tag and release
+      pull-requests: write # open and update the release pull request
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release

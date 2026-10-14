@@ -16,6 +16,12 @@ on:
 permissions:
   contents: read
 
+# A newer run for the same ref replaces the waiting one. The wait step keeps the newest
+# run per check name, so a cancelled run of an older event does not fail this one.
+concurrency:
+  group: required-aggregator-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   MAY_SKIP: |-
     Packer Format & Validate

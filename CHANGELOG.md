@@ -100,6 +100,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Two-phase staged MCP operations TTL eviction guard and capacity bounding (`pkg/mcp/staging.go`).
   - Automated Go catalog and provisioner script synchrony invariant test (`test_go_catalog_provisioners_synchrony` in `tests/test_flavors.py`).
 
+- Workflow audit gate: the action pin check (`tools/ci/action_pins.py`) also fails on `template-injection`, `excessive-permissions`, `undocumented-permissions` and `anonymous-definition`, each refused on its planted workflow first. Every workflow passes them: the Packer build reads the flavor through `env`, Scorecard grants nothing at workflow level, every grant beyond `contents: read` says in a comment what it is for, and the Pages and release-please jobs carry a name.
+- Concurrency groups on the PR gate, REUSE, required-aggregator, Scorecard and both release workflows; the release workflows never cancel a running release.
+
 ### Changed
 - The live container tests (`tests/test_container_integration.py`) run on the Ubuntu release the images ship, `ubuntu:` plus the `distro.version` of `versions.json` (26.04), instead of `ubuntu:24.04`, so `sshd -t`, the sysctl syntax check and the CDI validation read the configuration with the OpenSSH and tools of the target release. A test fails when the image differs from `versions.json` or when any test names an image literal of its own.
 - The Gitleaks and Semgrep jobs run `tools/ci/scanner_canary.py` before their scan: it scans planted findings outside the checkout and fails the job unless the scanner exits non-zero and reports each planted rule, including the custom `no-cosign-private-key` rule. The privacy tests now prove their patterns with planted leaks and pass documentation placeholders and near misses.

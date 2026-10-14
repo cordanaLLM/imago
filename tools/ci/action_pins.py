@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 # Copyright 2026 Lusoris
 # SPDX-License-Identifier: EUPL-1.2
-"""Fail unless every action reference is pinned to a real commit of its repository.
+"""Fail unless every action is pinned to a real commit and the workflows pass the audits.
 
-The check runs zizmor online with three audits, named as in the zizmor 1.30.1 audit
+The check runs zizmor online with seven audits, named as in the zizmor 1.30.1 audit
 documentation (https://docs.zizmor.sh/audits/):
 
 - `unpinned-uses`: a `uses:` clause pinned to a tag or branch instead of a commit;
 - `impostor-commit`: a commit that is not reachable from the named repository (it lives
   in a fork of it, or nowhere);
 - `ref-version-mismatch`: a version comment that names another release than the
-  pinned commit, or no release.
+  pinned commit, or no release;
+- `template-injection`: a `${{ }}` expression expanded inside a `run:` script;
+- `excessive-permissions`: a `read-all` or `write-all` grant;
+- `undocumented-permissions`: a grant beyond `contents: read` without a comment that
+  says what it is for;
+- `anonymous-definition`: a job without a `name:`.
 
 The check fails closed. It refuses to run without a GitHub token or with zizmor's
 offline switches set, because `impostor-commit` needs the API. It loads no zizmor
@@ -31,7 +36,17 @@ import subprocess
 import sys
 import tempfile
 
-AUDITS = ("impostor-commit", "ref-version-mismatch", "unpinned-uses")
+# Each audit with the fix the error line asks for.
+ADVICE = {
+    "anonymous-definition": "give the job a name",
+    "excessive-permissions": "grant the permissions the job needs, never read-all or write-all",
+    "impostor-commit": "pin this action to a release commit of its repository",
+    "ref-version-mismatch": "pin this action to a release commit of its repository",
+    "template-injection": "pass the expression to the script through env",
+    "undocumented-permissions": "say in a comment on the line what the permission is for",
+    "unpinned-uses": "pin this action to a release commit of its repository",
+}
+AUDITS = tuple(sorted(ADVICE))
 TOKEN_ENV = ("GH_TOKEN", "GITHUB_TOKEN", "ZIZMOR_GITHUB_TOKEN")
 OFFLINE_ENV = ("ZIZMOR_OFFLINE", "ZIZMOR_NO_ONLINE_AUDITS")
 # zizmor exits 0 without findings and 11 to 14 by the highest severity it found.
@@ -40,15 +55,19 @@ FINDINGS_EXIT = range(11, 15)
 SCAN_TIMEOUT_S = 600
 MAX_FINDINGS = 4096
 
-# One planted step per audit. The checkout commit is v7.0.1 under a v6.0.0 comment,
-# the setup-go commit exists nowhere, and the last step uses a tag.
+# One planted defect per audit. The workflow grants write-all, the job has no name and
+# an uncommented write grant, the checkout commit is v7.0.1 under a v6.0.0 comment, the
+# setup-go commit exists nowhere, the third step uses a tag, and the last one expands the
+# head branch name into its script.
 PLANT = """\
 name: plant
-on: push
-permissions: {}
+on: pull_request
+permissions: write-all
 jobs:
   plant:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6.0.0
         with:
@@ -57,6 +76,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - run: echo "${{ github.head_ref }}"
 """
 
 
@@ -117,7 +137,7 @@ def canary(binary: str) -> None:
     missing = sorted(set(AUDITS) - found)
     if missing:
         raise PinCheckError(f"zizmor did not report the planted workflow for: {', '.join(missing)}")
-    print(f"action pin canary: refused {', '.join(AUDITS)}")
+    print(f"action audit canary: refused {', '.join(AUDITS)}")
 
 
 def run(binary: str, target: pathlib.Path) -> int:
@@ -125,8 +145,8 @@ def run(binary: str, target: pathlib.Path) -> int:
     canary(binary)
     found = pin_findings(scan(binary, target))
     for audit, path, line in found:
-        print(f"::error file={path},line={line}::{audit}: pin this action to a release commit of its repository")
-    print(f"action pin check: {len(found)} finding(s) in {target}")
+        print(f"::error file={path},line={line}::{audit}: {ADVICE[audit]}")
+    print(f"action audit check: {len(found)} finding(s) in {target}")
     return 1 if found else 0
 
 

@@ -368,13 +368,16 @@ def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
     job = load(RELEASE)["jobs"]["build-matrix"]
     keep = upload_artifact(job, "checksums-${{ matrix.flavor }}")
     assert keep["with"]["if-no-files-found"] == "error"
-    upload = steps(job)[index(job, lambda s: s.get("uses", "").startswith("softprops/action-gh-release@"))]
+    upload = steps(job)[index(job, lambda s: runs(s, r"gh release upload "))]
     assert upload["if"] == "github.event_name == 'release'"
-    assert "SHA256SUMS" not in upload["with"]["files"]
-    assert upload["with"]["files"].splitlines() == [
-        "packer/output-images/${{ matrix.flavor }}/*.qcow2.zst",
-        "packer/output-images/${{ matrix.flavor }}/*.raw.zst",
-        "packer/output-images/${{ matrix.flavor }}/sbom-*.json",
+    assert upload["env"]["TAG"] == "${{ github.event.release.tag_name }}"
+    assert upload["env"]["FLAVOR"] == "${{ matrix.flavor }}"
+    assert "SHA256SUMS" not in upload["run"]
+    files = upload["run"].replace("\\\n", " ").split()
+    assert files[files.index("--clobber") + 1 :] == [
+        '"packer/output-images/${FLAVOR}"/*.qcow2.zst',
+        '"packer/output-images/${FLAVOR}"/*.raw.zst',
+        '"packer/output-images/${FLAVOR}"/sbom-*.json',
     ]
 
 
@@ -386,12 +389,13 @@ def test_sign_job_signs_verifies_then_uploads_on_release_only():
     merge = index(job, lambda s: runs(s, r"release_assets\.py merge --out SHA256SUMS "))
     sign = index(job, lambda s: runs(s, r"^cosign sign-blob --yes --bundle SHA256SUMS\.bundle SHA256SUMS$"))
     verify = index(job, lambda s: runs(s, r"cosign verify-blob --bundle SHA256SUMS\.bundle"))
-    upload = index(job, lambda s: s.get("uses", "").startswith("softprops/action-gh-release@"))
+    upload = index(job, lambda s: runs(s, r"gh release upload "))
     assert merge < sign < verify < upload
     verify_run = steps(job)[verify]["run"]
     assert '--certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}"' in verify_run
     assert "--certificate-oidc-issuer https://token.actions.githubusercontent.com" in verify_run
-    assert steps(job)[upload]["with"]["files"].split() == ["SHA256SUMS", "SHA256SUMS.bundle"]
+    upload_run = steps(job)[upload]["run"].split()
+    assert upload_run[upload_run.index("--clobber") + 1 :] == ["SHA256SUMS", "SHA256SUMS.bundle"]
 
 
 def test_every_action_is_pinned_to_a_commit():

@@ -1,10 +1,10 @@
 # Copyright 2026 Lusoris
-"""Verification that the action pin check fails closed.
+"""Verification that the action pin and workflow audit check fails closed.
 
 `tools/ci/action_pins.py` runs zizmor online over the workflows (`action-pins.yml`) and
-fails on an action reference that is not pinned to a commit of its repository. The tests
-below run the check against a stub zizmor: it passes a clean scan, fails on each pin
-finding, refuses to run without a token or with the offline switches, refuses a zizmor
+fails on an action reference that is not pinned to a commit of its repository, and on the
+template-injection, permission and job-name audits. The tests below run the check against
+a stub zizmor: it passes a clean scan, fails on each gated finding, refuses to run without a token or with the offline switches, refuses a zizmor
 that does not report the planted workflow for every named audit, and accepts only the
 exit codes zizmor documents. They also hold the workflow wiring and the hash-pinned
 install, and require every tool a workflow downloads to come from a release and to match a
@@ -79,19 +79,31 @@ def test_clean_workflows_pass(stub, capsys):
     stub()
     assert pins.main(["--binary", "unused", ".github/workflows"]) == 0
     out = capsys.readouterr().out
-    assert "refused impostor-commit, ref-version-mismatch, unpinned-uses" in out
+    assert f"refused {', '.join(pins.AUDITS)}" in out
     assert "0 finding(s)" in out
 
 
+def test_gated_audits_are_the_pin_and_workflow_audits():
+    assert set(pins.AUDITS) == {
+        "anonymous-definition",
+        "excessive-permissions",
+        "impostor-commit",
+        "ref-version-mismatch",
+        "template-injection",
+        "undocumented-permissions",
+        "unpinned-uses",
+    }
+
+
 @pytest.mark.parametrize("audit", pins.AUDITS)
-def test_each_pin_finding_fails_with_its_file_and_line(stub, capsys, audit):
+def test_each_gated_finding_fails_with_its_file_line_and_fix(stub, capsys, audit):
     stub(target=f"{audit}@42", target_exit=13)
     assert pins.main(["--binary", "unused", ".github/workflows"]) == 1
-    assert f"::error file=.github/workflows/ci.yml,line=42::{audit}:" in capsys.readouterr().out
+    assert f"::error file=.github/workflows/ci.yml,line=42::{audit}: {pins.ADVICE[audit]}" in capsys.readouterr().out
 
 
 def test_findings_of_other_audits_do_not_fail(stub):
-    stub(target="artipacked@3,template-injection@9", target_exit=14)
+    stub(target="artipacked@3,concurrency-limits@9", target_exit=14)
     assert pins.main(["--binary", "unused", ".github/workflows"]) == 0
 
 
@@ -166,12 +178,17 @@ def test_command_loads_no_configuration_and_stays_online():
     assert not {"--offline", "-o", "--no-online-audits", "--no-exit-codes", "--config", "-c"} & set(args)
 
 
-def test_plant_holds_one_step_per_audit():
-    steps = yaml.safe_load(pins.PLANT)["jobs"]["plant"]["steps"]
-    uses = [step["uses"] for step in steps]
-    assert len(uses) == len(pins.AUDITS)
+def test_plant_holds_one_defect_per_audit():
+    plant = yaml.safe_load(pins.PLANT)
+    job = plant["jobs"]["plant"]
+    uses = [step["uses"] for step in job["steps"] if "uses" in step]
+    assert len(uses) == 3
     assert any(ref.endswith("@0000000000000000000000000000000000000001") for ref in uses)
     assert any(len(ref.split("@")[1]) != 40 for ref in uses), "no tag-pinned step for unpinned-uses"
+    assert plant["permissions"] == "write-all", "no grant for excessive-permissions"
+    assert "name" not in job, "no anonymous job for anonymous-definition"
+    assert "contents: write\n" in pins.PLANT, "no uncommented grant for undocumented-permissions"
+    assert any("${{" in step.get("run", "") for step in job["steps"]), "no expansion for template-injection"
 
 
 def test_location_is_one_based():
