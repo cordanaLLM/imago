@@ -2,7 +2,9 @@
 # Copyright 2026 Lusoris
 # Action pins: tools/ci/action_pins.py runs zizmor online over the workflows and
 # fails on an action that is not pinned to a commit, a commit that is not in the
-# action's repository, or a version comment that names another release. The check
+# action's repository, a version comment that names another release, and the
+# workflow audits it names; .github/zizmor-exceptions.json lists the findings the
+# repository cannot fix yet, each with a category and an expiry. The check
 # asks the forge about every pinned commit, so it is no part of the local gate. It
 # runs on a pull request that changes a workflow or the check, once a week, and by
 # hand; the weekly run sees a release tag that moved after the pin was written.
@@ -14,6 +16,7 @@ on:
     paths:
       - .github/workflows/**
       - .github/requirements/pins.txt
+      - .github/zizmor-exceptions.json
       - tools/ci/action_pins.py
   schedule:
     - cron: "41 5 * * 3"
@@ -59,4 +62,6 @@ jobs:
       - name: Check action pins against their repositories
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -I tools/ci/action_pins.py --binary zizmor .github/workflows
+        run: >-
+          python3 -I tools/ci/action_pins.py --binary zizmor
+          --exceptions .github/zizmor-exceptions.json .github/workflows
