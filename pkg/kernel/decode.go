@@ -17,10 +17,47 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/cordanaLLM/imago/pkg/reason"
 )
 
 // ErrTooLarge is returned when a document or artifact exceeds its read bound.
 var ErrTooLarge = errors.New("exceeds read bound")
+
+// Placeholders reported in place of a correlation value that cannot be echoed.
+const (
+	missingValue = "(missing)"
+	invalidValue = "(invalid)"
+)
+
+// reported maps a raw correlation value to the text an error may repeat: a
+// value that failed its own check is not echoed (ADR-0028).
+func reported(raw string, valid bool) string {
+	switch {
+	case raw == "":
+		return missingValue
+	case !valid:
+		return invalidValue
+	}
+	return raw
+}
+
+// boundedError reports text cut by reason.Bound and keeps the full cause in
+// the chain for errors.Is and errors.As.
+type boundedError struct {
+	text string
+	err  error
+}
+
+func (e *boundedError) Error() string { return e.text }
+
+func (e *boundedError) Unwrap() error { return e.err }
+
+// bounded returns err with its text at most reason.MaxLen bytes. Every error an
+// exported function of this package returns passes through it (ADR-0028).
+func bounded(err error) error {
+	return &boundedError{text: reason.Bound(err.Error()), err: err}
+}
 
 // decodeStrict decodes exactly one JSON document of at most limit bytes into v.
 // Unknown fields, trailing data, and oversized input are rejected.

@@ -78,7 +78,7 @@ type Feature struct {
 func LoadRequirement(path string) (*Requirement, error) {
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		return nil, fmt.Errorf("kernel requirement: open %s: %w", path, err)
+		return nil, bounded(fmt.Errorf("kernel requirement: open %s: %w", path, err))
 	}
 	defer f.Close()
 	return ParseRequirement(f)
@@ -89,7 +89,7 @@ func LoadRequirement(path string) (*Requirement, error) {
 func ParseRequirement(r io.Reader) (*Requirement, error) {
 	var q Requirement
 	if err := decodeStrict(r, MaxRequirementBytes, &q); err != nil {
-		return nil, fmt.Errorf("kernel requirement: %w", err)
+		return nil, bounded(fmt.Errorf("kernel requirement: %w", err))
 	}
 	if err := q.Validate(); err != nil {
 		return nil, err
@@ -121,11 +121,13 @@ func (q *Requirement) fieldErr(field, reason string) error {
 }
 
 // fieldWrap keeps err in the chain so callers can test sentinels with errors.Is.
+// An invalid correlation id is reported as a placeholder, and the text is bounded.
 func (q *Requirement) fieldWrap(field string, err error) error {
 	if q.CorrelationID == "" {
-		return fmt.Errorf("kernel requirement: %s: %w", field, err)
+		return bounded(fmt.Errorf("kernel requirement: %s: %w", field, err))
 	}
-	return fmt.Errorf("kernel requirement %s: %s: %w", q.CorrelationID, field, err)
+	cid := reported(q.CorrelationID, boundedToken(q.CorrelationID, MaxCorrelationIDLen, correlationIDRegex))
+	return bounded(fmt.Errorf("kernel requirement %s: %s: %w", cid, field, err))
 }
 
 func (q *Requirement) validateArchitectures() error {
