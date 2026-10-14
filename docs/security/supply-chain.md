@@ -38,6 +38,14 @@ Before the Gitleaks and Semgrep jobs scan the repository, each runs [`tools/ci/s
 
 Go code is also checked by **govulncheck**, which reports only vulnerabilities the code can reach. The `Govulncheck Reachable Go Vulnerabilities` job runs it on every Go change, on every push to `main` and on the weekly schedule, so a newly published advisory turns the job red without a code change. The scanner is pinned in its own module, [`tools/govulncheck/go.mod`](https://github.com/cordanaLLM/imago/blob/main/tools/govulncheck/go.mod), so its dependencies do not change the versions imago builds with, and Renovate updates it. To run the same scan locally: `go -C tools/govulncheck tool govulncheck -C "$PWD" ./...`.
 
+Every `uses:` reference of a workflow is pinned to a commit with its release in a comment, and the **action pin check** holds that pin true. The `action-pins` workflow ([`.github/workflows/action-pins.yml`](https://github.com/cordanaLLM/imago/blob/main/.github/workflows/action-pins.yml)) runs [`tools/ci/action_pins.py`](https://github.com/cordanaLLM/imago/blob/main/tools/ci/action_pins.py), which runs [zizmor](https://docs.zizmor.sh/) (pinned with hashes in `.github/requirements/pins.txt`) online with the run token and fails on three audits:
+
+- `unpinned-uses`: a reference pinned to a tag or branch instead of a commit;
+- `impostor-commit`: a commit that is not in the named repository, for example one that exists only in a fork;
+- `ref-version-mismatch`: a version comment that names another release than the pinned commit, or none.
+
+The check loads no zizmor configuration and honours no ignore comments, so the repository cannot relax a rule. It refuses to run without a token or with zizmor's offline switches, because `impostor-commit` asks the forge. Before the real scan it audits a planted workflow outside the checkout and fails unless each of the three audits reports it, so an audit that a new zizmor version renames or that no longer reaches the forge turns the job red. The job runs on a pull request that changes a workflow, the lockfile or the script, once a week (a release tag can move after the pin was written), and by hand; it needs the network, so it is not part of the local gate. `tests/test_action_pins.py` runs the script against a stub zizmor. To run it locally: `GH_TOKEN="$(gh auth token)" python3 -I tools/ci/action_pins.py --binary zizmor .github/workflows`.
+
 ---
 
 ## 4. Continuous Assurance & PR Project Hard Gates
