@@ -33,9 +33,7 @@ PROVISIONER = ROOT / "packer" / "provisioners" / "25-baremetal-tuning.sh"
 MIB = 1024 * 1024
 TIMEOUT = 120
 
-HELPER_RE = re.compile(
-    r"cat <<'EOF' \| sudo tee /usr/local/bin/lusoris-install-to-disk\n(.*?)\nEOF\n", re.DOTALL
-)
+HELPER_RE = re.compile(r"cat <<'EOF' \| sudo tee /usr/local/bin/lusoris-install-to-disk\n(.*?)\nEOF\n", re.DOTALL)
 
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
