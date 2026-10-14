@@ -1,0 +1,46 @@
+FLAVOR ID                    TIER         HARDWARE                 DESCRIPTION
+----------------------------------------------------------------------------------------------------
+base-generic                 base         VirtIO / Generic CPU     Minimal hardened OS, Anycast NTS, QEMU+VMware agents
+base-intel                   base         Intel Xe / Arc / Xe2     Intel Media Driver (iHD), Level Zero, vainfo
+base-amd                     base         AMD Radeon / APU         Mesa Gallium radeonsi, RADV Vulkan, AMDGPU DRM
+base-nvidia-legacy           base         NVIDIA Pascal / Volta    NVIDIA 535 driver, CUDA 12.2 (GTX 1080, P4, P40, V100)
+base-nvidia-mainstream       base         NVIDIA Turing / Ampere   NVIDIA 565 driver, CUDA 12.8 (RTX 20/30/40, A100, L4)
+base-nvidia-modern           base         NVIDIA Ada / Hopper      NVIDIA 610 driver, CUDA 13.3 (RTX 4080/4090, L40S, H100)
+base-nvidia-bleeding         base         NVIDIA Blackwell         NVIDIA 615 driver, CUDA 13.4 (RTX 5090, B200)
+base-nvidia-datacenter       base         NVIDIA Hopper / Blackwell NVIDIA Open Kernel Modules, Fabric Manager for NVLink
+docker-generic               containers   VirtIO / Generic CPU     Docker CE 29.8, Docker Compose v2, systemd cgroups
+docker-intel                 containers   Intel Xe / Arc / Xe2     Docker CE + Intel QuickSync passthrough + CDI spec
+docker-amd                   containers   AMD Radeon / Instinct    Docker CE + AMD ROCm 10 compute runtime + CDI spec
+docker-nvidia                containers   NVIDIA Mainstream        Docker CE + NVIDIA 565 + Container Toolkit CDI
+docker-nvidia-modern         containers   NVIDIA Modern            Docker CE + NVIDIA 610 + Container Toolkit CDI
+docker-nvidia-bleeding       containers   NVIDIA Bleeding          Docker CE + NVIDIA 615 + Container Toolkit CDI
+podman-generic               containers   VirtIO / Generic CPU     Podman 5.x, Buildah, Skopeo, Quadlet, Netavark CNI
+k8s-node-generic             kubernetes   VirtIO / CPU             containerd 2.3.5, kubelet 1.37.0, zero preheat
+k8s-node-cilium              kubernetes   VirtIO / CPU             containerd 2.3.5, preheated Cilium 1.20.1 & kube-vip 1.2.3
+k8s-node-calico              kubernetes   VirtIO / CPU             containerd 2.3.5, preheated Calico 3.32.2 & kube-vip 1.2.3
+k8s-node-flannel             kubernetes   VirtIO / CPU             containerd 2.3.5, preheated Flannel 0.28.9 & kube-vip 1.2.3
+k8s-node-intel               kubernetes   Intel Arc / Xe2          containerd 2.3.5 + Intel drivers + Intel K8s Plugin
+k8s-node-amd                 kubernetes   AMD ROCm 10              containerd 2.3.5 + AMD ROCm 10 + AMD K8s Plugin
+k8s-node-nvidia              kubernetes   NVIDIA Mainstream        containerd 2.3.5 + NVIDIA 565 + NVIDIA K8s Plugin
+k8s-node-nvidia-modern       kubernetes   NVIDIA Modern            containerd 2.3.5 + NVIDIA 610 + NVIDIA K8s Plugin
+k8s-node-nvidia-bleeding     kubernetes   NVIDIA Bleeding          containerd 2.3.5 + NVIDIA 615 + NVIDIA K8s Plugin
+k3s-agent-generic            k3s          VirtIO / CPU             Lightweight K3s agent, containerd, Flannel (< 300MB RAM)
+k3s-agent-intel              k3s          Intel GPU                K3s agent + Intel QuickSync (iHD) + Level Zero
+k3s-agent-amd                k3s          AMD GPU                  K3s agent + AMD ROCm 10 compute runtime + RADV Vulkan
+k3s-agent-nvidia             k3s          NVIDIA Mainstream        K3s agent + NVIDIA 565 + Container Toolkit CDI
+k3s-server-generic           k3s          VirtIO / CPU             K3s standalone master, embedded SQLite, local-path storage
+cloudnative-generic          cloudnative  VirtIO / Generic CPU     Immutable container host, read-only root, ephemeral tmpfs
+cloudnative-k8s              cloudnative  VirtIO / Generic CPU     Immutable Kubernetes node, read-only root, containerd 2.3.5
+cloudnative-storage          cloudnative  CNCF Storage             NVMe-oF (TCP), OpenZFS 2.3, iSCSI, multipath, NFS
+cloudnative-pg               cloudnative  Database (CNPG)          CloudNativePG kernel tuning, hugepages, strict overcommit
+ai-infer-generic             ai-infer     CPU High-Throughput      AMX, AVX-512, NUMA, vLLM/Ollama CPU, Docker CE
+ai-infer-intel               ai-infer     Intel Xe / Arc / Xe2     Intel Level Zero, OpenVINO, IPEX-LLM, CDI, Docker CE
+ai-infer-amd                 ai-infer     AMD ROCm 10              AMD ROCm 10, /dev/kfd, RDNA 3/4 & Instinct, CDI, Docker CE
+ai-infer-nvidia              ai-infer     NVIDIA Mainstream        Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 565)
+ai-infer-nvidia-modern       ai-infer     NVIDIA Modern            Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 610)
+ai-infer-nvidia-bleeding     ai-infer     NVIDIA Bleeding          Transparent hugepages, Blackwell RTX 5090 / B200 (NVIDIA 615)
+appliance-vision-nvr         homelab      Intel GPU + Coral TPU    Coral Edge TPU (gasket-dkms, udev), Intel QuickSync (iHD), CDI, Docker CE
+appliance-gateway-dns        homelab      VirtIO / Low-Power CPU   Port 53 stub disabled, WireGuard, line-rate forwarding (< 150MB RAM)
+appliance-media-server       homelab      Intel + AMD GPU + NAS    Intel QuickSync + AMD Mesa VA-API, nfs-common, cifs-utils, 4096KB readahead
+appliance-ci-runner          homelab      Multi-Core CPU / DinD    QEMU ARM64/ARMv7 binfmt, Docker Buildx, git-lfs, 4GB tmpfs /tmp
+appliance-game-server        homelab      High Clock CPU           32-bit i386 glibc, steamcmd, 16MB UDP socket buffer tuning, 1M file limits

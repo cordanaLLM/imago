@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "milestones": [
+    {
+      "title": "0.1",
+      "state": "closed",
+      "due_on": "2026-10-01T00:00:00Z",
+      "description": "Fits every column."
+    },
+    {
+      "title": "1.0 — First release",
+      "state": "open",
+      "due_on": "",
+      "description": "Title overflows its column and the due date is empty."
+    }
+  ]
+}

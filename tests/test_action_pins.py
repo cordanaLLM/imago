@@ -7,13 +7,15 @@ below run the check against a stub zizmor: it passes a clean scan, fails on each
 finding, refuses to run without a token or with the offline switches, refuses a zizmor
 that does not report the planted workflow for every named audit, and accepts only the
 exit codes zizmor documents. They also hold the workflow wiring and the hash-pinned
-install.
+install, and require every tool a workflow downloads to come from a release and to match a
+checksum.
 """
 
 from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -22,7 +24,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "tools" / "ci" / "action_pins.py"
-WORKFLOW = ROOT / ".github" / "workflows" / "action-pins.yml"
+WORKFLOWS = ROOT / ".github" / "workflows"
+WORKFLOW = WORKFLOWS / "action-pins.yml"
 REQUIREMENTS = ROOT / ".github" / "requirements"
 
 _spec = importlib.util.spec_from_file_location("action_pins", SCRIPT)
@@ -217,3 +220,62 @@ def test_zizmor_is_pinned_by_hash():
     block = lock.split("zizmor==", 1)[1]
     assert block.split("\\", 1)[0].strip().count(".") == 2
     assert "--hash=sha256:" in block
+
+
+# A download in a run step is pinned the way an action is: it names a release, and the file
+# must match a checksum before it runs. A branch or the latest release changes under the
+# same commit, and a script piped into a shell runs before anything checks it.
+DOWNLOAD = re.compile(r"\b(curl|wget)\b")
+URL = re.compile(r"https?://[^\s\"')]+")
+MOVING_REF = re.compile(r"/(main|master|HEAD)(/|$)|/refs/heads/|/releases/latest\b")
+PIPED_SCRIPT = re.compile(r"(ba)?sh\s+-c\s+\"\$\((curl|wget)|\b(curl|wget)\b[^\n|]*\|\s*(sudo\s+)?(ba)?sh\b")
+
+
+def run_steps() -> list[tuple[str, dict]]:
+    steps = []
+    for path in sorted(WORKFLOWS.glob("*.yml")):
+        with path.open(encoding="utf-8") as handle:
+            jobs = yaml.safe_load(handle).get("jobs", {})
+        for job_id, job in jobs.items():
+            for index, step in enumerate(job.get("steps", [])):
+                if "run" in step:
+                    steps.append((f"{path.name} {job_id} step {index + 1}", step))
+    return steps
+
+
+def download_steps() -> list[tuple[str, dict]]:
+    return [(where, step) for where, step in run_steps() if DOWNLOAD.search(step["run"])]
+
+
+def test_the_guard_sees_the_known_downloads():
+    names = {step.get("name") for _, step in download_steps()}
+    assert {"Install Workflow Linters", "Run Gitleaks CLI against full history"} <= names
+
+
+def test_downloads_name_a_release_not_a_branch():
+    moving = [
+        (where, url) for where, step in download_steps() for url in URL.findall(step["run"]) if MOVING_REF.search(url)
+    ]
+    assert moving == []
+
+
+def test_no_step_pipes_a_download_into_a_shell():
+    assert [where for where, step in run_steps() if PIPED_SCRIPT.search(step["run"])] == []
+
+
+def test_every_download_is_checked_against_a_checksum():
+    assert [where for where, step in download_steps() if "sha256sum -c" not in step["run"]] == []
+
+
+def test_actionlint_matches_the_checksum_written_in_the_workflow():
+    with (WORKFLOWS / "ci.yml").open(encoding="utf-8") as handle:
+        steps = yaml.safe_load(handle)["jobs"]["lint-workflows"]["steps"]
+    install = next(step for step in steps if step.get("name") == "Install Workflow Linters")
+    assert re.fullmatch(r"\d+\.\d+\.\d+", install["env"]["ACTIONLINT_VERSION"])
+    assert re.fullmatch(r"[0-9a-f]{64}", install["env"]["ACTIONLINT_SHA256"])
+    run = install["run"]
+    assert run.startswith("set -euo pipefail\n")
+    assert "releases/download/v${ACTIONLINT_VERSION}/" in run
+    assert 'echo "${ACTIONLINT_SHA256}  /tmp/${archive}" | sha256sum -c -' in run
+    # A checksum file fetched next to the archive comes from the same place as the archive.
+    assert "checksums" not in run
