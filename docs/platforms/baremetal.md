@@ -22,7 +22,7 @@ cosign verify-blob --bundle SHA256SUMS.bundle \
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
-Write the checked file with the built-in helper utility, which refuses a target that is no block device and an image without a partition table:
+Write the checked file with the built-in helper utility:
 
 ```bash
 lusoris-install-to-disk lusoris-cloud-base-generic.raw.zst /dev/nvme0n1
