@@ -4,18 +4,35 @@
 
 ## 1. Direct Block Flashing (`lusoris-install-to-disk`)
 
-You can flash a compressed `.raw.zst` directly to physical NVMe or SATA storage from any live rescue environment (e.g. Ubuntu live CD, SystemRescue, Hetzner Rescue):
+You can flash a compressed `.raw.zst` directly to physical NVMe or SATA storage from any live rescue environment (e.g. Ubuntu live CD, SystemRescue, Hetzner Rescue).
+
+Each release of your fork carries the raw disk image of every flavor that `.github/workflows/release-matrix.yml` builds (`base-generic`, `docker-generic`, `k8s-node-generic`) as `lusoris-cloud-<flavor>.raw.zst`, next to the `.qcow2.zst`. Both are listed in the release's `SHA256SUMS`, which the workflow signs with cosign. The helper needs the raw image: handed a `.qcow2.zst`, it finds no partition table and stops. The target disk must be at least the image's disk size (20 GiB, `disk_size` in `packer/variables.pkr.hcl`); the first boot grows the root partition to fill it.
+
+Set `OWNER` to the account or organisation that holds your fork and `TAG` to the release you want, then check the image against the signed checksums before you write it:
 
 ```bash
-# Direct flash over network stream without saving uncompressed image to RAM
-curl -fsSL https://releases.lusoris.org/lusoris-base-generic.raw.zst | \
-  zstdcat | sudo dd of=/dev/nvme0n1 bs=4M status=progress conv=fsync
+OWNER=your-account
+TAG=v0.1.0
+for asset in lusoris-cloud-base-generic.raw.zst SHA256SUMS SHA256SUMS.bundle; do
+  curl -fsSLO "https://github.com/${OWNER}/imago/releases/download/${TAG}/${asset}"
+done
+cosign verify-blob --bundle SHA256SUMS.bundle \
+  --certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-matrix.yml@refs/tags/${TAG}" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS
 ```
 
-Or using the built-in helper utility:
+Write the checked file with the built-in helper utility:
 
 ```bash
-lusoris-install-to-disk https://releases.lusoris.org/lusoris-base-generic.raw.zst /dev/nvme0n1
+lusoris-install-to-disk lusoris-cloud-base-generic.raw.zst /dev/nvme0n1
+```
+
+Or stream it straight from the release without storing it, which skips the checksum check:
+
+```bash
+curl -fsSL "https://github.com/${OWNER}/imago/releases/download/${TAG}/lusoris-cloud-base-generic.raw.zst" | \
+  zstdcat | sudo dd of=/dev/nvme0n1 bs=4M status=progress conv=fsync
 ```
 
 The helper refuses a target that is not a block device. After the write it reads the first sector of the target and fails unless it ends with the boot signature `0x55 0xAA` that an MBR disk and the protective MBR of a GPT disk both carry, so a `.qcow2.zst` or any other non-raw image is reported instead of announced as ready to boot. `tests/test_install_to_disk.py` flashes images onto a loop device to check this.
@@ -74,11 +91,11 @@ When flashing a 20GB `.raw.zst` image onto a 1TB, 2TB, or larger physical drive,
 
 ## 4. iPXE Netboot Chainloading
 
-Example iPXE configuration snippet for network booting:
+A release ships no netboot kernel or initrd; serve them and the NoCloud seed from a boot server of your own. Example iPXE configuration snippet, with `boot.example.com` standing for that server:
 
 ```ipxe
 #!ipxe
-kernel https://releases.lusoris.org/netboot/vmlinuz ip=dhcp root=/dev/ram0 ds=nocloud;s=http://ipxe.example.com/cloud-init/
-initrd https://releases.lusoris.org/netboot/initrd.img
+kernel https://boot.example.com/netboot/vmlinuz ip=dhcp root=/dev/ram0 ds=nocloud;s=http://boot.example.com/cloud-init/
+initrd https://boot.example.com/netboot/initrd.img
 boot
 ```

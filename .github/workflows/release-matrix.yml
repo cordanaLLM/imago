@@ -135,12 +135,20 @@ jobs:
         # repository root where this step and the upload used to look for them. Each flavor
         # writes its own checksum file; the sign job merges them into the one SHA256SUMS of
         # the release, so the uploads no longer overwrite each other's SHA256SUMS.
+        # lusoris-install-to-disk writes its input to a disk unchanged, so the release also
+        # ships the image as raw disk: handed the qcow2 container, the helper refuses it.
+        # qemu-img writes the raw file sparse, and zstd packs the unused space to almost
+        # nothing; the sizes check fails before an asset reaches the forge limit.
         env:
           FLAVOR: ${{ matrix.flavor }}
         run: |
           cd "packer/output-images/${FLAVOR}"
-          zstd -T0 -19 --rm ./*.qcow2
-          sha256sum -- *.qcow2.zst sbom-*.json > "checksums-${FLAVOR}.sha256"
+          qcow2=(./*.qcow2)
+          test "${#qcow2[@]}" -eq 1
+          qemu-img convert -O raw "${qcow2[0]}" "${qcow2[0]%.qcow2}.raw"
+          zstd -T0 -19 --rm ./*.qcow2 ./*.raw
+          python3 -I "${GITHUB_WORKSPACE}/tools/ci/release_assets.py" sizes --summary "${GITHUB_STEP_SUMMARY}" ./*.qcow2.zst ./*.raw.zst
+          sha256sum -- *.qcow2.zst *.raw.zst sbom-*.json > "checksums-${FLAVOR}.sha256"
       - name: Keep the Checksums and SBOMs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -149,12 +157,24 @@ jobs:
             packer/output-images/${{ matrix.flavor }}/checksums-${{ matrix.flavor }}.sha256
             packer/output-images/${{ matrix.flavor }}/sbom-*.json
           if-no-files-found: error
+      - name: Keep the Raw Image of a Manual Run
+        # A manual run publishes nothing. Its raw image stays one day, so it can be checked
+        # against the kept checksums and written to a loop device before a release ships it.
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: raw-${{ matrix.flavor }}
+          path: packer/output-images/${{ matrix.flavor }}/*.raw.zst
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
       - name: Upload Release Artifacts
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             packer/output-images/${{ matrix.flavor }}/*.qcow2.zst
+            packer/output-images/${{ matrix.flavor }}/*.raw.zst
             packer/output-images/${{ matrix.flavor }}/sbom-*.json
 
   sign:
