@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "epics": [
+    {
+      "id": "E1",
+      "title": "Short title",
+      "cadence": "weekly",
+      "status": "open",
+      "required_labels": [],
+      "description": "Fits every column."
+    },
+    {
+      "id": "E2-longer-than-ten",
+      "title": "A title that runs past the fifty characters its column is padded to",
+      "cadence": "quarterly-plus",
+      "status": "closed",
+      "required_labels": ["kind/feature"],
+      "description": "Every cell overflows its column."
+    }
+  ]
+}

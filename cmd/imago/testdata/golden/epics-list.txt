@@ -1,0 +1,4 @@
+ID         CADENCE      TITLE                                              STATUS
+-------------------------------------------------------------------------------------
+E1         weekly       Short title                                        open
+E2-longer-than-ten quarterly-plus A title that runs past the fifty characters its column is padded to closed
