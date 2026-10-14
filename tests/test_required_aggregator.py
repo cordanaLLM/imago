@@ -1,18 +1,18 @@
 # Copyright 2026 Lusoris
-"""Verification of the skips the required-checks aggregator accepts (ADR-0026).
+"""Verification of the pull request job shape the required-checks aggregator relies on (ADR-0027).
 
-`.github/workflows/required-aggregator.yml` accepts a skipped check only when its name is
-listed in `MAY_SKIP`. A job belongs in that list when it needs the change detector of its
-workflow (job `changes`) and its condition is an alternation of event-name comparisons
-and detector outputs, so that only the event or the detector can skip it. These tests
-hold the list equal to those jobs, refuse planted conditions that could skip a job on
-another ground, and run the step that turns the list into the action inputs.
+`.github/workflows/required-aggregator.yml` accepts no skipped check. That holds only
+while no job a pull request starts can be skipped: every such job begins with the draft
+step, carries no job condition and needs no other job, and its workflow restarts on
+`ready_for_review`. A job with nothing to check passes through its path filter instead
+of skipping (tests/test_path_filters.py). These tests hold every pull request job to that
+shape and refuse planted jobs that break it.
 """
 
 from __future__ import annotations
 
+import json
 import re
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -21,11 +21,24 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 AGGREGATOR = WORKFLOWS / "required-aggregator.yml"
-
-# One term of an accepted condition; the terms are joined by `||` only.
-ALLOWED_TERMS = re.compile(r"github\.event_name\s*==\s*'[a-z_]+'|needs\.changes\.outputs\.[a-z_]+\s*==\s*'true'")
-NAME_CHARS = re.compile(r"[A-Za-z0-9 &.]+")
+RULESET = REPO_ROOT / ".github" / "rulesets" / "main.json"
+VERSION = re.compile(r"\d+\.\d+")
 WAIT_ACTION = "lewagon/wait-on-check-action@"
+READY = "ready_for_review"
+
+DRAFT_STEP = {
+    "name": "Stop on a draft pull request",
+    "if": "github.event.pull_request.draft == true",
+    "shell": "bash",
+    "env": {
+        "TITLE": "Gate not run on a draft",
+        "MESSAGE": (
+            "The gate did not run because the pull request is a draft."
+            " It runs when the pull request is marked ready for review."
+        ),
+    },
+    "run": ('echo "::error title=$TITLE::$MESSAGE"\necho "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"\nexit 1\n'),
+}
 
 
 def load(path: Path) -> dict:
@@ -33,38 +46,88 @@ def load(path: Path) -> dict:
         return yaml.safe_load(handle)
 
 
-def detector_decides(job: dict) -> bool:
-    """True when only the event or the change detector can skip this job."""
-    needs = job.get("needs", [])
-    needs = [needs] if isinstance(needs, str) else needs
-    condition = job.get("if")
-    if "changes" not in needs or not isinstance(condition, str):
-        return False
-    terms = [term.strip() for term in condition.split("||")]
-    return all(ALLOWED_TERMS.fullmatch(term) for term in terms)
+def triggers(document: dict) -> dict:
+    """The `on` mapping; PyYAML reads an unquoted `on` key as the boolean True."""
+    on = document.get("on", document.get(True))
+    if isinstance(on, str):
+        return {on: None}
+    if isinstance(on, list):
+        return dict.fromkeys(on)
+    return on or {}
 
 
-def detector_gated_names() -> set[str]:
-    names = set()
-    for path in sorted(WORKFLOWS.glob("*.yml")):
-        for job in (load(path).get("jobs") or {}).values():
-            if detector_decides(job):
-                names.add(job["name"])
-    return names
+def pull_request_workflows() -> list[tuple[Path, dict]]:
+    return [
+        (path, document)
+        for path in sorted(WORKFLOWS.glob("*.yml"))
+        if "pull_request" in triggers(document := load(path))
+    ]
 
 
-def may_skip() -> list[str]:
-    return load(AGGREGATOR)["env"]["MAY_SKIP"].splitlines()
+def pull_request_jobs() -> list[tuple[str, dict]]:
+    return [
+        (f"{path.name}:{job_id}", job)
+        for path, document in pull_request_workflows()
+        for job_id, job in (document.get("jobs") or {}).items()
+    ]
 
 
-def aggregator_steps() -> list[dict]:
-    return load(AGGREGATOR)["jobs"]["required-checks"]["steps"]
+def job_findings(job: dict) -> list[str]:
+    """Every way this job could skip, or run its work, on a pull request."""
+    findings = []
+    steps = job.get("steps") or []
+    if not steps or steps[0] != DRAFT_STEP:
+        findings.append("first step is not the draft step")
+    if any(step == DRAFT_STEP for step in steps[1:]):
+        findings.append("draft step repeated after the first step")
+    if "if" in job:
+        findings.append(f"job condition {job['if']!r}")
+    if "needs" in job:
+        findings.append(f"needs {job['needs']!r}")
+    if "uses" in job:
+        findings.append("calls a reusable workflow")
+    return findings
 
 
-def test_may_skip_equals_detector_gated_jobs():
-    listed = may_skip()
-    assert len(listed) == len(set(listed)), "MAY_SKIP lists a name twice"
-    assert set(listed) == detector_gated_names()
+def test_pull_request_jobs_exist():
+    assert len(pull_request_jobs()) >= 10
+
+
+@pytest.mark.parametrize("job_id,job", pull_request_jobs(), ids=[name for name, _ in pull_request_jobs()])
+def test_every_pull_request_job_has_the_draft_shape(job_id, job):
+    assert job_findings(job) == [], job_id
+
+
+@pytest.mark.parametrize("path,document", pull_request_workflows(), ids=[p.name for p, _ in pull_request_workflows()])
+def test_pull_request_triggers_restart_on_ready_for_review(path, document):
+    trigger = triggers(document)["pull_request"] or {}
+    assert READY in trigger.get("types", []), path.name
+
+
+GOOD_JOB = {"name": "x", "steps": [DRAFT_STEP, {"run": "true"}]}
+
+
+@pytest.mark.parametrize(
+    "job",
+    [
+        {"name": "x", "steps": [{"run": "true"}]},
+        {"name": "x", "steps": [{"run": "true"}, DRAFT_STEP]},
+        {"name": "x", "steps": [{**DRAFT_STEP, "shell": "sh"}]},
+        {"name": "x", "steps": [{**DRAFT_STEP, "run": "exit 0\n"}]},
+        {"name": "x", "steps": [{**DRAFT_STEP, "if": "github.event.pull_request.draft != true"}]},
+        {**GOOD_JOB, "if": "github.event.pull_request.draft != true"},
+        {**GOOD_JOB, "needs": "changes"},
+        {"name": "x", "uses": "./.github/workflows/other.yml"},
+        {"name": "x", "steps": []},
+    ],
+    ids=["no-draft", "draft-late", "wrong-shell", "draft-passes", "inverted", "job-if", "needs", "reusable", "empty"],
+)
+def test_planted_jobs_are_refused(job):
+    assert job_findings(job)
+
+
+def test_good_job_passes():
+    assert job_findings(GOOD_JOB) == []
 
 
 def jobs_running(command: str) -> list[dict]:
@@ -88,79 +151,35 @@ def test_codespell_runs_on_every_event():
     job = jobs[0]
     assert "if" not in job, job.get("if")
     assert "needs" not in job, job.get("needs")
-    assert job["name"] not in may_skip()
+    for step in job["steps"][1:]:
+        assert "if" not in step, step
 
 
-def test_may_skip_names_hold_only_safe_characters():
-    for name in may_skip():
-        assert NAME_CHARS.fullmatch(name), f"{name!r} needs escaping in the aggregator step"
+def test_aggregator_accepts_no_skip():
+    document = load(AGGREGATOR)
+    assert "MAY_SKIP" not in (document.get("env") or {})
+    steps = document["jobs"]["required-checks"]["steps"]
+    waits = [step for step in steps if step.get("uses", "").startswith(WAIT_ACTION)]
+    assert len(waits) == 1
+    inputs = waits[0]["with"]
+    assert inputs["allowed-conclusions"] == "success"
+    assert inputs["running-workflow-name"] == "required-checks"
+    assert "ignore-checks" not in inputs and "check-regexp" not in inputs and "check-name" not in inputs
 
 
-@pytest.mark.parametrize(
-    "job",
-    [
-        {"name": "x", "if": "github.event_name == 'workflow_dispatch'"},
-        {"name": "x", "needs": "changes"},
-        {"name": "x", "needs": "changes", "if": "always() || needs.changes.outputs.go == 'true'"},
-        {"name": "x", "needs": "changes", "if": "needs.changes.outputs.go == 'true' && false"},
-        {"name": "x", "needs": "changes", "if": "needs.changes.outputs.go != 'true'"},
-        {"name": "x", "needs": ["build"], "if": "needs.changes.outputs.go == 'true'"},
-        {"name": "x", "needs": "changes", "if": "github.event_name == 'push' |||| x"},
-    ],
-    ids=["no-detector", "no-condition", "always", "and-false", "negated", "other-need", "residue"],
-)
-def test_planted_conditions_are_not_detector_decided(job):
-    assert not detector_decides(job)
+def required_contexts() -> list[str]:
+    rules = json.loads(RULESET.read_text(encoding="utf-8"))["rules"]
+    (checks,) = [rule for rule in rules if rule["type"] == "required_status_checks"]
+    return [check["context"] for check in checks["parameters"]["required_status_checks"]]
 
 
-@pytest.mark.parametrize(
-    "condition",
-    [
-        "needs.changes.outputs.go == 'true'",
-        "github.event_name == 'push' || needs.changes.outputs.docs == 'true'",
-        " ||\n".join(
-            [
-                "github.event_name == 'push'",
-                "needs.changes.outputs.python == 'true'",
-                "needs.changes.outputs.shell == 'true'",
-            ]
-        ),
-    ],
-)
-def test_detector_conditions_are_accepted(condition):
-    assert detector_decides({"name": "x", "needs": ["changes"], "if": condition})
+def test_required_contexts_name_no_toolchain_version():
+    """A version bump from the update bot must not rename a required check."""
+    contexts = required_contexts()
+    assert len(contexts) == 19
+    assert [name for name in contexts if VERSION.search(name)] == []
 
 
-def test_aggregator_accepts_skips_only_for_the_listed_checks():
-    waits = [step for step in aggregator_steps() if step.get("uses", "").startswith(WAIT_ACTION)]
-    assert len(waits) == 2
-    every_other, gated = waits[0]["with"], waits[1]["with"]
-    assert every_other["allowed-conclusions"] == "success"
-    assert every_other["ignore-checks"] == "${{ steps.may-skip.outputs.ignore }}"
-    assert every_other["running-workflow-name"] == "required-checks"
-    assert gated["allowed-conclusions"] == "success,skipped"
-    assert gated["check-regexp"] == "${{ steps.may-skip.outputs.regexp }}"
-    assert "ignore-checks" not in gated and "check-name" not in gated
-
-
-def run_list_step(names: list[str], tmp_path: Path) -> dict[str, str]:
-    step = next(s for s in aggregator_steps() if s.get("id") == "may-skip")
-    output = tmp_path / "github_output"
-    output.write_text("", encoding="utf-8")
-    env = {"MAY_SKIP": "\n".join(names), "GITHUB_OUTPUT": str(output), "PATH": "/usr/bin:/bin"}
-    subprocess.run(["bash", "-c", step["run"]], env=env, check=True, timeout=30)
-    pairs = (line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
-    return dict(pairs)
-
-
-def test_list_step_builds_exact_inputs(tmp_path):
-    names = may_skip()
-    outputs = run_list_step(names, tmp_path)
-    assert [name.strip() for name in outputs["ignore"].split(",")] == names
-    pattern = re.compile(outputs["regexp"])
-    for name in names:
-        assert pattern.search(name), name
-    near_misses = ["required-checks", "Strict MkDocs BuildX", "Go 1x27 Build & Unit Tests"]
-    near_misses += [f"{names[0]} (retry)", "Detect Changed Paths", ""]
-    for name in near_misses:
-        assert not pattern.search(name), name
+@pytest.mark.parametrize("name", ["Go 1.27 Build & Unit Tests", "Python 3.14 Tests", "Node 24.1"])
+def test_planted_versioned_context_is_found(name):
+    assert VERSION.search(name)

@@ -160,5 +160,6 @@ def test_workflow_passes_the_config_and_reads_the_report():
     checks = [step for step in steps if "tools/ci/trivy_coverage.py" in step.get("run", "")]
     assert len(checks) == 1
     assert f"--report {REPORT}" in checks[0]["run"]
-    assert checks[0]["if"] == "${{ !cancelled() }}"
+    gate = "github.event_name != 'pull_request' || steps.filter.outputs.trivy == 'true'"
+    assert checks[0]["if"] == f"(!cancelled()) && ({gate})"
     assert steps.index(checks[0]) > steps.index(trivy_step())

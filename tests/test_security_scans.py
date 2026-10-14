@@ -32,6 +32,9 @@ GOVULNCHECK_SCAN = 'go -C tools/govulncheck tool govulncheck -C "$PWD" ./...'
 # Shapes that let the step pass although govulncheck found something or did not run.
 GOVULNCHECK_HIDERS = re.compile(r"\|\||;\s*(true|:|exit)\b|(^|\s)-(json|format)\b|command -v|(^|\s)which\s")
 STEP_TIMEOUT_S = 30
+# The only condition the scan step may carry: the job's path filter (ADR-0027), which
+# runs the scan on every push and scheduled run.
+GOVULNCHECK_GATE = "github.event_name != 'pull_request' || steps.filter.outputs.govulncheck == 'true'"
 
 
 def steps(job: str) -> list[dict]:
@@ -50,7 +53,7 @@ def govulncheck_fails(step: dict) -> bool:
         lines == ["set -euo pipefail", GOVULNCHECK_SCAN]
         and not GOVULNCHECK_HIDERS.search(script)
         and not step.get("continue-on-error")
-        and "if" not in step
+        and step.get("if", GOVULNCHECK_GATE) == GOVULNCHECK_GATE
     )
 
 
@@ -131,8 +134,23 @@ def test_govulncheck_fails_on_a_finding():
         {"run": GOVULNCHECK_SCAN},
         {"run": "set -euo pipefail\n" + GOVULNCHECK_SCAN, "continue-on-error": True},
         {"run": "set -euo pipefail\n" + GOVULNCHECK_SCAN, "if": "hashFiles('go.sum') != ''"},
+        {
+            "run": "set -euo pipefail\n" + GOVULNCHECK_SCAN,
+            "if": f"({GOVULNCHECK_GATE}) && github.event_name != 'schedule'",
+        },
     ],
-    ids=["json", "sarif", "or-true", "exit-0", "skip-if-missing", "unpinned", "no-errexit", "continue", "cond"],
+    ids=[
+        "json",
+        "sarif",
+        "or-true",
+        "exit-0",
+        "skip-if-missing",
+        "unpinned",
+        "no-errexit",
+        "continue",
+        "cond",
+        "no-schedule",
+    ],
 )
 def test_planted_govulncheck_steps_pass_with_findings(step):
     assert not govulncheck_fails(step)
@@ -147,7 +165,8 @@ def test_govulncheck_runs_on_the_weekly_schedule():
     with WORKFLOW.open(encoding="utf-8") as handle:
         workflow = yaml.safe_load(handle)
     assert workflow[True]["schedule"]
-    assert "github.event_name == 'schedule'" in workflow["jobs"]["govulncheck"]["if"]
+    assert "if" not in workflow["jobs"]["govulncheck"]
+    assert govulncheck_step()["if"] == GOVULNCHECK_GATE
 
 
 def test_govulncheck_is_pinned_in_its_own_module():

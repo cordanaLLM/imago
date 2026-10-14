@@ -65,5 +65,5 @@ The following repository settings were verified via `gh api`:
 - **Visibility & Metadata**: Public repository, description set, topics registered, homepage set to `https://cordanallm.github.io/imago`.
 - **Merge Settings**: Squash and rebase merges allowed; merge commits disabled; delete branch on merge enabled.
 - **Workflow Permissions**: `can_approve_pull_request_reviews: true` to enable Release Please automation.
-- **Branch Protection on `main`**: Required status check `required-checks`; strict linear history; force-pushes and deletions blocked.
+- **Branch Protection on `main`**: Required status checks as listed in `.github/rulesets/main.json`, the `required-checks` aggregator among them (ADR-0027); strict linear history; force-pushes and deletions blocked.
 - **Project Tracking**: GitHub Project V2 [`lusoris-cloud-images Roadmap`](https://github.com/users/lusoris/projects/1) tracking active epics.

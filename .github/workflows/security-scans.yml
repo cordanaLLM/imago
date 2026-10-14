@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # ready_for_review starts the run a draft's stopped job did not make.
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
     - cron: "13 5 * * 1"
 
@@ -14,71 +16,84 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Detect Security Scan Paths
-    runs-on: ubuntu-26.04
-    outputs:
-      code: ${{ steps.filter.outputs.code }}
-      go: ${{ steps.filter.outputs.go }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        id: filter
-        with:
-          filters: |
-            code:
-              - 'packer/**'
-              - 'tests/**'
-              - 'versions.json'
-              - 'Makefile'
-              - 'pyproject.toml'
-              - 'go.mod'
-              - 'go.sum'
-              - 'tools/**'
-              - '.github/**'
-            go:
-              - 'go.mod'
-              - 'go.sum'
-              - 'cmd/**'
-              - 'pkg/**'
-              - 'tools/govulncheck/**'
-              - '.github/workflows/security-scans.yml'
-
   semgrep:
     name: Semgrep SAST
-    needs: changes
-    if: github.event_name == 'push' || github.event_name == 'schedule' || needs.changes.outputs.code == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.semgrep != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter semgrep in .github/path-filters.yml changed."
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: github.event_name != 'pull_request' || steps.filter.outputs.semgrep == 'true'
         with:
           python-version: "3.12"
       - run: pip install --require-hashes -r .github/requirements/sast.txt
+        if: github.event_name != 'pull_request' || steps.filter.outputs.semgrep == 'true'
       # The canary scans a planted finding outside the checkout first, so a rule
       # set or flag that stops reporting turns the job red instead of green.
       - name: Check semgrep refuses a planted finding
+        if: github.event_name != 'pull_request' || steps.filter.outputs.semgrep == 'true'
         run: python3 -I tools/ci/scanner_canary.py semgrep --binary semgrep
       - name: Run semgrep security rules
+        if: github.event_name != 'pull_request' || steps.filter.outputs.semgrep == 'true'
         run: |
           semgrep --error --config p/ci --config p/security-audit .
 
   govulncheck:
     name: Govulncheck Reachable Go Vulnerabilities
-    needs: changes
-    if: github.event_name == 'push' || github.event_name == 'schedule' || needs.changes.outputs.go == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.govulncheck != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter govulncheck in .github/path-filters.yml changed."
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        if: github.event_name != 'pull_request' || steps.filter.outputs.govulncheck == 'true'
         with:
           go-version: "1.27.x"
           check-latest: true
@@ -87,21 +102,43 @@ jobs:
       # package that does not load); -json, -format json, sarif or openvex exit 0
       # whatever they find (tests/test_security_scans.py).
       - name: Run govulncheck
+        if: github.event_name != 'pull_request' || steps.filter.outputs.govulncheck == 'true'
         run: |
           set -euo pipefail
           go -C tools/govulncheck tool govulncheck -C "$PWD" ./...
 
   trivy:
     name: Trivy Filesystem CVE Scan
-    needs: changes
-    if: github.event_name == 'push' || github.event_name == 'schedule' || needs.changes.outputs.code == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Check the paths this job tests
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: .github/path-filters.yml
+      - name: Report that no tested path changed
+        if: github.event_name == 'pull_request' && steps.filter.outputs.trivy != 'true'
+        shell: bash
+        run: echo "::notice title=Nothing to check::No path of filter trivy in .github/path-filters.yml changed."
       - name: Run Trivy vulnerability scanner
+        if: github.event_name != 'pull_request' || steps.filter.outputs.trivy == 'true'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: "fs"
@@ -118,7 +155,7 @@ jobs:
       # A lockfile trivy does not recognise is neither scanned nor reported; the
       # job fails unless the report lists every tracked lockfile.
       - name: Check Trivy scanned every lockfile
-        if: ${{ !cancelled() }}
+        if: (!cancelled()) && (github.event_name != 'pull_request' || steps.filter.outputs.trivy == 'true')
         run: python3 -I tools/ci/trivy_coverage.py --report trivy-results.json
 
   gitleaks:
@@ -126,6 +163,18 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
+      - name: Stop on a draft pull request
+        if: github.event.pull_request.draft == true
+        shell: bash
+        env:
+          TITLE: Gate not run on a draft
+          MESSAGE: >-
+            The gate did not run because the pull request is a draft.
+            It runs when the pull request is marked ready for review.
+        run: |
+          echo "::error title=$TITLE::$MESSAGE"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

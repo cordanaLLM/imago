@@ -35,4 +35,5 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0023](0023-eupl-1.2-licence-and-reuse-annotations.md) | EUPL-1.2 Licence and REUSE Annotations | Accepted | 2026-10-11 |
 | [0024](0024-product-result-emitter-and-signature-reference-form.md) | Product-Result Emitter and the Signature Reference Form | Accepted | 2026-10-11 |
 | [0025](0025-forge-as-record-of-open-work-and-frozen-planning-graph.md) | The Forge as the Record of Open Work and a Frozen Planning Graph | Accepted | 2026-10-11 |
-| [0026](0026-required-checks-accept-only-detector-decided-skips.md) | Required Checks Accept Only Detector-Decided Skips | Accepted | 2026-10-12 |
+| [0026](0026-required-checks-accept-only-detector-decided-skips.md) | Required Checks Accept Only Detector-Decided Skips | Superseded by [0027](0027-pull-request-jobs-never-skip-path-filter-per-job.md) | 2026-10-12 |
+| [0027](0027-pull-request-jobs-never-skip-path-filter-per-job.md) | Pull Request Jobs Never Skip; Each Job Filters Its Own Paths | Accepted | 2026-10-14 |

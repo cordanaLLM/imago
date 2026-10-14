@@ -44,13 +44,31 @@
       "parameters": {
         "required_status_checks": [
           {
-            "context": "Detect Changed Paths"
+            "context": "Strict MkDocs Build"
           },
           {
             "context": "Secret \u0026 Privacy Leak Scan"
           },
           {
+            "context": "Packer Format \u0026 Validate"
+          },
+          {
+            "context": "Ruff Lint \u0026 Format"
+          },
+          {
+            "context": "ShellCheck \u0026 Shfmt Provisioners"
+          },
+          {
             "context": "Codespell"
+          },
+          {
+            "context": "Actionlint \u0026 Yamllint"
+          },
+          {
+            "context": "Go Build \u0026 Unit Tests"
+          },
+          {
+            "context": "Pytest Verification Suite"
           },
           {
             "context": "CodeQL (go)"
@@ -71,10 +89,16 @@
             "context": "REUSE lint"
           },
           {
-            "context": "Detect Security Scan Paths"
+            "context": "Gitleaks History Scan"
           },
           {
-            "context": "Gitleaks History Scan"
+            "context": "Govulncheck Reachable Go Vulnerabilities"
+          },
+          {
+            "context": "Semgrep SAST"
+          },
+          {
+            "context": "Trivy Filesystem CVE Scan"
           }
         ],
         "strict_required_status_checks_policy": true
