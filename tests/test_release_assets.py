@@ -341,7 +341,7 @@ def test_compress_step_converts_to_raw_then_checks_sizes_before_the_checksums():
         r'qemu-img convert -O raw "\$\{qcow2\[0\]\}" "\$\{qcow2\[0\]%\.qcow2\}\.raw"$',
         r"zstd -T0 -19 --rm \./\*\.qcow2 \./\*\.raw$",
         r'python3 -I "\$\{GITHUB_WORKSPACE\}/tools/ci/release_assets\.py" sizes --summary "\$\{GITHUB_STEP_SUMMARY\}"'
-        r" \./\*\.qcow2\.zst \./\*\.raw\.zst$",
+        + r" \./\*\.qcow2\.zst \./\*\.raw\.zst$",
         r"sha256sum -- ",
     ]
     order = [[i for i, line in enumerate(lines) if re.match(w, line)] for w in wanted]
