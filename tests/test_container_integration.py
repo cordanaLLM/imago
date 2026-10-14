@@ -2,10 +2,14 @@
 """Live Container Integration Test Suite using Docker.
 
 Validates hardened configurations (OpenSSH daemon syntax, sysctl file parsing,
-and rootfs filesystem contracts) inside an ephemeral Ubuntu 24.04 container.
+and rootfs filesystem contracts) inside an ephemeral container of the Ubuntu
+release the images ship, as `versions.json` names it.
 """
 
+import ast
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -22,7 +26,10 @@ from tests.harness.live import REQUIRE_LIVE_ENV, skip_or_fail
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
-UBUNTU_IMAGE = "ubuntu:24.04"
+# The release the images are built from; an older release would check the
+# configuration against another OpenSSH and another procps than the image carries.
+DISTRO = json.loads((REPO_ROOT / "versions.json").read_text(encoding="utf-8"))["distro"]
+UBUNTU_IMAGE = f"{DISTRO['name']}:{DISTRO['version']}"
 
 # Bounds in seconds. Starting a container and installing a package depend on
 # the host's disk, network and load, so each has its own bound and a host that
@@ -262,6 +269,25 @@ def yaml_container() -> Iterator[PreparedContainer]:
         remove_container(name)
 
 
+class TestContainerTarget:
+    """The live tests run on the release the images ship; no Docker daemon is needed."""
+
+    def test_container_is_the_release_in_versions_json(self):
+        manifest = json.loads((REPO_ROOT / "versions.json").read_text(encoding="utf-8"))
+        assert UBUNTU_IMAGE == f"ubuntu:{manifest['distro']['version']}"
+
+    def test_no_test_starts_another_image(self):
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        tags = [
+            node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and re.fullmatch(r"(ubuntu|debian|alpine)(:\S+)?", node.value)
+        ]
+        assert tags == [], f"image named outside UBUNTU_IMAGE: {tags}"
+
+
 class TestContainerRemoval:
     """`remove_container` against a stubbed Docker client; no Docker daemon is needed."""
 
@@ -334,7 +360,7 @@ class TestContainerIntegration:
         res = sshd_syntax_check(sshd_container.name, hardened_sshd_config())
 
         took = f"installation took {sshd_container.install_seconds:.1f} s"
-        assert res.returncode == 0, f"sshd -t failed in Ubuntu 24.04 ({took}): {res.stderr or res.stdout}"
+        assert res.returncode == 0, f"sshd -t failed in {UBUNTU_IMAGE} ({took}): {res.stderr or res.stdout}"
         assert "SSHD_SYNTAX_VALID" in res.stdout
 
     def test_openssh_invalid_directive_is_rejected(self, sshd_container: PreparedContainer) -> None:
@@ -385,7 +411,7 @@ echo "SYSCTL_SYNTAX_VALID"
 """
 
         res = subprocess.run(
-            ["docker", "run", "--rm", "ubuntu:24.04", "bash", "-c", bash_cmd],
+            ["docker", "run", "--rm", UBUNTU_IMAGE, "bash", "-c", bash_cmd],
             capture_output=True,
             text=True,
             timeout=30,
