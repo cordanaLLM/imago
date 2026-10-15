@@ -64,7 +64,17 @@
     "provider": "cordanaLLM/nucleus",
     "contract": "imago.nucleus.kernel-artifact.v1",
     "dispatch_event": "kernel_release_published",
-    "streams": {}
+    "streams": {
+      "bleeding": {
+        "version": "7.3-rc7-lusoris3",
+        "artifact_digest": "sha256:ec8365545917e7451f66b77bb40635c78d4ee85739e6c542716493a6920577c6",
+        "provenance": {
+          "tag": "v7.3-rc7-bleeding-lusoris3",
+          "revision": "0949e1dddd7f959b4bee3c87cf87cbaa7a16634d",
+          "bundle": "SHA256SUMS.bundle"
+        }
+      }
+    }
   },
   "time": {
     "anycast_nts": "time.cloudflare.com",
