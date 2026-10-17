@@ -92,6 +92,7 @@ nav:
       - Maintenance Cadences & SOPs: operations/maintenance-cadence.md
       - AI Studio & Managed Agents Fleet: operations/managed-agents.md
       - Sister Repo Kernel Forge Blueprint: operations/sister-repo-kernel-forge-blueprint.md
+      - Aegis OS Image Build & Release: operations/aegis-build.md
   - Security & Time:
       - CIS Benchmark Baseline: security/cis-baseline.md
       - Global Anycast NTS Time: security/time-nts.md
@@ -129,6 +130,7 @@ nav:
       - "0030: The Kernel Requirement Decoder Follows the Schema Owner": adr/0030-kernel-requirement-decoder-follows-the-schema-owner.md
       - "0031: Fail-Closed Build Dispatch": adr/0031-fail-closed-build-dispatch.md
       - "0032: Local Packer Executor": adr/0032-local-packer-executor.md
+      - "0033: Aegis Build Workflow": adr/0033-aegis-build-workflow.md
       - "0018: NAS & Storage Appliance Ecosystem": adr/0018-nas-and-storage-appliance-ecosystem.md
   - Engineering & Governance:
       - Engineering Principles: principles.md

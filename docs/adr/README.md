@@ -42,3 +42,4 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0030](0030-kernel-requirement-decoder-follows-the-schema-owner.md) | The Kernel Requirement Decoder Follows the Schema Owner | Accepted | 2026-10-17 |
 | [0031](0031-fail-closed-build-dispatch.md) | Fail-Closed Build Dispatch | Accepted | 2026-10-17 |
 | [0032](0032-local-packer-executor.md) | Local Packer Executor | Accepted | 2026-10-17 |
+| [0033](0033-aegis-build-workflow.md) | Aegis OS Image Build and Release Workflow | Accepted | 2026-10-17 |
