@@ -63,6 +63,11 @@ overrides:
         slsa_level: 3
         enforce_cosign: true
         require_sbom: true
+    # release-please opens the release pull request with GITHUB_TOKEN (issue #45); the online
+    # audit fails when the forge withdraws the capability, before a release run can.
+    actions:
+        default_workflow_permissions: read
+        allow_create_and_approve_pull_requests: true
     ci:
         diff_aware_filtering: true
         skip_heavy_gates_on_docs_or_state: true
