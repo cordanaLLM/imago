@@ -5,9 +5,12 @@ type safety, description completeness, and source builder declarations.
 Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked assertions.
 """
 
+import os
 import re
 import subprocess
 from pathlib import Path
+
+from tests.harness.live import skip_or_fail
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKER_DIR = REPO_ROOT / "packer"
@@ -26,7 +29,10 @@ class TestPackerIntegrity:
             text=True,
             check=False,
         )
-        assert result.returncode == 0, f"Packer validation failed: {result.stderr or result.stdout}"
+        output = result.stderr or result.stdout
+        if result.returncode != 0 and "Unsupported Packer Core version" in output:
+            skip_or_fail(f"installed packer does not satisfy required_version: {output.strip()}", os.environ)
+        assert result.returncode == 0, f"Packer validation failed: {output}"
 
     def test_variables_declarations(self) -> None:
         """Verify all declared variables in variables.pkr.hcl specify type and description."""

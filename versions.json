@@ -60,6 +60,25 @@
     "cdebug": "0.0.19",
     "enroot": "3.4.1"
   },
+  "build": {
+    "packer": {
+      "version": "1.16.1",
+      "sha256_linux_amd64": "1ee97a23df2180919352029030e20b45c176861125421fd3a06c1d78a0565a47",
+      "zip_sha256_linux_amd64": "af38a9e93e4ed1b9ca68206ae969c64c300c82a3dde46a780dfa629f0867f651"
+    },
+    "packer_plugins": {
+      "qemu": {
+        "source": "github.com/hashicorp/qemu",
+        "version": "1.1.7",
+        "sha256_linux_amd64": "9ff1f3359f934eb87157b2293972145e420ea5aefa93a5af085cc6f18ae4f4ff"
+      },
+      "proxmox": {
+        "source": "github.com/hashicorp/proxmox",
+        "version": "1.2.4",
+        "sha256_linux_amd64": "8c2ad5bbd26dbc7204ce2dbf7cf3cd2c0211cd6e04e971f1a2478f1f5469d08e"
+      }
+    }
+  },
   "kernel": {
     "provider": "cordanaLLM/nucleus",
     "contract": "imago.nucleus.kernel-artifact.v1",
