@@ -48,19 +48,22 @@ func features(n int) []any {
 }
 
 func TestLoadRequirementAegisFixtures(t *testing.T) {
-	q, err := kernel.LoadRequirement(filepath.Join("testdata", "aegis-kernel-requirement.json"))
+	q, err := kernel.LoadRequirement(filepath.Join("testdata", "aegis", "kernel-requirement.json"))
 	require.NoError(t, err)
 	assert.Equal(t, "aegis-m18-kernel-requirement-0001", q.CorrelationID)
 	assert.Equal(t, []string{"x86-64"}, q.Architectures)
 	assert.Equal(t, "6.12", q.ABI.MinimumRelease)
-	assert.Equal(t, "7.3", q.ABI.TargetRelease)
+	require.NotNil(t, q.ABI.TargetRelease)
+	assert.Equal(t, "7.3", *q.ABI.TargetRelease)
+	assert.Nil(t, q.Artifact)
 	assert.Len(t, q.Features, 14)
 	assert.Equal(t, "CONFIG_PREEMPT_RT", q.Features[0].Symbol)
 
-	ref, err := kernel.LoadRequirement(filepath.Join("testdata", "aegis-kernel-requirement.reference.json"))
+	ref, err := kernel.LoadRequirement(filepath.Join("testdata", "aegis", "kernel-requirement.reference.json"))
 	require.NoError(t, err)
-	assert.Equal(t, "7.2.4-1-cachyos", ref.ABI.ModuleABI)
-	assert.Empty(t, ref.ABI.TargetRelease)
+	require.NotNil(t, ref.ABI.ModuleABI)
+	assert.Equal(t, "7.2.4-1-cachyos", *ref.ABI.ModuleABI)
+	assert.Nil(t, ref.ABI.TargetRelease)
 	assert.Len(t, ref.Features, 13)
 }
 
@@ -93,15 +96,26 @@ func TestParseRequirementNegative(t *testing.T) {
 		{"wrong schema", func(d map[string]any) { d["schema"] = "aegis.p01-nucleus.kernel-requirement.v2" }, "schema: must be"},
 		{"missing correlation id", func(d map[string]any) { delete(d, "correlation-id") }, "kernel requirement: correlation-id:"},
 		{"correlation id characters", func(d map[string]any) { d["correlation-id"] = "bad id" }, "correlation-id: must be"},
-		{"no architectures", func(d map[string]any) { d["architectures"] = []any{} }, "architectures: must list 1..8"},
-		{"uppercase architecture", func(d map[string]any) { d["architectures"] = []any{"X86-64"} }, "architectures[0]: must be a lowercase token"},
-		{"duplicate architecture", func(d map[string]any) { d["architectures"] = []any{"x86-64", "x86-64"} }, "duplicate architecture x86-64"},
-		{"minimum release not dotted", func(d map[string]any) { d["abi"] = map[string]any{"minimum-release": "6"} }, "abi.minimum-release: must be a dotted"},
+		{"no architectures", func(d map[string]any) { d["architectures"] = []any{} }, "architectures: must list 1..4"},
+		{"uppercase architecture", func(d map[string]any) { d["architectures"] = []any{"X86-64"} }, "architectures[0]: must be one of [x86-64 arm64]"},
+		{"unknown architecture", func(d map[string]any) { d["architectures"] = []any{"x86-64", "riscv64"} }, "architectures[1]: must be one of"},
+		{"minimum release letter first", func(d map[string]any) { d["abi"] = map[string]any{"minimum-release": "v6.12"} }, "abi.minimum-release: must be 1..64 characters"},
 		{"minimum release missing", func(d map[string]any) { d["abi"] = map[string]any{"target-release": "7.3"} }, "abi.minimum-release"},
 		{"target release token", func(d map[string]any) {
 			d["abi"] = map[string]any{"minimum-release": "6.12", "target-release": "7.3 rc"}
 		}, "abi.target-release"},
+		{"target release empty", func(d map[string]any) { d["abi"] = map[string]any{"minimum-release": "6.12", "target-release": ""} }, "abi.target-release"},
+		{"target release older than minimum", func(d map[string]any) {
+			d["abi"] = map[string]any{"minimum-release": "6.12", "target-release": "6.6.30"}
+		}, "abi.target-release: target release 6.6.30 is older than the minimum release 6.12"},
 		{"module abi token", func(d map[string]any) { d["abi"] = map[string]any{"minimum-release": "6.12", "module-abi": "-bad"} }, "abi.module-abi"},
+		{"artifact digest uppercase", func(d map[string]any) {
+			d["artifact"] = map[string]any{"digest": strings.Repeat("AB", 32)}
+		}, "artifact.digest: must be 64 lowercase hex characters"},
+		{"artifact signature odd length", func(d map[string]any) {
+			d["artifact"] = map[string]any{"digest": strings.Repeat("ab", 32), "signature": "abc"}
+		}, "artifact.signature: must be 2..256"},
+		{"artifact without digest", func(d map[string]any) { d["artifact"] = map[string]any{"signature": "ab"} }, "artifact.digest"},
 		{"symbol prefix", func(d map[string]any) {
 			d["features"] = []any{map[string]any{"symbol": "KVM", "state": "module", "probe": "kernel-config", "required-by": "R"}}
 		}, "features[0].symbol: must match CONFIG_"},
@@ -110,12 +124,18 @@ func TestParseRequirementNegative(t *testing.T) {
 		}, "features[0].symbol"},
 		{"state", func(d map[string]any) {
 			d["features"] = []any{map[string]any{"symbol": "CONFIG_KVM", "state": "y", "probe": "kernel-config", "required-by": "R"}}
-		}, "features[0].state: must be built-in or module"},
+		}, "features[0].state: must be one of [built-in module present absent]"},
 		{"unknown probe", func(d map[string]any) {
 			d["features"] = []any{map[string]any{"symbol": "CONFIG_KVM", "state": "module", "probe": "dmesg", "required-by": "R"}}
 		}, `features[0].probe: unknown probe "dmesg"`},
 		{"required-by empty", func(d map[string]any) {
 			d["features"] = []any{map[string]any{"symbol": "CONFIG_KVM", "state": "module", "probe": "kernel-config", "required-by": ""}}
+		}, "features[0].required-by"},
+		{"required-by bare prefix", func(d map[string]any) {
+			d["features"] = []any{map[string]any{"symbol": "CONFIG_KVM", "state": "module", "probe": "kernel-config", "required-by": "REQ-"}}
+		}, "features[0].required-by: must be 1..128 characters"},
+		{"required-by lowercase", func(d map[string]any) {
+			d["features"] = []any{map[string]any{"symbol": "CONFIG_KVM", "state": "module", "probe": "kernel-config", "required-by": "flavor-base"}}
 		}, "features[0].required-by"},
 		{"duplicate symbol", func(d map[string]any) {
 			f := d["features"].([]any)
@@ -164,11 +184,12 @@ func TestParseRequirementBoundaries(t *testing.T) {
 	doc["features"] = features(kernel.MaxFeatures + 1)
 	_, err = parseDoc(t, doc)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "features: more than 512 entries")
+	assert.Contains(t, err.Error(), "features: more than 64 entries")
 
+	// The owner allows a repeated architecture, so the bound counts entries.
 	archs := make([]any, 0, kernel.MaxArchitectures+1)
 	for i := 0; i <= kernel.MaxArchitectures; i++ {
-		archs = append(archs, fmt.Sprintf("arch%d", i))
+		archs = append(archs, kernel.KnownArchitectures[i%len(kernel.KnownArchitectures)])
 	}
 	doc = requirementDoc()
 	doc["architectures"] = archs[:kernel.MaxArchitectures]

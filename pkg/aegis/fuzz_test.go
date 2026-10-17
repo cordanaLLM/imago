@@ -153,15 +153,29 @@ func checkResultAcceptance(t *testing.T, res *aegis.Result) {
 	if err := res.Validate(); err != nil {
 		t.Fatalf("ParseResult accepted a result that Validate rejects: %v", err)
 	}
-	// An oracle that does not share code with the validator: whatever the
-	// parser accepts has the one signature-ref form of ADR-0024.
-	ref := res.SignatureRef
+	checkSignatureRefForm(t, res.SignatureRef)
+	checkResultRoundTrip(t, res)
+}
+
+// checkSignatureRefForm is an oracle that does not share code with the
+// validator: whatever the parser accepts has the one signature-ref form of
+// ADR-0024.
+func checkSignatureRefForm(t *testing.T, ref string) {
+	t.Helper()
 	if !strings.HasPrefix(ref, "https://") || !strings.HasSuffix(ref, "/"+aegis.SignatureBundleFile) {
 		t.Fatalf("accepted signature-ref %q is not an https URL of %s", ref, aegis.SignatureBundleFile)
 	}
-	if rest := ref[len("https://"):]; strings.ContainsAny(rest, "?#%@: \\") || strings.Contains(rest, "//") || strings.Contains(rest, "/../") || strings.Contains(rest, "/./") {
-		t.Fatalf("accepted signature-ref %q has a port, user part, query, fragment, escape or an empty or dot segment", ref)
+	rest := ref[len("https://"):]
+	if strings.ContainsAny(rest, "?#%@: \\") || strings.Contains(rest, "//") {
+		t.Fatalf("accepted signature-ref %q has a port, user part, query, fragment, escape or an empty segment", ref)
 	}
+	if strings.Contains(rest, "/../") || strings.Contains(rest, "/./") {
+		t.Fatalf("accepted signature-ref %q has a dot segment", ref)
+	}
+}
+
+func checkResultRoundTrip(t *testing.T, res *aegis.Result) {
+	t.Helper()
 	var buf bytes.Buffer
 	if err := aegis.WriteResult(&buf, *res); err != nil {
 		t.Fatalf("WriteResult failed for accepted result: %v", err)

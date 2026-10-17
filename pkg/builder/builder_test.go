@@ -76,19 +76,20 @@ func TestDispatchRequiresClock(t *testing.T) {
 
 func TestDispatchBackends(t *testing.T) {
 	ctx := context.Background()
-	backends := []builder.Backend{
-		builder.BackendLocal,
-		builder.BackendGitea,
-		builder.BackendProxmox,
-		builder.BackendGitLab,
-		builder.BackendWoodpecker,
-		builder.BackendHarbor,
-		builder.BackendMinIO,
-		builder.BackendJenkins,
-		builder.BackendGitHub,
+	// Each backend must reach its own dispatcher: the message names it.
+	backends := map[builder.Backend]string{
+		builder.BackendLocal:      "local build command formulated",
+		builder.BackendGitea:      "GITEA Actions workflow dispatch",
+		builder.BackendProxmox:    "Proxmox VE template clone task",
+		builder.BackendGitLab:     "GitLab CI pipeline trigger",
+		builder.BackendWoodpecker: "Woodpecker CI build triggered",
+		builder.BackendHarbor:     "Harbor OCI artifact verification",
+		builder.BackendMinIO:      "MinIO/S3 artifact storage target",
+		builder.BackendJenkins:    "Jenkins remote job trigger",
+		builder.BackendGitHub:     "GITHUB Actions workflow dispatch",
 	}
 
-	for _, b := range backends {
+	for b, want := range backends {
 		req := builder.Request{
 			Backend: b,
 			Flavor:  "base-generic",
@@ -97,6 +98,6 @@ func TestDispatchBackends(t *testing.T) {
 		res, err := builder.Dispatch(ctx, req)
 		require.NoError(t, err, "backend %s should succeed", b)
 		assert.True(t, res.Success)
-		assert.NotEmpty(t, res.Message)
+		assert.Contains(t, res.Message, want, "backend %s", b)
 	}
 }

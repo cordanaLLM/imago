@@ -73,6 +73,15 @@
           "revision": "0949e1dddd7f959b4bee3c87cf87cbaa7a16634d",
           "bundle": "SHA256SUMS.bundle"
         }
+      },
+      "realtime": {
+        "version": "7.2.10-lusoris3",
+        "artifact_digest": "sha256:9cd5468a2c6093fba5318330dc4b55d8b81363d3ae31d2a74805c515217ae72f",
+        "provenance": {
+          "tag": "v7.2.10-realtime-lusoris3",
+          "revision": "0949e1dddd7f959b4bee3c87cf87cbaa7a16634d",
+          "bundle": "SHA256SUMS.bundle"
+        }
       }
     }
   },

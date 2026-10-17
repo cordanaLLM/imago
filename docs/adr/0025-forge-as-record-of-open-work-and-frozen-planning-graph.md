@@ -4,7 +4,7 @@ Date: 2026-10-11
 
 ## Status
 
-Accepted
+Accepted. Amended by [ADR-0029](0029-a-planning-step-reopens-when-its-acceptance-is-unmet.md) (a step whose acceptance is unmet reopens).
 
 ## Context
 

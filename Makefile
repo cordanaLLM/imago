@@ -83,7 +83,7 @@ test: test-go ## Run automated configuration, SSOT, privacy, execution, and cont
 
 test-all: lint test test-bench ## Run full enterprise verification suite (lints, unit tests, mock execution, live docker, benchmarks)
 
-prove-hooks: ## Show in a temporary clone that the pre-commit hooks refuse planted defects (issue #80)
+prove-hooks: ## Show in a temporary clone that every pre-commit and pre-push hook refuses a planted defect (issue #80)
 	@python3 -I tools/ci/prove_hooks.py
 
 compress: ## Compress generated output images with zstd (sparse)

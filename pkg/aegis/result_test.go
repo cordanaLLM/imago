@@ -425,46 +425,41 @@ func TestParseResult(t *testing.T) {
 	assert.Equal(t, valid, *res)
 
 	raw := []byte(`{"schema":"imago.p01.product-result.v1","correlation-id":"test-cid","extra":1}`)
-	_, err = aegis.ParseResult(raw)
-	require.Error(t, err)
-	var aerr *aegis.Error
-	require.ErrorAs(t, err, &aerr)
+	aerr := requireParseError(t, raw, "input", aegis.ErrDecode)
 	assert.Equal(t, "test-cid", aerr.CorrelationID)
-	assert.Equal(t, "input", aerr.Field)
-	assert.ErrorIs(t, err, aegis.ErrDecode)
 
 	trailing := append(bytes.Clone(validJSON), " {}"...)
-	_, err = aegis.ParseResult(trailing)
-	require.Error(t, err)
-	require.ErrorAs(t, err, &aerr)
-	assert.Equal(t, "input", aerr.Field)
-	assert.ErrorIs(t, err, aegis.ErrTrailingContent)
-
-	_, err = aegis.ParseResult(make([]byte, aegis.MaxInputBytes+1))
-	require.Error(t, err)
-	require.ErrorAs(t, err, &aerr)
-	assert.Equal(t, "input", aerr.Field)
-	assert.ErrorIs(t, err, aegis.ErrInputTooLarge)
+	requireParseError(t, trailing, "input", aegis.ErrTrailingContent)
+	requireParseError(t, make([]byte, aegis.MaxInputBytes+1), "input", aegis.ErrInputTooLarge)
 
 	badSchema := valid
 	badSchema.Schema = "bad.schema"
-	badSchemaJSON, err := json.Marshal(badSchema)
-	require.NoError(t, err)
-	_, err = aegis.ParseResult(badSchemaJSON)
-	require.Error(t, err)
-	require.ErrorAs(t, err, &aerr)
-	assert.Equal(t, "schema", aerr.Field)
-	assert.ErrorIs(t, err, aegis.ErrSchema)
+	requireParseError(t, marshalResult(t, badSchema), "schema", aegis.ErrSchema)
 
 	oldSig := valid
 	oldSig.SignatureRef = "sigstore://rekor.example.com/entries/0001"
-	oldSigJSON, err := json.Marshal(oldSig)
-	require.NoError(t, err)
-	_, err = aegis.ParseResult(oldSigJSON)
+	requireParseError(t, marshalResult(t, oldSig), "signature-ref", aegis.ErrInvalidField)
+}
+
+// requireParseError asserts that ParseResult rejects data with an *aegis.Error
+// naming field and wrapping sentinel, and returns that error.
+func requireParseError(t *testing.T, data []byte, field string, sentinel error) *aegis.Error {
+	t.Helper()
+	_, err := aegis.ParseResult(data)
 	require.Error(t, err)
+	var aerr *aegis.Error
 	require.ErrorAs(t, err, &aerr)
-	assert.Equal(t, "signature-ref", aerr.Field)
-	assert.ErrorIs(t, err, aegis.ErrInvalidField)
+	assert.Equal(t, field, aerr.Field)
+	assert.ErrorIs(t, err, sentinel)
+	return aerr
+}
+
+// marshalResult encodes r without the validation WriteResult applies.
+func marshalResult(t *testing.T, r aegis.Result) []byte {
+	t.Helper()
+	data, err := json.Marshal(r)
+	require.NoError(t, err)
+	return data
 }
 
 func TestLoadResult(t *testing.T) {
