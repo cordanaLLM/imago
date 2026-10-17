@@ -111,7 +111,9 @@ jobs:
           set -euo pipefail
           out_dir="${GITHUB_WORKSPACE}/aegis-output"
           mkdir -p "${out_dir}"
-          mkosi -C aegis/build --output-directory "${out_dir}" build
+          # The hosted runner lacks systemd-repart, ukify, mkfs.erofs and mkfs.btrfs; an Arch tools tree
+          # inherits the image snapshot (mkosi(1) ToolsTreeSnapshot=), so build tools are pinned as well.
+          mkosi -C aegis/build --tools-tree=yes --tools-tree-distribution=arch --output-directory "${out_dir}" build
           expected_artifacts=(
             "${out_dir}/aegis-os.raw"
             "${out_dir}/aegis-os.efi"
