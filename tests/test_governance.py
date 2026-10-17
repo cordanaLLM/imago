@@ -116,17 +116,23 @@ class TestGovernanceIntegrity:
         version = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
         assert released == version, f"The manifest says {released} was released, VERSION says {version}"
 
-    def test_no_1_x_release_while_the_first_release_milestone_is_open(self) -> None:
-        """Verify no version from 1.0.0 up is cut before milestone '1.0 — First release' closes.
+    def test_no_later_release_while_the_first_release_milestone_is_open(self) -> None:
+        """Verify no version past the first release milestone is cut before that milestone closes.
 
-        The release tool cuts `initial-version` when the manifest is empty and bumps from the
-        manifest entry otherwise; either one is the next version it releases. Until the
-        milestone that defines 1.0 is closed, that version stays below 1.0.0.
+        The milestone titled `X.Y.Z — First release` names the first version. The release tool
+        cuts `initial-version` when the manifest is empty and bumps from the manifest entry
+        otherwise; either one is the next version it releases. Until the milestone is closed,
+        that version stays at or below X.Y.Z.
         """
         milestones = json.loads((REPO_ROOT / ".github" / "milestones.json").read_text(encoding="utf-8"))
-        first = next(m for m in milestones["milestones"] if m["title"] == "1.0 — First release")
+        named = [m for m in milestones["milestones"] if m["title"].endswith(" — First release")]
+        assert len(named) == 1, f"Expected one milestone '<X.Y.Z> — First release', found {len(named)}"
+        first = named[0]
+        found = re.match(r"^(\d+)\.(\d+)\.(\d+) — First release$", first["title"])
+        assert found, f"Milestone '{first['title']}' does not name a full X.Y.Z version"
         if first["state"] == "closed":
             return
+        limit = tuple(int(part) for part in found.groups())
         config = json.loads((REPO_ROOT / "release-please-config.json").read_text(encoding="utf-8"))
         manifest = json.loads((REPO_ROOT / ".release-please-manifest.json").read_text(encoding="utf-8"))
         candidates = {
@@ -136,8 +142,10 @@ class TestGovernanceIntegrity:
         }
         for source, value in candidates.items():
             if value:
-                major = int(value.split(".", 1)[0])
-                assert major < 1, f"{source} is {value}, but milestone '1.0 — First release' is still open"
+                parts = re.match(r"^(\d+)\.(\d+)\.(\d+)", value)
+                assert parts, f"{source} is {value}, not an X.Y.Z version"
+                version = tuple(int(part) for part in parts.groups())
+                assert version <= limit, f"{source} is {value}, but milestone '{first['title']}' is still open"
 
     def test_cli_version_constant_follows_the_version_file(self) -> None:
         """Verify the version the CLI advertises is the released one and stays so.

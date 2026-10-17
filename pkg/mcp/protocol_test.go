@@ -250,7 +250,7 @@ func TestMCPProtocolToolExecution(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, res.IsError)
 		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "1.0 — First release")
+		assert.Contains(t, text, "0.1.0 — First release")
 	})
 
 	t.Run("inspect_compliance_default", func(t *testing.T) {

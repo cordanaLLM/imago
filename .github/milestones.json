@@ -3,34 +3,46 @@
   "version": "1.0.0",
   "milestones": [
     {
-      "title": "1.0 — First release",
+      "title": "0.1.0 — First release",
       "state": "open",
       "due_on": null,
       "description": "Initial production release supporting 44 Ubuntu 26.04 flavors across seven tiers: Base, Containers (Docker and Podman), Kubernetes, K3s Edge, CloudNative, AI Inference and Homelab appliances."
     },
     {
-      "title": "v1.1.0 - Multi-Hypervisor & Bare-Metal Hardening",
+      "title": "0.2.0 — Multi-Hypervisor & Bare-Metal Hardening",
       "state": "open",
       "due_on": "2026-10-30T00:00:00Z",
       "description": "Direct disk streaming installer, native Unraid virtiofs auto-mount, VMware ESXi 8.x validation, and iPXE netboot."
     },
     {
-      "title": "v1.2.0 - Blackwell Fabric & Multi-Vendor Inference",
+      "title": "0.3.0 — Blackwell Fabric & Multi-Vendor Inference",
       "state": "closed",
       "due_on": "2026-11-29T00:00:00Z",
-      "description": "NVIDIA Blackwell B200 / RTX 5090 NVLink fabric tuning, AMD Instinct MI300 ROCm 10 optimization, and automated vLLM benchmarks. Note of 2026-10-11: this milestone was closed empty. No issue was ever filed under it, and the scope above was not delivered as tracked work. The scope is reviewed together with the hardware acceleration roadmap after the 1.0 release."
+      "description": "NVIDIA Blackwell B200 / RTX 5090 NVLink fabric tuning, AMD Instinct MI300 ROCm 10 optimization, and automated vLLM benchmarks. Note of 2026-10-11: this milestone was closed empty. No issue was ever filed under it, and the scope above was not delivered as tracked work. The scope is reviewed together with the hardware acceleration roadmap after the first release (milestone 0.1.0)."
     },
     {
-      "title": "v1.3.0 - Aegis & Nucleus Fleet Contracts",
+      "title": "0.4.0 — Aegis & Nucleus Fleet Contracts",
       "state": "closed",
       "due_on": "2026-12-17T00:00:00Z",
       "description": "Pinned producer contracts with the connected Aegis-OS stack: the aegis.p01.product-input.v1 build request and the imago.nucleus.kernel-artifact.v1 kernel artifact manifest, verified by digest and provenance before consumption. Tracks planning milestones ms-aegis and ms-nucleus."
     },
     {
-      "title": "Post-1.0 roadmap",
+      "title": "Backlog — Roadmap after the first release",
       "state": "open",
       "due_on": null,
-      "description": "Planned items that accepted ADRs, the principles or an earlier plan promise and that have no implementation yet. Each issue records the promise and the state of the tree. An issue here is a tracked home for the plan, not a scheduled unit: order and scope are decided after the 1.0 release."
+      "description": "Planned items that accepted ADRs, the principles or an earlier plan promise and that have no implementation yet. Each issue records the promise and the state of the tree. An issue here is a tracked home for the plan, not a scheduled unit: order and scope are decided after the first release (milestone 0.1.0)."
+    },
+    {
+      "title": "Ongoing — Code health and deduplication",
+      "state": "open",
+      "due_on": null,
+      "description": "Keep the code base small, deduplicated and inside the HISS limits."
+    },
+    {
+      "title": "Ongoing — Research and upstream watch",
+      "state": "open",
+      "due_on": null,
+      "description": "Continuous scan of new tools, skills, papers and releases relevant to this repository; items carry research-watch and feed the research hub."
     }
   ]
 }
