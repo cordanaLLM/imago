@@ -108,6 +108,16 @@ def test_no_silent_mkosi_fallback() -> None:
     assert check["run"].count("exit 1") == 2
 
 
+def test_mkosi_builds_with_pinned_arch_tools_tree() -> None:
+    """mkosi takes repart, ukify and mkfs tools from an Arch tools tree, never from the runner host."""
+    steps = load_workflow()["jobs"]["build"]["steps"]
+    build = next(step for step in steps if step.get("name") == "Build Aegis Image with mkosi")
+    command = next(line for line in build["run"].splitlines() if line.strip().startswith("mkosi "))
+    assert "--tools-tree=yes" in command.split()
+    assert "--tools-tree-distribution=arch" in command.split()
+    assert "--tools-tree-snapshot" not in command
+
+
 def test_release_targets_built_commit() -> None:
     """The pre-release tag points at the imago commit the workflow ran from."""
     steps = load_workflow()["jobs"]["build"]["steps"]

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Aegis build workflow: mkosi now builds with `--tools-tree=yes --tools-tree-distribution=arch`, because the first dispatch (run 39067484406) failed on the hosted runner without `systemd-repart`; the Arch tools tree carries repart, ukify and the erofs, btrfs and vfat tools and follows the image snapshot (`docs/adr/0033-aegis-build-workflow.md`).
+
 ### Added
 - Aegis OS image build and pre-release workflow (`.github/workflows/aegis-build.yml`, issue #46 unit 2): triggered by `workflow_dispatch` only with validated `aegis-revision` and `request-sha256` inputs passed via environment variables. Checks out `cordanaLLM/Aegis-OS`, runs `tools/aegis/check_request.py` to verify request hash, `imago aegis validate` acceptance, and git ancestor lineage; builds the UKI disk image using `systemd/mkosi@ecf7f5702bb2052b7a69cab3fe7d37bc3b9ad77b # v27.1` on `ubuntu-26.04` with a mandatory `/dev/kvm` read-write check; boots the image once via `tools/aegis/boot_once.py` with QEMU KVM, non-Secure-Boot OVMF, swtpm TPM 2.0 socket, and throwaway qcow2 overlay under SMBIOS type 11 extra console logging until a systemd target marker appears; refuses dispatch outside `main`, fails when `mkosi` or `pacman` is missing, signs `SHA256SUMS` using keyless cosign and publishes a pre-release tagged `aegis-<correlation-id>` (`--latest=false`, no clobber) uploading release assets and emitting `imago.p01.product-result.v1` (`docs/adr/0033-aegis-build-workflow.md`, `docs/operations/aegis-build.md`).
 - Local Packer executor for `imago build --backend local` (#136): verifies pinned Packer and QEMU plugin versions/checksum, applies a build deadline, and reports a run log, QCOW2 artifact and SHA256 only after success. MCP and other backends continue to refuse execution.
