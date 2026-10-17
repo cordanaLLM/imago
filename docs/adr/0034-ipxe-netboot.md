@@ -22,6 +22,7 @@ The facts below were measured on 2026-10-17. The raw notes live in the local evi
    - `rd.live.ram=1` and `rd.live.overlay.size=` control the copy to RAM and the size of the writable overlay.
 3. **iPXE cannot compare digests.** At iPXE master `c51ca76a6e56` (2026-10-15), `md5sum` and `sha1sum` only print a digest, and `imgverify` checks a CMS signature. iPXE does provide the `${cwduri}` setting, the directory of the current script, and it resolves relative URIs against the script's own URI.
 4. **Size.** The rootfs of the daily resolute cloud image (sha256 `8800651811af9a85…`) unpacks to 3,153,971,370 B. `mksquashfs` 4.7.5 with zstd level 19 packs it into 634,195,968 B (about 605 MiB). The forge's per-asset limit is 2 GiB (`ASSET_LIMIT_BYTES` in `tools/ci/release_assets.py`). Flavors with GPU stacks are larger than the base image and are measured by the matrix itself.
+5. **`/boot` is a separate partition.** Read on 2026-10-18 from the same image: partition 13 (1023 MiB, ext4, label `BOOT`) holds the kernels and initrds, and `/boot` in `cloudimg-rootfs` is an empty mount point. Its `/etc/fstab` mounts `LABEL=BOOT` at `/boot` and `LABEL=UEFI` at `/boot/efi`, neither with `nofail`. The first CI dispatch (run 39073997870) failed because the extract read `/boot` from the root partition alone.
 
 ## Decision
 
@@ -37,7 +38,7 @@ The facts below were measured on 2026-10-17. The raw notes live in the local evi
    - It never falls back to an unchecked root, and no option skips the check.
    - Hook point: `livenetroot.sh` (dracut 110, `modules.d/70livenet/livenetroot.sh:83`) ends its bounded fetch loop with `exec /sbin/dmsquash-live-root "$root"`, which `70dmsquash-live/module-setup.sh:32` installs. The module installs after `70dmsquash-live` (dracut installs modules in `modules.d` glob order), renames that program to `dmsquash-live-root.orig` and takes its place, so every fetched image, including one fetched after a retry, passes the check before the original runs.
    - dracut ignores a failing module `install()`, so the provisioner reads the built initrd back with `lsinitrd` and fails the build when the module or the renamed original is missing.
-4. **The iPXE script.** The script fetches the kernel and initrd by URIs relative to itself. It passes `root=live:${cwduri}<flavor>-root.squashfs`, `ip=dhcp`, `rd.neednet=1` and `imago.root-sha256=<digest>`. An operator therefore serves the four assets from one directory and chains the script. The digest is written into the script at build time from the same file that goes into `SHA256SUMS`.
+4. **The iPXE script.** The script fetches the kernel and initrd by URIs relative to itself. It passes `root=live:${cwduri}<flavor>-root.squashfs`, `ip=dhcp`, `rd.neednet=1`, `imago.root-sha256=<digest>` and `fstab=no` (Consequences). An operator therefore serves the four assets from one directory and chains the script. The digest is written into the script at build time from the same file that goes into `SHA256SUMS`.
 5. **Kernel and initrd integrity.** iPXE cannot verify these (Context 3). The operator verifies `SHA256SUMS` with `cosign verify-blob` and checks the four assets against it before serving them. `docs/platforms/baremetal.md` states this step. The squashfs digest is checked again at boot (item 3).
 6. **Size limit.** The matrix's `release_assets.py sizes` step covers the new assets. An asset at or above 2 GiB fails the flavor build, and a planted oversize asset in the tests proves that.
 7. **CI proof.** A test boots `base-generic` in QEMU through iPXE over a local HTTP server: the iPXE script loads the kernel and initrd, and the initrd fetches the squashfs and reaches a multi-user marker on the serial console. The same run with a wrong `imago.root-sha256` must stop before the root is mounted.
@@ -47,7 +48,8 @@ The facts below were measured on 2026-10-17. The raw notes live in the local evi
 
 - Each release flavor grows by about one compressed root image (about 605 MiB for the base image) plus a kernel and an initrd.
 - A netbooted host runs from RAM with a writable overlay. Its changes are lost at reboot unless the operator adds persistent storage.
-- The image's `/etc/fstab` refers to disk partitions that a netbooted host lacks. The CI boot in item 7 shows whether those entries need handling, and the implementation records the result here.
+- The image's `/etc/fstab` mounts the `BOOT` and `UEFI` partitions without `nofail` (Context 5). A netbooted host has neither, so their mount units would fail `local-fs.target`. The script therefore passes `fstab=no`, which makes `systemd-fstab-generator` ignore every mount and swap entry in `/etc/fstab` in the booted system (`systemd-fstab-generator(8)`, systemd 262). The root is mounted by dracut from `root=live:` and does not depend on `/etc/fstab`. The CI boot in item 7 confirms that the host reaches the marker with these entries skipped.
+- The extract mounts the `BOOT` partition read-only at `/boot` of the mounted root (`tools/ci/release_assets.py attach`), and `mksquashfs -one-file-system` packs the root without it: the kernel and the initrd ship as their own assets, and `/boot` stays an empty directory in the squashfs.
 - A change to the dracut `livenet` or `dmsquash-live` command line is caught by the CI boot, not by a unit test.
 
 ## References

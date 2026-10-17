@@ -70,7 +70,7 @@ def generate_ipxe(flavor: str, digest: str) -> str:
             f"kernel {valid_flavor}-netboot.vmlinuz "
             f"initrd={valid_flavor}-netboot.initrd ip=dhcp rd.neednet=1 "
             f"root=live:${{cwduri}}{valid_flavor}-root.squashfs "
-            f"imago.root-sha256={valid_digest} "
+            f"imago.root-sha256={valid_digest} fstab=no "
             "console=ttyS0 console=tty0"
         ),
         f"initrd {valid_flavor}-netboot.initrd",
@@ -145,7 +145,8 @@ def extract(
     copy_out(kernel_src, kernel_dst, use_sudo=use_sudo)
     copy_out(initrd_src, initrd_dst, use_sudo=use_sudo)
 
-    # Pack root filesystem into squashfs with Zstandard level 19
+    # Pack the root file system with zstd level 19. -one-file-system keeps /boot, where attach
+    # mounts the BOOT partition, as an empty directory: the kernel and initrd ship on their own.
     mksquashfs = ["sudo", "mksquashfs"] if use_sudo else ["mksquashfs"]
     cmd = [
         *mksquashfs,
@@ -156,6 +157,7 @@ def extract(
         "-Xcompression-level",
         "19",
         "-noappend",
+        "-one-file-system",
     ]
     run(cmd)
 

@@ -125,4 +125,5 @@ The script loads the kernel and initrd from its own directory (`${cwduri}`) and 
 
 - **RAM**: the host holds the squashfs and its writable overlay in RAM. Plan for the squashfs size (about 605 MiB for `base-generic`; the release job summary lists every flavor) plus the overlay and the workload; the CI netboot test gives the guest 4 GiB.
 - **State**: every change lives in the overlay and is lost at reboot.
+- **Disks**: the script passes `fstab=no`, so the booted host ignores the image's `/etc/fstab` entries for the `BOOT` and `UEFI` disk partitions it does not have. Mount local disks with systemd mount units or cloud-init `mounts:` instead.
 - **cloud-init**: the script passes no data source. Add `ds=nocloud;s=https://boot.example.com/seed/` to the `kernel` line of a copy of the script to give the host a NoCloud seed; the copy no longer matches `SHA256SUMS`, but it keeps the `imago.root-sha256=` value, so the squashfs is still checked at boot.

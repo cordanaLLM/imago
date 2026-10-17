@@ -34,7 +34,7 @@ def test_generate_ipxe_exact_fixture():
     expected = (
         "#!ipxe\n"
         f"kernel base-generic-netboot.vmlinuz initrd=base-generic-netboot.initrd ip=dhcp rd.neednet=1 "
-        f"root=live:${{cwduri}}base-generic-root.squashfs imago.root-sha256={SAMPLE_DIGEST} "
+        f"root=live:${{cwduri}}base-generic-root.squashfs imago.root-sha256={SAMPLE_DIGEST} fstab=no "
         "console=ttyS0 console=tty0\n"
         "initrd base-generic-netboot.initrd\n"
         "boot\n"
@@ -134,6 +134,7 @@ def test_extract_netboot_assets(tmp_path, monkeypatch):
     assert "-comp" in mksquashfs_call and "zstd" in mksquashfs_call
     assert "-Xcompression-level" in mksquashfs_call and "19" in mksquashfs_call
     assert "-noappend" in mksquashfs_call
+    assert "-one-file-system" in mksquashfs_call
 
 
 @pytest.mark.parametrize(

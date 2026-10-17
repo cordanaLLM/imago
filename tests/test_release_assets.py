@@ -39,14 +39,14 @@ class Tools:
     def __init__(self, mount_dir: Path) -> None:
         self.mount_dir = mount_dir
         self.calls: list[list[str]] = []
-        self.labels = {f"{DEVICE}p1": assets.ROOT_LABEL, f"{DEVICE}p15": "UEFI"}
+        self.labels = {f"{DEVICE}p1": assets.ROOT_LABEL, f"{DEVICE}p13": "BOOT", f"{DEVICE}p15": "UEFI"}
         self.fail: set[str] = set()
         self.dpkg_status = True
 
     def run(self, command: list[str]) -> str:
         self.calls.append(command)
         verb = command[1] if command[0] == "sudo" else command[0]
-        if verb in self.fail:
+        if verb in self.fail or (verb == "mount" and "mount-boot" in self.fail and command[-1].endswith("/boot")):
             raise assets.AssetError(f"{verb} failed")
         if verb == "lsblk":
             return "\n".join([DEVICE, *self.labels]) + "\n"
@@ -82,16 +82,51 @@ def attach(image: Path, tools: Tools) -> int:
 
 def test_attach_mounts_the_labelled_partition_read_only(image, tools):
     assert attach(image, tools) == 0
-    assert tools.verbs() == ["modprobe", "qemu-nbd", "mount"]
-    connect, mount = tools.calls[1], tools.calls[-1]
+    assert tools.verbs() == ["modprobe", "qemu-nbd", "mount", "mount"]
+    connect = tools.calls[1]
+    root, boot = [c for c in tools.calls if c[:2] == ["sudo", "mount"]]
     assert "--read-only" in connect and f"--connect={DEVICE}" in connect
-    assert mount[2:] == ["-o", "ro,noload", f"{DEVICE}p1", str(tools.mount_dir)]
+    assert root[2:] == ["-o", "ro,noload", f"{DEVICE}p1", str(tools.mount_dir)]
+    assert boot[2:] == ["-o", "ro,noload", f"{DEVICE}p13", str(tools.mount_dir / "boot")]
+
+
+def test_attach_without_a_boot_partition_mounts_the_root_only(image, tools, capsys):
+    del tools.labels[f"{DEVICE}p13"]
+    assert attach(image, tools) == 0
+    assert tools.verbs() == ["modprobe", "qemu-nbd", "mount"]
+    assert "no BOOT partition" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        (lambda t: t.labels.update({f"{DEVICE}p2": "BOOT"}), "2 partitions of /dev/nbd7 carry the label BOOT"),
+        (lambda t: t.fail.add("mount-boot"), "mount failed"),
+    ],
+    ids=["two-boot-labels", "boot-mount-fails"],
+)
+def test_attach_fails_on_the_boot_partition_and_releases_the_device(image, tools, capsys, case):
+    setup, message = case
+    setup(tools)
+    assert attach(image, tools) == 1
+    assert message in capsys.readouterr().err
+    assert tools.verbs()[-2:] == ["umount", "qemu-nbd"]
+    assert tools.calls[-1][1:] == ["qemu-nbd", "--disconnect", DEVICE]
 
 
 def test_detach_unmounts_then_disconnects(tools):
     assert assets.main(["detach", "--at", str(tools.mount_dir), "--device", DEVICE]) == 0
     assert tools.verbs() == ["umount", "qemu-nbd"]
     assert tools.calls[-1][2:] == ["--disconnect", DEVICE]
+
+
+def test_detach_unmounts_boot_before_the_root(tools, monkeypatch):
+    boot = tools.mount_dir / "boot"
+    monkeypatch.setattr(assets.os.path, "ismount", lambda path: Path(path) == boot)
+    assert assets.main(["detach", "--at", str(tools.mount_dir), "--device", DEVICE]) == 0
+    assert tools.calls[0][1:] == ["umount", str(boot)]
+    assert tools.calls[1][1:] == ["umount", str(tools.mount_dir)]
+    assert tools.verbs() == ["umount", "umount", "qemu-nbd"]
 
 
 def test_detach_tries_both_and_fails_when_umount_fails(tools, capsys):
