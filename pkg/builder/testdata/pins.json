@@ -1,0 +1,20 @@
+{
+  "build": {
+    "packer": {
+      "version": "1.16.1"
+    },
+    "packer_plugins": {
+      "qemu": {
+        "source": "github.com/hashicorp/qemu",
+        "version": "1.1.7",
+        "sha256_linux_amd64": "28ad3bc910d916d182c5759e41939ec7b554f24535a32e44da6423a552593c52",
+        "sha256_linux_arm64": "28ad3bc910d916d182c5759e41939ec7b554f24535a32e44da6423a552593c52",
+        "sha256_linux_riscv64": "28ad3bc910d916d182c5759e41939ec7b554f24535a32e44da6423a552593c52",
+        "sha256_darwin_amd64": "28ad3bc910d916d182c5759e41939ec7b554f24535a32e44da6423a552593c52",
+        "sha256_darwin_arm64": "28ad3bc910d916d182c5759e41939ec7b554f24535a32e44da6423a552593c52",
+        "sha256_windows_amd64": "28ad3bc910d916d182c5759e41939ec7b554f24535a32e44da6423a552593c52",
+        "sha256_windows_arm64": "28ad3bc910d916d182c5759e41939ec7b554f24535a32e44da6423a552593c52"
+      }
+    }
+  }
+}

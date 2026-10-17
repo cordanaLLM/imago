@@ -110,19 +110,29 @@ Every value written into the YAML passes an allow-list first, and the generator 
 
 Accepted values are written as double-quoted YAML scalars, so a value can never open a new key. `cloud-init metadata` applies the same hostname rule.
 
-### 2.4 Build Plan Validation (`build`)
+### 2.4 Local Builds and Plan Validation (`build`)
 
-`imago build` validates a build plan: the flavor must be in the catalog and the backend must be one of `local`, `gitea`, `proxmox`, `gitlab`, `woodpecker`, `harbor`, `minio`, `jenkins`, `github`. No backend has an executor yet ([ADR-0031](../adr/0031-fail-closed-build-dispatch.md)), so the command never starts a build:
+`imago build --backend local` executes the installed Packer against the repository's QEMU templates ([ADR-0032](../adr/0032-local-packer-executor.md)). Every request validates its flavor and backend first. Other backends (`gitea`, `proxmox`, `gitlab`, `woodpecker`, `harbor`, `minio`, `jenkins`, `github`) retain the unavailable error from [ADR-0031](../adr/0031-fail-closed-build-dispatch.md).
 
 ```bash
-# Validate a plan; prints "==> Build plan (planned): dry-run: ..." and exits 0
+# Validate a plan without loading pins, running Packer or checking plugins
 imago build --flavor=k8s-node-cilium --backend=gitea --dry-run
 
-# Without --dry-run: exits 1 with "builder: backend \"proxmox\": build backend not implemented"
+# Execute locally; requires the pinned Packer and QEMU plugin already installed
+imago build --flavor=base-generic --backend=local \
+  --packer-dir=./packer --output-dir=./output-images --versions=versions.json
+
+# Exits 1: this backend has no executor
 imago build --flavor=cloudnative-storage --backend=proxmox
 ```
 
-An unknown flavor or backend fails in both modes. Images are built with the `make build-<flavor>` targets and the release workflow, not with this command. In Go, `builder.Dispatch` returns `*builder.BackendUnavailableError`, which matches `builder.ErrBackendUnavailable` under `errors.Is`; a dry-run `Result` has `status: "planned"`, `dry_run: true` and `success: false`, because `success` is reserved for an execution a backend acknowledged (`pkg/builder/builder_test.go`).
+The defaults are `--packer-dir=./packer`, `--output-dir=./output-images` (ignored by `.gitignore`) and `--versions=versions.json`; relative paths resolve from the CLI's working directory. `builder.LoadPins` reads `build.packer.version`, `build.packer_plugins.qemu.version` and the current platform's `sha256_<GOOS>_<GOARCH>` from the manifest, refusing absent or malformed pins and duplicate JSON keys at any depth. The executor checks the first line of `packer version` and hashes the installed QEMU plugin before starting a build. It installs nothing. Plugin lookup uses `PACKER_PLUGIN_PATH`, falling back to `$HOME/.config/packer/plugins`, following the [Packer configuration reference](https://developer.hashicorp.com/packer/docs/configure#packer_plugin_path).
+
+Packer runs with the requested flavor, output directory and `image_name=lusoris-cloud` explicitly set. Its stdout and stderr go to `output-images/logs/<flavor>-<UTC timestamp>.log`; the artifact is `output-images/<flavor>/lusoris-cloud-<flavor>.qcow2`. A successful command prints `==> Build succeeded: <flavor>`, `Run log: <path>`, `Artifact: <path>` and `SHA256: <hex>`. Success requires Packer exit 0 and a regular artifact file written after the build started, whose SHA256 has been streamed; a file left from an earlier run is refused. Failure exits 1; a Packer failure names its log. An existing log with the same flavor and second is refused rather than overwritten (`pkg/builder/local_test.go`).
+
+In Go, `builder.Dispatch` keeps its refusal-only default. `builder.DispatchWith` accepts an explicit executor map; the CLI registers only `builder.BackendLocal`. Local `Result` evidence fields are `run_log`, `artifact` and `artifact_sha256`, with `status: "succeeded"` and `success: true` only after verification. A dry run keeps `status: "planned"`, `dry_run: true` and `success: false`, without evidence. `Request.Timeout` bounds local execution, defaulting to two hours when zero; an earlier caller deadline still applies. Timeout errors match both `builder.ErrBuildTimeout` and `context.DeadlineExceeded` (`pkg/builder/builder_test.go`, `pkg/builder/local_test.go`).
+
+MCP `trigger_build` and `confirm_action` continue to refuse every execution backend, including local. Their local refusal names `imago build --backend local`: an agent must not start a long KVM build on the shared host. Dry-run plans and staging remain available (`pkg/mcp/build_test.go`).
 
 ### 2.5 Imageless Host Provisioning (`apply`)
 
@@ -280,7 +290,7 @@ imago mcp --transport=http --addr=:8899
 | **`get_standards`** | `flavor_id` (string) | Query machine-readable CIS/BSI hardening requirements |
 | **`list_epics`** | None | List recurring operational and architectural epics |
 | **`get_milestones`** | None | List release milestones with state and due date |
-| **`trigger_build`** | `flavor`, `backend`, `dry_run`, `confirmed` | Validate a build plan with `dry_run=true` (`status: "planned"`, `success: false`); no backend has an executor, so a confirmed request returns an error. Staging still applies; an unknown flavor or backend is refused before a dry run or staging |
+| **`trigger_build`** | `flavor`, `backend`, `dry_run`, `confirmed` | Validate a build plan with `dry_run=true` (`status: "planned"`, `success: false`); MCP refuses all execution backends, including local (use `imago build --backend local` in the CLI). Staging still applies; an unknown flavor or backend is refused before a dry run or staging |
 | **`apply_flavor`** | `flavor_id`, `dry_run` | Generate in-place host provisioning bash script |
 | **`inspect_compliance`** | `path` (optional, repository-relative; default `tests/compliance/goss.yaml`) | Inspect declarative CIS/NIST compliance profile; an absolute path or one leaving the repository is refused |
 | **`list_staged_actions`** | None | List pending staged actions requiring operator confirmation |

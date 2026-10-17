@@ -31,6 +31,9 @@ func TestMCPBuildReportsUnavailableForEveryBackend(t *testing.T) {
 		t.Run(backend+"/confirmed", func(t *testing.T) {
 			text, refused := call(t, session, "trigger_build", map[string]any{"flavor": "base-generic", "backend": backend, "confirmed": true})
 			assertBuildUnavailable(t, text, refused)
+			if backend == "local" {
+				assert.Contains(t, text, "imago build --backend local")
+			}
 		})
 		t.Run(backend+"/staged", func(t *testing.T) {
 			text, refused := call(t, session, "trigger_build", map[string]any{"flavor": "base-generic", "backend": backend})
@@ -39,6 +42,9 @@ func TestMCPBuildReportsUnavailableForEveryBackend(t *testing.T) {
 			require.Len(t, m, 2, text)
 			text, refused = call(t, session, "confirm_action", map[string]any{"action_id": m[1]})
 			assertBuildUnavailable(t, text, refused)
+			if backend == "local" {
+				assert.Contains(t, text, "imago build --backend local")
+			}
 		})
 	}
 }

@@ -1,7 +1,7 @@
 // Copyright 2026 Lusoris
 // Package builder validates image build plans for local Packer and self-hosted
-// or cloud CI backends. No backend has an executor yet: a request that would
-// execute fails with BackendUnavailableError, and a dry run reports a plan.
+// or cloud CI backends. Execution requires an explicitly registered executor;
+// a dry run reports a plan without execution.
 package builder
 
 import (
@@ -35,6 +35,8 @@ const (
 	StatusPlanned = "planned"
 	// StatusUnavailable marks a request whose backend has no executor.
 	StatusUnavailable = "unavailable"
+	// StatusSucceeded marks a completed build with artifact evidence.
+	StatusSucceeded = "succeeded"
 )
 
 // Request defines the build parameters.
@@ -49,16 +51,17 @@ type Request struct {
 	Timeout    time.Duration `json:"timeout"`
 }
 
-// Result describes a validated plan or a refused dispatch. Success is reserved
-// for an execution a backend acknowledged; a valid dry run is not one, and no
-// backend has an executor, so Success is false in every result Dispatch returns.
+// Result describes a plan, refusal, or execution backed by artifact evidence.
 type Result struct {
-	Backend Backend `json:"backend"`
-	Flavor  string  `json:"flavor"`
-	Success bool    `json:"success"`
-	Status  string  `json:"status"`
-	DryRun  bool    `json:"dry_run"`
-	Message string  `json:"message"`
+	Backend        Backend `json:"backend"`
+	Flavor         string  `json:"flavor"`
+	Success        bool    `json:"success"`
+	Status         string  `json:"status"`
+	DryRun         bool    `json:"dry_run"`
+	Message        string  `json:"message"`
+	RunLog         string  `json:"run_log,omitempty"`
+	Artifact       string  `json:"artifact,omitempty"`
+	ArtifactSHA256 string  `json:"artifact_sha256,omitempty"`
 }
 
 // ErrBackendUnavailable identifies a known backend without an executor.
@@ -96,10 +99,18 @@ func Validate(backend Backend, flavor string) error {
 	return nil
 }
 
-// Dispatch validates the build request. A dry run returns a plan with status
-// StatusPlanned; any other request returns BackendUnavailableError without
-// performing I/O, because no backend has an executor.
+// Executor performs a validated build request.
+type Executor interface {
+	Execute(context.Context, Request) (Result, error)
+}
+
+// Dispatch preserves the refusal-only default; no executor is registered.
 func Dispatch(ctx context.Context, req Request) (Result, error) {
+	return DispatchWith(ctx, req, nil)
+}
+
+// DispatchWith validates before planning or invoking an explicitly registered executor.
+func DispatchWith(ctx context.Context, req Request, executors map[Backend]Executor) (Result, error) {
 	res := Result{Backend: req.Backend, Flavor: req.Flavor, DryRun: req.DryRun}
 	if err := ctx.Err(); err != nil {
 		return res, fmt.Errorf("builder: request context: %w", err)
@@ -111,6 +122,9 @@ func Dispatch(ctx context.Context, req Request) (Result, error) {
 		res.Status = StatusPlanned
 		res.Message = fmt.Sprintf("dry-run: validated plan for flavor %q on backend %q; no build was executed", req.Flavor, req.Backend)
 		return res, nil
+	}
+	if executor := executors[req.Backend]; executor != nil {
+		return executor.Execute(ctx, req)
 	}
 	err := &BackendUnavailableError{Backend: req.Backend}
 	res.Status = StatusUnavailable

@@ -231,20 +231,18 @@ func newCloudInitCmd() *cobra.Command {
 }
 
 func newBuildCmd() *cobra.Command {
-	var flavor, backend string
+	var flavor, backend, packerDir, outputDir, versions string
 	var dryRun bool
 	var cmd *cobra.Command
 
-	// One-shot fx run: the app starts, the plan is validated, and the app stops
-	// without blocking on a signal. No backend has an executor, so a request
-	// without --dry-run fails with builder.ErrBackendUnavailable.
-	cmd = clikit.Command("build", "Validate an image build plan; no build backend has an executor yet",
+	// One-shot fx run: local builds execute; other backends retain their refusal.
+	cmd = clikit.Command("build", "Build locally with Packer; other backends refuse execution",
 		clikit.WithFxRun(func(ctx context.Context) error {
-			res, err := builder.Dispatch(ctx, builder.Request{
+			res, err := dispatchCLIBuild(ctx, builder.Request{
 				Backend: builder.Backend(backend),
 				Flavor:  flavor,
 				DryRun:  dryRun,
-			})
+			}, packerDir, outputDir, versions)
 			if err != nil {
 				return err
 			}
@@ -254,12 +252,53 @@ func newBuildCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&flavor, "flavor", "f", "base-generic", "Flavor to build")
 	cmd.Flags().StringVarP(&backend, "backend", "b", "local", "Build backend (local, gitea, proxmox, gitlab, woodpecker, harbor, minio, jenkins, github)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Validate a build plan without execution")
+	cmd.Flags().StringVar(&packerDir, "packer-dir", "./packer", "Packer template directory")
+	cmd.Flags().StringVar(&outputDir, "output-dir", "./output-images", "Artifact directory (logs in logs/)")
+	cmd.Flags().StringVar(&versions, "versions", "versions.json", "Manifest with build toolchain pins")
 	return cmd
 }
 
+// newLocalBuildExecutor is the CLI-only construction seam for offline tests.
+var newLocalBuildExecutor = loadLocalBuildExecutor
+
+func loadLocalBuildExecutor(packerDir, outputDir, versions string) (builder.Executor, error) {
+	pins, err := builder.LoadPins(versions)
+	if err != nil {
+		return nil, fmt.Errorf("imago: local build pins: %w", err)
+	}
+	return builder.LocalExecutor{Pins: pins, PackerDir: packerDir, OutputDir: outputDir,
+		LogDir: filepath.Join(outputDir, "logs")}, nil
+}
+
+func dispatchCLIBuild(ctx context.Context, req builder.Request, packerDir, outputDir, versions string) (builder.Result, error) {
+	if req.DryRun || req.Backend != builder.BackendLocal {
+		return builder.Dispatch(ctx, req)
+	}
+	if err := ctx.Err(); err != nil {
+		return builder.Result{}, fmt.Errorf("imago: build context: %w", err)
+	}
+	if err := builder.Validate(req.Backend, req.Flavor); err != nil {
+		return builder.Result{}, err
+	}
+	executor, err := newLocalBuildExecutor(packerDir, outputDir, versions)
+	if err != nil {
+		return builder.Result{}, err
+	}
+	return builder.DispatchWith(ctx, req, map[builder.Backend]builder.Executor{builder.BackendLocal: executor})
+}
+
 func printBuildResult(w io.Writer, res builder.Result) error {
-	_, err := fmt.Fprintf(w, "==> Build plan (%s): %s\n", res.Status, res.Message)
-	return err
+	var err error
+	if res.Success && res.Status == builder.StatusSucceeded {
+		_, err = fmt.Fprintf(w, "==> Build succeeded: %s\nRun log: %s\nArtifact: %s\nSHA256: %s\n",
+			res.Flavor, res.RunLog, res.Artifact, res.ArtifactSHA256)
+	} else {
+		_, err = fmt.Fprintf(w, "==> Build plan (%s): %s\n", res.Status, res.Message)
+	}
+	if err != nil {
+		return fmt.Errorf("imago: print build result: %w", err)
+	}
+	return nil
 }
 
 func newApplyCmd() *cobra.Command {

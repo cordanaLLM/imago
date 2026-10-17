@@ -181,6 +181,8 @@ make build-cloudnative-storage # CNCF storage appliance (NVMe-oF / ZFS)
 make build-ai-infer-nvidia     # AI inference appliance (vLLM / NUMA tuning)
 ```
 
+The `imago build --backend local` CLI also executes Packer after checking the installed toolchain pins from `versions.json`, then reports the run log, QCOW2 path and SHA256. Other backends refuse execution; `--dry-run` validates plans for every backend. See [local build flags and evidence](docs/tools/cli-mcp.md#24-local-builds-and-plan-validation-build).
+
 ---
 
 ## Repository & Documentation Map

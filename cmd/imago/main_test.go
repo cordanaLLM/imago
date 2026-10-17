@@ -145,10 +145,9 @@ func TestBuildCommand(t *testing.T) {
 	assert.Contains(t, out, "no build was executed")
 }
 
-// Every backend is a planted false-success case: without --dry-run the command
-// fails, names the missing executor and prints nothing that reads as a build.
+// Remote backends retain the unavailable error without execution evidence.
 func TestBuildCommandRefusesEveryBackendWithoutExecutor(t *testing.T) {
-	for _, backend := range []string{"local", "gitea", "proxmox", "gitlab", "woodpecker", "harbor", "minio", "jenkins", "github"} {
+	for _, backend := range []string{"gitea", "proxmox", "gitlab", "woodpecker", "harbor", "minio", "jenkins", "github"} {
 		t.Run(backend, func(t *testing.T) {
 			out, err := executeCommand("build", "--flavor=base-generic", "--backend="+backend)
 			require.ErrorIs(t, err, builder.ErrBackendUnavailable)

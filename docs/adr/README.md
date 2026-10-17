@@ -41,3 +41,4 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0029](0029-a-planning-step-reopens-when-its-acceptance-is-unmet.md) | A Planning Step Reopens When Its Acceptance Is Unmet | Accepted | 2026-10-17 |
 | [0030](0030-kernel-requirement-decoder-follows-the-schema-owner.md) | The Kernel Requirement Decoder Follows the Schema Owner | Accepted | 2026-10-17 |
 | [0031](0031-fail-closed-build-dispatch.md) | Fail-Closed Build Dispatch | Accepted | 2026-10-17 |
+| [0032](0032-local-packer-executor.md) | Local Packer Executor | Accepted | 2026-10-17 |
