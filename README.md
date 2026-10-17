@@ -37,7 +37,7 @@ private scratch-link policy.
 
 [![Flavors](https://img.shields.io/badge/Flavors-44%20Production%20Targets-blue?logo=linux&logoColor=white&style=flat-square)](FLAVORS.md)
 [![Base OS](https://img.shields.io/badge/Base%20OS-Ubuntu%2026.04%20LTS%20Resolute-E95420?logo=ubuntu&logoColor=white&style=flat-square)](versions.json)
-[![Packer](https://img.shields.io/badge/Packer-1.11%2B-02A8EF?logo=packer&logoColor=white&style=flat-square)](https://www.packer.io/)
+[![Packer](https://img.shields.io/badge/Packer-1.16.1-02A8EF?logo=packer&logoColor=white&style=flat-square)](https://www.packer.io/)
 [![SSOT Schema](https://img.shields.io/badge/SSOT-Draft%202020--12-success?logo=json&style=flat-square)](versions.schema.json)
 [![Time Security](https://img.shields.io/badge/Time%20Security-NTS%20RFC%208915-informational?style=flat-square)](docs/security/time-nts.md)
 

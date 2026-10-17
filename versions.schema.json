@@ -3,7 +3,7 @@
   "title": "Lusoris Cloud Images Version Manifest Schema",
   "description": "Validates the structure and semantic invariants of versions.json Single Source of Truth",
   "type": "object",
-  "required": ["distro", "kubernetes", "drivers", "runtimes", "time"],
+  "required": ["distro", "kubernetes", "drivers", "runtimes", "build", "time"],
   "properties": {
     "$schema": { "type": "string" },
     "distro": {
@@ -115,6 +115,50 @@
       "properties": {
         "cdebug": { "type": "string" },
         "enroot": { "type": "string" }
+      }
+    },
+    "build": {
+      "type": "object",
+      "required": ["packer", "packer_plugins"],
+      "additionalProperties": false,
+      "properties": {
+        "packer": {
+          "type": "object",
+          "required": ["version", "sha256_linux_amd64", "zip_sha256_linux_amd64"],
+          "additionalProperties": false,
+          "properties": {
+            "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+            "sha256_linux_amd64": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "zip_sha256_linux_amd64": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        "packer_plugins": {
+          "type": "object",
+          "required": ["qemu", "proxmox"],
+          "additionalProperties": false,
+          "properties": {
+            "qemu": {
+              "type": "object",
+              "required": ["source", "version", "sha256_linux_amd64"],
+              "additionalProperties": false,
+              "properties": {
+                "source": { "type": "string" },
+                "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+                "sha256_linux_amd64": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+              }
+            },
+            "proxmox": {
+              "type": "object",
+              "required": ["source", "version", "sha256_linux_amd64"],
+              "additionalProperties": false,
+              "properties": {
+                "source": { "type": "string" },
+                "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+                "sha256_linux_amd64": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+              }
+            }
+          }
+        }
       }
     },
     "kernel": {

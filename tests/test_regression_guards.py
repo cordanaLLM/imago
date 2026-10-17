@@ -230,6 +230,8 @@ def test_packer_validates_the_accelerator(value: str, accepted: bool) -> None:
         check=False,
     )
     output = result.stdout + result.stderr
+    if result.returncode != 0 and "Unsupported Packer Core version" in output:
+        skip_or_fail(f"installed packer does not satisfy required_version: {output.strip()}", os.environ)
     assert (result.returncode == 0) is accepted, output
     if not accepted:
         assert "accelerator must be one of" in output

@@ -51,10 +51,14 @@ jobs:
         if: github.event_name == 'pull_request' && steps.filter.outputs.lint-packer != 'true'
         shell: bash
         run: echo "::notice title=Nothing to check::No path of filter lint-packer in .github/path-filters.yml changed."
+      - name: Resolve Packer version pin
+        id: packer-pin
+        if: github.event_name != 'pull_request' || steps.filter.outputs.lint-packer == 'true'
+        run: echo "version=$(jq -r .build.packer.version versions.json)" >> "$GITHUB_OUTPUT"
       - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789  # v3.4.0
         if: github.event_name != 'pull_request' || steps.filter.outputs.lint-packer == 'true'
         with:
-          version: "1.11.2"
+          version: ${{ steps.packer-pin.outputs.version }}
       - name: Validate Packer
         if: github.event_name != 'pull_request' || steps.filter.outputs.lint-packer == 'true'
         run: |
@@ -305,10 +309,14 @@ jobs:
         if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         with:
           python-version: "3.12"
+      - name: Resolve Packer version pin
+        id: packer-pin
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
+        run: echo "version=$(jq -r .build.packer.version versions.json)" >> "$GITHUB_OUTPUT"
       - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789  # v3.4.0
         if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         with:
-          version: "1.11.2"
+          version: ${{ steps.packer-pin.outputs.version }}
       - name: Install Dependencies
         if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         run: |

@@ -86,9 +86,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Resolve Packer version pin
+        id: packer-pin
+        run: echo "version=$(jq -r .build.packer.version versions.json)" >> "$GITHUB_OUTPUT"
       - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789 # v3.4.0
         with:
-          version: "1.11.2"
+          version: ${{ steps.packer-pin.outputs.version }}
       - name: Install QEMU, ISO Authoring and Zstd
         run: |
           sudo apt-get update

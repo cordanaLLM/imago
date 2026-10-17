@@ -214,6 +214,42 @@
       ],
       "depNameTemplate": "NVIDIA/enroot",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^versions\\.json$/"
+      ],
+      "matchStrings": [
+        "\"packer\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "hashicorp/packer",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^versions\\.json$/"
+      ],
+      "matchStrings": [
+        "\"qemu\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "hashicorp/packer-plugin-qemu",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^versions\\.json$/"
+      ],
+      "matchStrings": [
+        "\"proxmox\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "hashicorp/packer-plugin-proxmox",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ]
 }
