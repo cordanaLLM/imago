@@ -52,61 +52,101 @@ func Get(flavorID string) (Standard, error) {
 	return std, nil
 }
 
+// tierRules adds the requirements of each tier on top of the common baseline.
+var tierRules = map[string]func(*Standard, flavors.Flavor){
+	"containers":  enrichContainers,
+	"kubernetes":  enrichKubernetes,
+	"k3s":         enrichK3s,
+	"cloudnative": enrichCloudNative,
+	"ai-infer":    enrichAIInfer,
+	"homelab":     enrichHomelab,
+}
+
 func enrichTierStandard(std *Standard, fl flavors.Flavor) {
-	switch fl.TierID {
-	case "containers":
-		if strings.HasPrefix(fl.ID, "podman") {
-			std.RequiredPackages = append(std.RequiredPackages, "podman", "buildah", "skopeo")
-		} else {
-			std.RequiredPackages = append(std.RequiredPackages, "docker-ce", "docker-compose-plugin")
-			std.SystemdUnits = append(std.SystemdUnits, "docker.service")
-		}
-		if strings.Contains(fl.ID, "nvidia") || strings.Contains(fl.ID, "intel") || strings.Contains(fl.ID, "amd") {
-			std.CDISpecRequired = true
-		}
-	case "kubernetes":
-		std.SecurityBaseline = "CIS Kubernetes Benchmark v1.37 / CIS OS L2"
-		std.RequiredPackages = append(std.RequiredPackages, "containerd", "kubelet", "kubeadm", "kubectl")
-		std.KernelParameters["net.bridge.bridge-nf-call-iptables"] = "1"
-		std.KernelParameters["net.ipv4.ip_forward"] = "1"
-		std.SystemdUnits = append(std.SystemdUnits, "containerd.service", "kubelet.service")
-	case "k3s":
-		std.RequiredPackages = append(std.RequiredPackages, "curl", "iptables")
-		if fl.ID == "k3s-server-generic" {
-			std.SystemdUnits = append(std.SystemdUnits, "k3s.service")
-		} else {
-			std.SystemdUnits = append(std.SystemdUnits, "k3s-agent.service")
-		}
-		std.MaxIdleMemoryMB = 300
-	case "cloudnative":
-		if fl.ID == "cloudnative-storage" {
-			std.RequiredPackages = append(std.RequiredPackages, "zfsutils-linux", "nvme-cli", "multipath-tools")
-		} else if fl.ID == "cloudnative-pg" {
-			std.KernelParameters["vm.overcommit_memory"] = "2"
-			std.KernelParameters["vm.overcommit_ratio"] = "80"
-		}
-	case "ai-infer":
-		std.RequiredPackages = append(std.RequiredPackages, "numactl", "docker-ce")
-		std.KernelParameters["vm.zone_reclaim_mode"] = "0"
-		if strings.Contains(fl.ID, "nvidia") || strings.Contains(fl.ID, "intel") || strings.Contains(fl.ID, "amd") {
-			std.CDISpecRequired = true
-		}
-	case "homelab":
-		if fl.ID == "appliance-vision-nvr" {
-			std.RequiredPackages = append(std.RequiredPackages, "gasket-dkms", "intel-media-va-driver-non-free", "docker-ce")
-			std.CDISpecRequired = true
-		} else if fl.ID == "appliance-gateway-dns" {
-			std.RequiredPackages = append(std.RequiredPackages, "wireguard", "iptables")
-			std.MaxIdleMemoryMB = 150
-		} else if fl.ID == "appliance-game-server" {
-			std.RequiredPackages = append(std.RequiredPackages, "steamcmd", "docker-ce")
-			std.KernelParameters["net.core.rmem_max"] = "16777216"
-			std.KernelParameters["net.core.wmem_max"] = "16777216"
-		} else if fl.ID == "appliance-media-server" {
-			std.RequiredPackages = append(std.RequiredPackages, "nfs-common", "cifs-utils", "docker-ce")
-		} else if fl.ID == "appliance-ci-runner" {
-			std.RequiredPackages = append(std.RequiredPackages, "docker-ce", "git-lfs")
-		}
+	if rule, ok := tierRules[fl.TierID]; ok {
+		rule(std, fl)
+	}
+}
+
+// hasGPUVendor reports whether the flavor ID names a GPU vendor whose devices need a CDI spec.
+func hasGPUVendor(id string) bool {
+	return strings.Contains(id, "nvidia") || strings.Contains(id, "intel") || strings.Contains(id, "amd")
+}
+
+func enrichContainers(std *Standard, fl flavors.Flavor) {
+	if strings.HasPrefix(fl.ID, "podman") {
+		std.RequiredPackages = append(std.RequiredPackages, "podman", "buildah", "skopeo")
+	} else {
+		std.RequiredPackages = append(std.RequiredPackages, "docker-ce", "docker-compose-plugin")
+		std.SystemdUnits = append(std.SystemdUnits, "docker.service")
+	}
+	if hasGPUVendor(fl.ID) {
+		std.CDISpecRequired = true
+	}
+}
+
+func enrichKubernetes(std *Standard, _ flavors.Flavor) {
+	std.SecurityBaseline = "CIS Kubernetes Benchmark v1.37 / CIS OS L2"
+	std.RequiredPackages = append(std.RequiredPackages, "containerd", "kubelet", "kubeadm", "kubectl")
+	std.KernelParameters["net.bridge.bridge-nf-call-iptables"] = "1"
+	std.KernelParameters["net.ipv4.ip_forward"] = "1"
+	std.SystemdUnits = append(std.SystemdUnits, "containerd.service", "kubelet.service")
+}
+
+func enrichK3s(std *Standard, fl flavors.Flavor) {
+	std.RequiredPackages = append(std.RequiredPackages, "curl", "iptables")
+	if fl.ID == "k3s-server-generic" {
+		std.SystemdUnits = append(std.SystemdUnits, "k3s.service")
+	} else {
+		std.SystemdUnits = append(std.SystemdUnits, "k3s-agent.service")
+	}
+	std.MaxIdleMemoryMB = 300
+}
+
+func enrichCloudNative(std *Standard, fl flavors.Flavor) {
+	switch fl.ID {
+	case "cloudnative-storage":
+		std.RequiredPackages = append(std.RequiredPackages, "zfsutils-linux", "nvme-cli", "multipath-tools")
+	case "cloudnative-pg":
+		std.KernelParameters["vm.overcommit_memory"] = "2"
+		std.KernelParameters["vm.overcommit_ratio"] = "80"
+	}
+}
+
+func enrichAIInfer(std *Standard, fl flavors.Flavor) {
+	std.RequiredPackages = append(std.RequiredPackages, "numactl", "docker-ce")
+	std.KernelParameters["vm.zone_reclaim_mode"] = "0"
+	if hasGPUVendor(fl.ID) {
+		std.CDISpecRequired = true
+	}
+}
+
+// homelabRules holds the requirements of each appliance; the homelab tier has no common part.
+var homelabRules = map[string]func(*Standard){
+	"appliance-vision-nvr": func(std *Standard) {
+		std.RequiredPackages = append(std.RequiredPackages, "gasket-dkms", "intel-media-va-driver-non-free", "docker-ce")
+		std.CDISpecRequired = true
+	},
+	"appliance-gateway-dns": func(std *Standard) {
+		std.RequiredPackages = append(std.RequiredPackages, "wireguard", "iptables")
+		std.MaxIdleMemoryMB = 150
+	},
+	"appliance-game-server": func(std *Standard) {
+		std.RequiredPackages = append(std.RequiredPackages, "steamcmd", "docker-ce")
+		std.KernelParameters["net.core.rmem_max"] = "16777216"
+		std.KernelParameters["net.core.wmem_max"] = "16777216"
+	},
+	"appliance-media-server": func(std *Standard) {
+		std.RequiredPackages = append(std.RequiredPackages, "nfs-common", "cifs-utils", "docker-ce")
+	},
+	"appliance-ci-runner": func(std *Standard) {
+		std.RequiredPackages = append(std.RequiredPackages, "docker-ce", "git-lfs")
+	},
+}
+
+func enrichHomelab(std *Standard, fl flavors.Flavor) {
+	if rule, ok := homelabRules[fl.ID]; ok {
+		rule(std)
 	}
 }
 

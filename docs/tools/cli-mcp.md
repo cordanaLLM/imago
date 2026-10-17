@@ -400,7 +400,8 @@ Both manifests declare the stdio Hindsight bridge and optional cluster knowledge
       "args": ["scripts/hindsight_mcp_server.py"],
       "env": {
         "HINDSIGHT_URL": "http://127.0.0.1:8888",
-        "HINDSIGHT_BANK": "lusoris-cloud-images"
+        "HINDSIGHT_BANK": "lusoris-cloud-images",
+        "HINDSIGHT_API_KEY": "${HINDSIGHT_API_KEY:-}"
       }
     },
     "cauda-kb": {
@@ -414,6 +415,8 @@ Both manifests declare the stdio Hindsight bridge and optional cluster knowledge
 }
 ```
 
+`HINDSIGHT_API_KEY` is required against the cluster deployment: export it in the shell that starts the client, with the value of the deployment's tenant key (secret `hindsight-tenant-api-key`, read by the server as `HINDSIGHT_API_TENANT_API_KEY`). The bridge sends it as `Authorization: Bearer <key>` on every request. The manifests only reference it, so the key never enters the repository; a client that does not expand `${...}` passes the placeholder through, and the bridge treats that as unset.
+
 ### 4.2 Registered Memory Tools
 
 | Tool Identifier | Parameters | Description |
@@ -421,8 +424,10 @@ Both manifests declare the stdio Hindsight bridge and optional cluster knowledge
 | **`hindsight_recall`** | `query` (string), `top_k` (int, default 5), `bank_id` (string) | Semantic hybrid retrieval over durable architectural rules, bug root causes, and previous decisions |
 | **`hindsight_retain`** | `content` (string), `context` (string), `bank_id` (string) | Persists discoveries, rationale, and constraints into Hindsight memory |
 | **`hindsight_reflect`** | `bank_id` (string) | Triggers observation consolidation and mental model synthesis |
-| **`hindsight_status`** | None | Probes backend connectivity, active bank count, and local buffer state |
+| **`hindsight_status`** | None | Probes the backend and reports `ONLINE`, `UNREACHABLE` (no HTTP response: start the port-forward), `UNAUTHORISED` (HTTP 401 or 403: `HINDSIGHT_API_KEY` is not set or was rejected) or `ERROR` (any other status, with the server's answer), plus the count of buffered facts still pending |
 | **`hindsight_list_banks`** | None | Lists available fleet memory banks in the tenant |
+
+When a call fails, `hindsight_retain` stores the fact in `.workingdir/memory/hindsight-local-buffer.json` and names the failure. The first call that succeeds afterwards, whichever tool makes it, sends each pending fact to its own bank and marks it synced; it stops at the first refused fact and leaves the rest pending. An empty buffer costs no request.
 
 ### 4.3 Zero-Leak Privacy Guard
 
