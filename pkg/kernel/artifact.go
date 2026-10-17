@@ -190,22 +190,30 @@ func (m *ArtifactManifest) validateArtifacts() error {
 	seen := make(map[string]struct{}, len(m.Artifacts))
 	for i, a := range m.Artifacts {
 		field := fmt.Sprintf("artifacts[%d]", i)
-		if !safeBasename(a.Name) {
-			return m.fieldErr(field+".name", "must be a safe basename without path separators or ..")
-		}
-		if a.Name == ChecksumsFile || a.Name == BundleFile {
-			return m.fieldErr(field+".name", a.Name+" is verified separately and must not be listed")
-		}
-		if !hexDigestRegex.MatchString(a.SHA256) {
-			return m.fieldErr(field+".sha256", "must be 64 lowercase hex characters")
-		}
-		if a.Size < 0 || a.Size > MaxArtifactBytes {
-			return m.fieldErr(field+".size", fmt.Sprintf("must be 0..%d bytes", MaxArtifactBytes))
+		if err := m.validateArtifact(field, a); err != nil {
+			return err
 		}
 		if _, dup := seen[a.Name]; dup {
 			return m.fieldErr(field+".name", "duplicate artifact "+a.Name)
 		}
 		seen[a.Name] = struct{}{}
+	}
+	return nil
+}
+
+// validateArtifact checks one entry on its own; validateArtifacts checks the list.
+func (m *ArtifactManifest) validateArtifact(field string, a Artifact) error {
+	if !safeBasename(a.Name) {
+		return m.fieldErr(field+".name", "must be a safe basename without path separators or ..")
+	}
+	if a.Name == ChecksumsFile || a.Name == BundleFile {
+		return m.fieldErr(field+".name", a.Name+" is verified separately and must not be listed")
+	}
+	if !hexDigestRegex.MatchString(a.SHA256) {
+		return m.fieldErr(field+".sha256", "must be 64 lowercase hex characters")
+	}
+	if a.Size < 0 || a.Size > MaxArtifactBytes {
+		return m.fieldErr(field+".size", fmt.Sprintf("must be 0..%d bytes", MaxArtifactBytes))
 	}
 	return nil
 }
