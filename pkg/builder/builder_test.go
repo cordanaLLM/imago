@@ -3,50 +3,72 @@ package builder_test
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/golusoris/golusoris/core/clock"
-
 	"github.com/cordanaLLM/imago/pkg/builder"
 )
 
-func TestDispatchDryRun(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	req := builder.Request{
-		Backend: builder.BackendLocal,
-		Flavor:  "base-generic",
-		DryRun:  true,
-		Clock:   clock.NewFake(),
-	}
-
-	res, err := builder.Dispatch(ctx, req)
-	require.NoError(t, err)
-	assert.True(t, res.Success)
-	assert.Contains(t, res.Message, "dry-run")
+// knownBackends lists every backend Validate accepts; none has an executor.
+var knownBackends = []builder.Backend{
+	builder.BackendLocal, builder.BackendGitea, builder.BackendProxmox,
+	builder.BackendGitLab, builder.BackendWoodpecker, builder.BackendHarbor,
+	builder.BackendMinIO, builder.BackendJenkins, builder.BackendGitHub,
 }
 
-func TestDispatchInvalidFlavor(t *testing.T) {
-	ctx := context.Background()
-	req := builder.Request{
-		Backend: builder.BackendLocal,
-		Flavor:  "invalid-flavor-name",
-		Clock:   clock.NewFake(),
+// assertNoExecutionEvidence refuses a result that carries anything a caller
+// could read as proof of a build: success, a timestamp, a job id or an artifact.
+func assertNoExecutionEvidence(t *testing.T, res builder.Result) {
+	t.Helper()
+	assert.False(t, res.Success)
+	out, err := json.Marshal(res)
+	require.NoError(t, err)
+	var fields map[string]any
+	require.NoError(t, json.Unmarshal(out, &fields))
+	for _, key := range []string{"triggered_at", "pipeline_id", "artifact_url"} {
+		assert.NotContains(t, fields, key)
 	}
+}
 
-	_, err := builder.Dispatch(ctx, req)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid flavor")
+// Every known backend once reported success without invoking anything. Each
+// one is its own planted false-success case: a non-dry-run request must fail
+// with the typed unavailable error and carry no execution evidence.
+func TestDispatchRefusesEveryBackendWithoutExecutor(t *testing.T) {
+	for _, b := range knownBackends {
+		t.Run(string(b), func(t *testing.T) {
+			res, err := builder.Dispatch(context.Background(), builder.Request{Backend: b, Flavor: "base-generic"})
+			require.ErrorIs(t, err, builder.ErrBackendUnavailable)
+			var unavailable *builder.BackendUnavailableError
+			require.True(t, errors.As(err, &unavailable))
+			assert.Equal(t, b, unavailable.Backend)
+			assert.Equal(t, builder.StatusUnavailable, res.Status)
+			assert.False(t, res.DryRun)
+			assertNoExecutionEvidence(t, res)
+		})
+	}
+}
+
+// A dry run of every known backend reports a plan, never a success.
+func TestDispatchDryRunReportsPlanOnly(t *testing.T) {
+	for _, b := range knownBackends {
+		t.Run(string(b), func(t *testing.T) {
+			res, err := builder.Dispatch(context.Background(), builder.Request{Backend: b, Flavor: "base-generic", DryRun: true})
+			require.NoError(t, err)
+			assert.Equal(t, builder.StatusPlanned, res.Status)
+			assert.True(t, res.DryRun)
+			assert.Contains(t, res.Message, "no build was executed")
+			assertNoExecutionEvidence(t, res)
+		})
+	}
 }
 
 // A dry run validates like a real dispatch: an unknown backend or flavor is
-// refused, not reported as a successful plan.
-func TestDispatchDryRunRefusesUnknownInput(t *testing.T) {
+// refused, not reported as a plan.
+func TestDispatchRefusesUnknownInput(t *testing.T) {
 	cases := map[string]builder.Request{
 		"unknown-backend": {Backend: "bogus", Flavor: "base-generic"},
 		"empty-backend":   {Backend: "", Flavor: "base-generic"},
@@ -54,50 +76,26 @@ func TestDispatchDryRunRefusesUnknownInput(t *testing.T) {
 		"unknown-flavor":  {Backend: builder.BackendLocal, Flavor: "invalid-flavor-name"},
 	}
 	for name, req := range cases {
-		t.Run(name, func(t *testing.T) {
-			req.DryRun = true
-			req.Clock = clock.NewFake()
-			res, err := builder.Dispatch(context.Background(), req)
-			require.Error(t, err)
-			assert.False(t, res.Success)
-		})
+		for _, dryRun := range []bool{true, false} {
+			t.Run(name, func(t *testing.T) {
+				req.DryRun = dryRun
+				res, err := builder.Dispatch(context.Background(), req)
+				require.Error(t, err)
+				assert.NotErrorIs(t, err, builder.ErrBackendUnavailable)
+				assert.Empty(t, res.Status)
+				assertNoExecutionEvidence(t, res)
+			})
+		}
 	}
 	require.NoError(t, builder.Validate(builder.BackendGitHub, "appliance-game-server"))
 }
 
-func TestDispatchRequiresClock(t *testing.T) {
-	_, err := builder.Dispatch(context.Background(), builder.Request{
-		Backend: builder.BackendLocal,
-		Flavor:  "base-generic",
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "clock is required")
-}
-
-func TestDispatchBackends(t *testing.T) {
-	ctx := context.Background()
-	// Each backend must reach its own dispatcher: the message names it.
-	backends := map[builder.Backend]string{
-		builder.BackendLocal:      "local build command formulated",
-		builder.BackendGitea:      "GITEA Actions workflow dispatch",
-		builder.BackendProxmox:    "Proxmox VE template clone task",
-		builder.BackendGitLab:     "GitLab CI pipeline trigger",
-		builder.BackendWoodpecker: "Woodpecker CI build triggered",
-		builder.BackendHarbor:     "Harbor OCI artifact verification",
-		builder.BackendMinIO:      "MinIO/S3 artifact storage target",
-		builder.BackendJenkins:    "Jenkins remote job trigger",
-		builder.BackendGitHub:     "GITHUB Actions workflow dispatch",
-	}
-
-	for b, want := range backends {
-		req := builder.Request{
-			Backend: b,
-			Flavor:  "base-generic",
-			Clock:   clock.NewFake(),
-		}
-		res, err := builder.Dispatch(ctx, req)
-		require.NoError(t, err, "backend %s should succeed", b)
-		assert.True(t, res.Success)
-		assert.Contains(t, res.Message, want, "backend %s", b)
-	}
+// A cancelled context ends the request before validation reports anything.
+func TestDispatchRefusesCancelledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	res, err := builder.Dispatch(ctx, builder.Request{Backend: builder.BackendLocal, Flavor: "base-generic", DryRun: true})
+	require.ErrorIs(t, err, context.Canceled)
+	assert.Empty(t, res.Status)
+	assertNoExecutionEvidence(t, res)
 }

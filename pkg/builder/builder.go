@@ -1,6 +1,7 @@
 // Copyright 2026 Lusoris
-// Package builder provides a multi-backend build dispatcher supporting local
-// Packer execution and self-hosted/cloud CI pipelines.
+// Package builder validates image build plans for local Packer and self-hosted
+// or cloud CI backends. No backend has an executor yet: a request that would
+// execute fails with BackendUnavailableError, and a dry run reports a plan.
 package builder
 
 import (
@@ -8,10 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strings"
 	"time"
-
-	"github.com/golusoris/golusoris/core/clock"
 
 	"github.com/cordanaLLM/imago/pkg/flavors"
 )
@@ -31,6 +29,14 @@ const (
 	BackendGitHub     Backend = "github"
 )
 
+// Status values a Result carries once the request passed validation.
+const (
+	// StatusPlanned marks a validated dry run; nothing was executed.
+	StatusPlanned = "planned"
+	// StatusUnavailable marks a request whose backend has no executor.
+	StatusUnavailable = "unavailable"
+)
+
 // Request defines the build parameters.
 type Request struct {
 	Backend    Backend       `json:"backend"`
@@ -41,23 +47,38 @@ type Request struct {
 	Ref        string        `json:"ref,omitempty"`
 	DryRun     bool          `json:"dry_run"`
 	Timeout    time.Duration `json:"timeout"`
-	// Clock supplies "now" for TriggeredAt and pipeline identifiers. It is
-	// injected (golusoris core/clock) so dispatch timing is testable.
-	Clock clock.Clock `json:"-"`
 }
 
-// Result describes the outcome of a build dispatch.
+// Result describes a validated plan or a refused dispatch. Success is reserved
+// for an execution a backend acknowledged; a valid dry run is not one, and no
+// backend has an executor, so Success is false in every result Dispatch returns.
 type Result struct {
-	Backend     Backend   `json:"backend"`
-	Flavor      string    `json:"flavor"`
-	Success     bool      `json:"success"`
-	Message     string    `json:"message"`
-	TriggeredAt time.Time `json:"triggered_at"`
-	PipelineID  string    `json:"pipeline_id,omitempty"`
-	ArtifactURL string    `json:"artifact_url,omitempty"`
+	Backend Backend `json:"backend"`
+	Flavor  string  `json:"flavor"`
+	Success bool    `json:"success"`
+	Status  string  `json:"status"`
+	DryRun  bool    `json:"dry_run"`
+	Message string  `json:"message"`
 }
 
-// backends lists every backend Dispatch routes; Validate refuses any other.
+// ErrBackendUnavailable identifies a known backend without an executor.
+var ErrBackendUnavailable = errors.New("build backend not implemented")
+
+// BackendUnavailableError names the backend a build request needed.
+type BackendUnavailableError struct {
+	Backend Backend
+}
+
+func (e *BackendUnavailableError) Error() string {
+	return fmt.Sprintf("builder: backend %q: %v", e.Backend, ErrBackendUnavailable)
+}
+
+// Unwrap supports errors.Is with ErrBackendUnavailable.
+func (e *BackendUnavailableError) Unwrap() error {
+	return ErrBackendUnavailable
+}
+
+// backends lists every backend Validate accepts.
 var backends = []Backend{
 	BackendLocal, BackendGitea, BackendProxmox, BackendGitLab, BackendWoodpecker,
 	BackendHarbor, BackendMinIO, BackendJenkins, BackendGitHub,
@@ -75,104 +96,24 @@ func Validate(backend Backend, flavor string) error {
 	return nil
 }
 
-// Dispatch validates the build request and routes it to the selected backend.
+// Dispatch validates the build request. A dry run returns a plan with status
+// StatusPlanned; any other request returns BackendUnavailableError without
+// performing I/O, because no backend has an executor.
 func Dispatch(ctx context.Context, req Request) (Result, error) {
+	res := Result{Backend: req.Backend, Flavor: req.Flavor, DryRun: req.DryRun}
+	if err := ctx.Err(); err != nil {
+		return res, fmt.Errorf("builder: request context: %w", err)
+	}
 	if err := Validate(req.Backend, req.Flavor); err != nil {
-		return Result{}, err
+		return res, err
 	}
-
-	if req.Clock == nil {
-		return Result{}, errors.New("builder: request clock is required")
-	}
-
-	if req.Timeout == 0 {
-		req.Timeout = 10 * time.Minute
-	}
-
-	res := Result{
-		Backend:     req.Backend,
-		Flavor:      req.Flavor,
-		TriggeredAt: req.Clock.Now().UTC(),
-	}
-
 	if req.DryRun {
-		res.Success = true
-		res.Message = fmt.Sprintf("dry-run: validated build request for flavor %q on backend %q", req.Flavor, req.Backend)
+		res.Status = StatusPlanned
+		res.Message = fmt.Sprintf("dry-run: validated plan for flavor %q on backend %q; no build was executed", req.Flavor, req.Backend)
 		return res, nil
 	}
-
-	dispatch, ok := dispatchers[req.Backend]
-	if !ok {
-		return Result{}, fmt.Errorf("builder: unsupported backend %q", req.Backend)
-	}
-	return dispatch(ctx, req, res)
-}
-
-// dispatchers routes each backend of the backends list; Validate has refused any other.
-var dispatchers = map[Backend]func(context.Context, Request, Result) (Result, error){
-	BackendLocal:      dispatchLocal,
-	BackendGitea:      dispatchWorkflow,
-	BackendGitHub:     dispatchWorkflow,
-	BackendProxmox:    dispatchProxmox,
-	BackendGitLab:     dispatchGitLab,
-	BackendWoodpecker: dispatchWoodpecker,
-	BackendHarbor:     dispatchHarbor,
-	BackendMinIO:      dispatchMinIO,
-	BackendJenkins:    dispatchJenkins,
-}
-
-func dispatchLocal(ctx context.Context, req Request, res Result) (Result, error) {
-	res.Success = true
-	res.Message = fmt.Sprintf("local build command formulated: packer build -only=%s.qemu.image packer/", req.Flavor)
-	return res, nil
-}
-
-func dispatchWorkflow(ctx context.Context, req Request, res Result) (Result, error) {
-	backendName := strings.ToUpper(string(req.Backend))
-	res.Success = true
-	res.PipelineID = fmt.Sprintf("%s-job-%d", string(req.Backend), req.Clock.Now().Unix())
-	res.Message = fmt.Sprintf("%s Actions workflow dispatch dispatched for flavor %q", backendName, req.Flavor)
-	return res, nil
-}
-
-func dispatchProxmox(ctx context.Context, req Request, res Result) (Result, error) {
-	res.Success = true
-	res.PipelineID = fmt.Sprintf("pve-clone-%s-%d", req.Flavor, req.Clock.Now().Unix())
-	res.Message = fmt.Sprintf("Proxmox VE template clone task scheduled for flavor %q", req.Flavor)
-	return res, nil
-}
-
-func dispatchGitLab(ctx context.Context, req Request, res Result) (Result, error) {
-	res.Success = true
-	res.PipelineID = fmt.Sprintf("gl-pipeline-%d", req.Clock.Now().Unix())
-	res.Message = fmt.Sprintf("GitLab CI pipeline trigger scheduled for flavor %q", req.Flavor)
-	return res, nil
-}
-
-func dispatchWoodpecker(ctx context.Context, req Request, res Result) (Result, error) {
-	res.Success = true
-	res.PipelineID = fmt.Sprintf("wp-build-%d", req.Clock.Now().Unix())
-	res.Message = fmt.Sprintf("Woodpecker CI build triggered for flavor %q", req.Flavor)
-	return res, nil
-}
-
-func dispatchHarbor(ctx context.Context, req Request, res Result) (Result, error) {
-	res.Success = true
-	res.ArtifactURL = fmt.Sprintf("harbor.example.com/lusoris/images:%s", req.Flavor)
-	res.Message = fmt.Sprintf("Harbor OCI artifact verification completed for flavor %q", req.Flavor)
-	return res, nil
-}
-
-func dispatchMinIO(ctx context.Context, req Request, res Result) (Result, error) {
-	res.Success = true
-	res.ArtifactURL = fmt.Sprintf("s3://lusoris-images/releases/%s.qcow2.zst", req.Flavor)
-	res.Message = fmt.Sprintf("MinIO/S3 artifact storage target verified for flavor %q", req.Flavor)
-	return res, nil
-}
-
-func dispatchJenkins(ctx context.Context, req Request, res Result) (Result, error) {
-	res.Success = true
-	res.PipelineID = fmt.Sprintf("jenkins-build-%d", req.Clock.Now().Unix())
-	res.Message = fmt.Sprintf("Jenkins remote job trigger scheduled for flavor %q", req.Flavor)
-	return res, nil
+	err := &BackendUnavailableError{Backend: req.Backend}
+	res.Status = StatusUnavailable
+	res.Message = err.Error()
+	return res, err
 }

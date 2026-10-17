@@ -119,7 +119,7 @@ var toolCases = []toolCase{
 	{name: "apply_flavor_invalid", tool: "apply_flavor", args: map[string]any{"flavor_id": "invalid-flavor", "dry_run": true}, isError: true},
 	{name: "trigger_build_dry_run", tool: "trigger_build", args: map[string]any{
 		"flavor": "base-generic", "backend": "local", "dry_run": true,
-	}, want: []string{"base-generic", "local"}},
+	}, want: []string{"base-generic", "local", `"status": "planned"`, `"success": false`}},
 	{name: "trigger_build_invalid_flavor", tool: "trigger_build", args: map[string]any{
 		"flavor": "invalid-flavor-xyz", "backend": "local", "dry_run": true,
 	}, isError: true},
