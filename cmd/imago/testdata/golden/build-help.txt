@@ -1,0 +1,13 @@
+Build locally with Packer; other backends refuse execution
+
+Usage:
+  imago build [flags]
+
+Flags:
+  -b, --backend string      Build backend (local, gitea, proxmox, gitlab, woodpecker, harbor, minio, jenkins, github) (default "local")
+      --dry-run             Validate a build plan without execution
+  -f, --flavor string       Flavor to build (default "base-generic")
+  -h, --help                help for build
+      --output-dir string   Artifact directory (logs in logs/) (default "./output-images")
+      --packer-dir string   Packer template directory (default "./packer")
+      --versions string     Manifest with build toolchain pins (default "versions.json")

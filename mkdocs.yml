@@ -128,6 +128,7 @@ nav:
       - "0029: A Planning Step Reopens When Its Acceptance Is Unmet": adr/0029-a-planning-step-reopens-when-its-acceptance-is-unmet.md
       - "0030: The Kernel Requirement Decoder Follows the Schema Owner": adr/0030-kernel-requirement-decoder-follows-the-schema-owner.md
       - "0031: Fail-Closed Build Dispatch": adr/0031-fail-closed-build-dispatch.md
+      - "0032: Local Packer Executor": adr/0032-local-packer-executor.md
       - "0018: NAS & Storage Appliance Ecosystem": adr/0018-nas-and-storage-appliance-ecosystem.md
   - Engineering & Governance:
       - Engineering Principles: principles.md

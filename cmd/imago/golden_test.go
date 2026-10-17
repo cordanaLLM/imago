@@ -30,6 +30,7 @@ var goldenCases = []struct {
 	args []string
 }{
 	{"root-help", []string{"--help"}},
+	{"build-help", []string{"build", "--help"}},
 	{"flavors-list", []string{"flavors", "list"}},
 	{"standards-list", []string{"standards", "list"}},
 	{"epics-list", []string{"epics", "list", "--path", filepath.Join(goldenDir, "epics.json")}},

@@ -274,7 +274,7 @@ func inspectComplianceHandler(_ context.Context, req *coremcp.CallToolRequest) (
 
 func registerExecutionTools(s *coremcp.Server, deps Deps) {
 	s.AddTool(tool("trigger_build",
-		"Validate an image build plan with dry_run=true. No backend has an executor: a confirmed request returns an error. Requests stage a confirmation card unless confirmed=true or dry_run=true; confirmation does not imply execution.",
+		"Validate an image build plan with dry_run=true. MCP has no execution backends: a confirmed request returns an error. For local execution use the CLI: imago build --backend local. Requests stage a confirmation card unless confirmed=true or dry_run=true; confirmation does not imply execution.",
 		`{"type":"object","required":["flavor","backend"],"properties":{"flavor":{"type":"string"},"backend":{"type":"string"},"dry_run":{"type":"boolean"},"confirmed":{"type":"boolean"}}}`,
 	), triggerBuildHandler(deps))
 	s.AddTool(tool("apply_flavor",
@@ -326,6 +326,9 @@ func dispatchBuild(ctx context.Context, backend, flavor string, dryRun bool, pre
 		DryRun:  dryRun,
 	})
 	if err != nil {
+		if backend == string(builder.BackendLocal) && errors.Is(err, builder.ErrBackendUnavailable) {
+			err = fmt.Errorf("%w; local executor available from the CLI: imago build --backend local", err)
+		}
 		return errorResult(err), nil
 	}
 	out, err := json.MarshalIndent(res, "", "  ")
