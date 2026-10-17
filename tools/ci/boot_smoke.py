@@ -18,8 +18,10 @@ Usage:
 """
 
 import argparse
+import os
 import pathlib
 import secrets
+import signal
 import subprocess
 import sys
 import tempfile
@@ -91,6 +93,21 @@ def marker_line(log: str, nonce: str) -> str:
         if f"{MARKER} {nonce}" in line:
             return line.strip()
     return ""
+
+
+def signal_group(pgid: object, sig: int = signal.SIGKILL) -> bool:
+    """Signal one foreign process group; refuse any id that could reach other processes.
+
+    `os.killpg(1, sig)` is `kill(-1, sig)`: it signals every process the user owns. A
+    `MagicMock` pid passes `operator.index()` as 1, so only a real `int` above 1 that is not
+    this process's own group is signalled. Returns whether the signal was sent.
+    """
+    if not isinstance(pgid, int) or isinstance(pgid, bool) or pgid <= 1:
+        return False
+    if pgid == os.getpgrp():
+        return False
+    os.killpg(pgid, sig)
+    return True
 
 
 def stop(process: subprocess.Popen) -> None:
