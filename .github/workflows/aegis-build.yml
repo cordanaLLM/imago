@@ -143,6 +143,7 @@ jobs:
             --correlation-id "${cid}" \
             --serial-log "${out_dir}/serial.log" \
             --evidence "${out_dir}/boot-evidence.json" \
+            --failure-evidence "${out_dir}/boot-failure.json" \
             --deadline 600
           for artifact in "${out_dir}/serial.log" "${out_dir}/boot-evidence.json"; do
             size=$(stat -c %s "${artifact}")
@@ -151,6 +152,20 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Keep the Boot Evidence of a Failed Run
+        # A failed run publishes nothing, so the serial log and the failure record would be lost
+        # with the runner. They stay three days, long enough to read the cause of a boot failure.
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aegis-boot-failure-${{ github.run_attempt }}
+          path: |
+            aegis-output/serial.log
+            aegis-output/boot-failure.json
+            aegis-output/boot-evidence.json
+          retention-days: 3
+          if-no-files-found: warn
 
       - name: Generate Checksums
         run: |

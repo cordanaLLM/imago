@@ -44,7 +44,8 @@ Several architectural and environmental constraints govern this execution:
      As documented in `systemd-stub(7)` (section "SMBIOS Type 11 strings", string added in systemd 254; read from the systemd 262 man page), `systemd-stub` reads `io.systemd.stub.kernel-cmdline-extra` unless it detects a confidential computing environment, measures the value into PCR12, and adds it to the kernel command line. Secure Boot state does not gate this string; the hosted runner is not a confidential guest;
    - Polls for the systemd target success marker (matching `Reached target multi-user.target`, `Reached target Multi-User System`, or `Startup finished in`) within a hard 600-second deadline;
    - Ensures all spawned process groups (QEMU, swtpm) are cleanly terminated on every exit path;
-   - Generates `boot-evidence.json` matching schema `imago.aegis.boot-evidence.v1`.
+   - Generates `boot-evidence.json` matching schema `imago.aegis.boot-evidence.v1`;
+   - On a failed boot, writes `boot-failure.json` (`imago.aegis.boot-failure.v1`, a separate schema so a failure record never passes for boot evidence), and the workflow keeps it with `serial.log` as a three-day run artifact under `if: failure()`. Run 39075280378 timed out after 600 seconds, and its serial log was lost with the runner.
 6. **Keyless Signing & Evidence Packaging**:
    - `SHA256SUMS` is computed over all released assets: `aegis-os.raw`, `aegis-os.efi`, `aegis-os.vmlinuz`, `aegis-os.initrd`, `aegis-os.roothash`, `boot-evidence.json`, and `serial.log`.
    - Sigstore Cosign (`sigstore/cosign-installer` pinned to `d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1`) signs `SHA256SUMS` keylessly to produce `SHA256SUMS.bundle`.
