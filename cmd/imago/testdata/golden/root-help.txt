@@ -8,7 +8,7 @@ Available Commands:
   apply       In-place live host / SSH provisioning (imageless execution)
   audit       Execute repository health audit script
   boot        Generate microVM direct kernel boot command
-  build       Dispatch an image build locally or to self-hosted CI backends
+  build       Validate an image build plan; no build backend has an executor yet
   cloud-init  Generate hardened cloud-init configuration
   completion  Generate the autocompletion script for the specified shell
   epics       Inspect tracked architectural and operational recurring epics

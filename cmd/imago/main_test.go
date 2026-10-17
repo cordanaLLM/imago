@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/cordanaLLM/imago/pkg/aegis"
+	"github.com/cordanaLLM/imago/pkg/builder"
 	"github.com/cordanaLLM/imago/pkg/kernel"
 )
 
@@ -140,7 +141,29 @@ func TestBootCommand(t *testing.T) {
 func TestBuildCommand(t *testing.T) {
 	out, err := executeCommand("build", "--flavor=base-generic", "--backend=local", "--dry-run")
 	require.NoError(t, err)
-	assert.Contains(t, out, "dry-run:")
+	assert.Contains(t, out, "==> Build plan (planned): dry-run:")
+	assert.Contains(t, out, "no build was executed")
+}
+
+// Every backend is a planted false-success case: without --dry-run the command
+// fails, names the missing executor and prints nothing that reads as a build.
+func TestBuildCommandRefusesEveryBackendWithoutExecutor(t *testing.T) {
+	for _, backend := range []string{"local", "gitea", "proxmox", "gitlab", "woodpecker", "harbor", "minio", "jenkins", "github"} {
+		t.Run(backend, func(t *testing.T) {
+			out, err := executeCommand("build", "--flavor=base-generic", "--backend="+backend)
+			require.ErrorIs(t, err, builder.ErrBackendUnavailable)
+			assert.NotContains(t, out, "==> Build")
+			assert.NotContains(t, out, "Pipeline ID")
+			assert.NotContains(t, out, "Artifact")
+		})
+	}
+}
+
+func TestBuildCommandDryRunRefusesUnknownBackend(t *testing.T) {
+	out, err := executeCommand("build", "--backend=unknown", "--dry-run")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported backend")
+	assert.NotContains(t, out, "==> Build")
 }
 
 func TestAegisValidate(t *testing.T) {

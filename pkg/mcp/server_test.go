@@ -24,7 +24,7 @@ func newTestServer(t *testing.T, logger *slog.Logger) *mcp.Server {
 		&sdkmcp.ServerOptions{Logger: logger},
 	)
 	fc := clock.NewFake()
-	require.NoError(t, mcp.RegisterTools(s, mcp.Deps{Stager: mcp.NewStager(fc), Clock: fc}))
+	require.NoError(t, mcp.RegisterTools(s, mcp.Deps{Stager: mcp.NewStager(fc)}))
 	return s
 }
 
@@ -39,6 +39,6 @@ func TestRegisterToolsRejectsMissingDeps(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "required")
 
-	err = mcp.RegisterTools(nil, mcp.Deps{Stager: mcp.NewStager(clock.NewFake()), Clock: clock.NewFake()})
+	err = mcp.RegisterTools(nil, mcp.Deps{Stager: mcp.NewStager(clock.NewFake())})
 	assert.Error(t, err)
 }

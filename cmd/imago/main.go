@@ -233,42 +233,33 @@ func newCloudInitCmd() *cobra.Command {
 func newBuildCmd() *cobra.Command {
 	var flavor, backend string
 	var dryRun bool
-	var clk clock.Clock
 	var cmd *cobra.Command
 
-	// One-shot fx run: clock.Module provides the golusoris wall clock, the app
-	// starts, dispatch runs, and the app stops without blocking on a signal.
-	cmd = clikit.Command("build", "Dispatch an image build locally or to self-hosted CI backends",
+	// One-shot fx run: the app starts, the plan is validated, and the app stops
+	// without blocking on a signal. No backend has an executor, so a request
+	// without --dry-run fails with builder.ErrBackendUnavailable.
+	cmd = clikit.Command("build", "Validate an image build plan; no build backend has an executor yet",
 		clikit.WithFxRun(func(ctx context.Context) error {
 			res, err := builder.Dispatch(ctx, builder.Request{
 				Backend: builder.Backend(backend),
 				Flavor:  flavor,
 				DryRun:  dryRun,
-				Clock:   clk,
 			})
 			if err != nil {
 				return err
 			}
 			return printBuildResult(cmd.OutOrStdout(), res)
-		}, clock.Module, fx.Populate(&clk)),
+		}),
 	)
 	cmd.Flags().StringVarP(&flavor, "flavor", "f", "base-generic", "Flavor to build")
 	cmd.Flags().StringVarP(&backend, "backend", "b", "local", "Build backend (local, gitea, proxmox, gitlab, woodpecker, harbor, minio, jenkins, github)")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Simulate build dispatch without execution")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Validate a build plan without execution")
 	return cmd
 }
 
 func printBuildResult(w io.Writer, res builder.Result) error {
-	if _, err := fmt.Fprintf(w, "==> Build Dispatch: %s\n", res.Message); err != nil {
-		return err
-	}
-	if res.PipelineID != "" {
-		fmt.Fprintf(w, "    Pipeline ID: %s\n", res.PipelineID)
-	}
-	if res.ArtifactURL != "" {
-		fmt.Fprintf(w, "    Artifact: %s\n", res.ArtifactURL)
-	}
-	return nil
+	_, err := fmt.Fprintf(w, "==> Build plan (%s): %s\n", res.Status, res.Message)
+	return err
 }
 
 func newApplyCmd() *cobra.Command {
@@ -509,8 +500,8 @@ func newMCPCmd() *cobra.Command {
 			fx.Decorate(func(o coremcp.Options) coremcp.Options {
 				return withServerIdentity(o, transport, addr)
 			}),
-			fx.Invoke(func(s *coremcp.Server, st *mcp.Stager, c clock.Clock) error {
-				return mcp.RegisterTools(s, mcp.Deps{Stager: st, Clock: c})
+			fx.Invoke(func(s *coremcp.Server, st *mcp.Stager) error {
+				return mcp.RegisterTools(s, mcp.Deps{Stager: st})
 			}),
 		),
 	)
