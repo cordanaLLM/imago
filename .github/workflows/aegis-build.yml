@@ -1,0 +1,233 @@
+---
+name: aegis-build
+on:
+  workflow_dispatch:
+    inputs:
+      aegis-revision:
+        description: "Aegis commit revision (40 lowercase hex)"
+        required: true
+        type: string
+      request-sha256:
+        description: "Expected SHA-256 of build/product-input.json (64 lowercase hex)"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: aegis-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build, Boot, and Release Aegis OS Image
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
+    permissions:
+      contents: write # publish pre-release and upload assets
+      id-token: write # keyless cosign OIDC signing
+    env:
+      AEGIS_REVISION: ${{ inputs.aegis-revision }}
+      REQUEST_SHA256: ${{ inputs.request-sha256 }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Refuse Dispatch Outside main
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "::error::aegis-build runs only from refs/heads/main, not ${GITHUB_REF}."
+            exit 1
+          fi
+
+      - name: Checkout imago Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Build imago CLI
+        run: |
+          set -euo pipefail
+          go build -trimpath -o ./imago ./cmd/imago
+
+      - name: Checkout Aegis-OS Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: cordanaLLM/Aegis-OS
+          ref: ${{ inputs.aegis-revision }}
+          fetch-depth: 0
+          path: aegis
+          persist-credentials: false
+
+      - name: Install Host Packages
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 ovmf swtpm swtpm-tools qemu-utils
+
+      - name: Setup mkosi
+        uses: systemd/mkosi@9bb5d145c8d8df700c0455c234fa8d51c1fab1ea # v27.1
+
+      - name: Verify KVM Read-Write Access
+        run: |
+          set -euo pipefail
+          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            echo "::error::/dev/kvm is missing or not readable and writable. KVM acceleration is required."
+            exit 1
+          fi
+          echo "/dev/kvm is accessible (read-write)"
+
+      - name: Check Aegis Build Request
+        run: |
+          set -euo pipefail
+          python3 -I tools/aegis/check_request.py \
+            --request aegis/build/product-input.json \
+            --request-sha256 "${REQUEST_SHA256}" \
+            --aegis-dir aegis \
+            --aegis-revision "${AEGIS_REVISION}" \
+            --imago-binary ./imago
+
+      - name: Verify mkosi and pacman
+        run: |
+          set -euo pipefail
+          if ! command -v mkosi >/dev/null 2>&1; then
+            echo "::error::mkosi is not on PATH after the setup action."
+            exit 1
+          fi
+          mkosi --version
+          if ! command -v pacman >/dev/null 2>&1; then
+            echo "::error::pacman is missing; the Arch Linux image cannot be built on this runner."
+            exit 1
+          fi
+          pacman --version
+
+      - name: Build Aegis Image with mkosi
+        run: |
+          set -euo pipefail
+          out_dir="${GITHUB_WORKSPACE}/aegis-output"
+          mkdir -p "${out_dir}"
+          mkosi -C aegis/build --output-directory "${out_dir}" build
+          expected_artifacts=(
+            "${out_dir}/aegis-os.raw"
+            "${out_dir}/aegis-os.efi"
+            "${out_dir}/aegis-os.vmlinuz"
+            "${out_dir}/aegis-os.initrd"
+            "${out_dir}/aegis-os.roothash"
+          )
+          for artifact in "${expected_artifacts[@]}"; do
+            if [[ ! -f "${artifact}" ]]; then
+              echo "::error::Expected build artefact missing: ${artifact}"
+              exit 1
+            fi
+            size=$(stat -c %s "${artifact}")
+            if (( size > 2147483648 )); then
+              echo "::error::Artefact ${artifact} exceeds 2 GiB release limit: ${size} bytes"
+              exit 1
+            fi
+          done
+
+      - name: Boot the Image Once
+        run: |
+          set -euo pipefail
+          out_dir="${GITHUB_WORKSPACE}/aegis-output"
+          cid=$(jq -r '."correlation-id"' aegis/build/product-input.json)
+          python3 -I tools/aegis/boot_once.py \
+            --image "${out_dir}/aegis-os.raw" \
+            --correlation-id "${cid}" \
+            --serial-log "${out_dir}/serial.log" \
+            --evidence "${out_dir}/boot-evidence.json" \
+            --deadline 600
+          for artifact in "${out_dir}/serial.log" "${out_dir}/boot-evidence.json"; do
+            size=$(stat -c %s "${artifact}")
+            if (( size > 2147483648 )); then
+              echo "::error::Artefact ${artifact} exceeds 2 GiB release limit: ${size} bytes"
+              exit 1
+            fi
+          done
+
+      - name: Generate Checksums
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}/aegis-output"
+          sha256sum \
+            aegis-os.raw \
+            aegis-os.efi \
+            aegis-os.vmlinuz \
+            aegis-os.initrd \
+            aegis-os.roothash \
+            boot-evidence.json \
+            serial.log > SHA256SUMS
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+
+      - name: Sign Checksums
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}/aegis-output"
+          cosign sign-blob --yes --bundle SHA256SUMS.bundle SHA256SUMS
+
+      - name: Verify Signature
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}/aegis-output"
+          cosign verify-blob --bundle SHA256SUMS.bundle \
+            --certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            SHA256SUMS
+
+      - name: Emit Product-Result
+        run: |
+          set -euo pipefail
+          out_dir="${GITHUB_WORKSPACE}/aegis-output"
+          cid=$(jq -r '."correlation-id"' aegis/build/product-input.json)
+          tag="aegis-${cid}"
+          sig_ref="https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/SHA256SUMS.bundle"
+          boot_ref="https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/boot-evidence.json"
+          ./imago aegis result emit \
+            --request aegis/build/product-input.json \
+            --image "${out_dir}/aegis-os.raw" \
+            --checksums "${out_dir}/SHA256SUMS" \
+            --signature-ref "${sig_ref}" \
+            --boot-evidence-ref "${boot_ref}" > "${out_dir}/result.json"
+          ./imago aegis result validate "${out_dir}/result.json"
+
+      - name: Publish Pre-Release
+        run: |
+          set -euo pipefail
+          out_dir="${GITHUB_WORKSPACE}/aegis-output"
+          cid=$(jq -r '."correlation-id"' aegis/build/product-input.json)
+          tag="aegis-${cid}"
+          if [[ "${tag}" != aegis-* ]]; then
+            echo "::error::Tag must begin with 'aegis-': ${tag}"
+            exit 1
+          fi
+          if gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "::error::Release ${tag} already exists. Refusing duplicate publication."
+            exit 1
+          fi
+          if git ls-remote --tags origin "refs/tags/${tag}" | grep -q "${tag}"; then
+            echo "::error::Tag ${tag} already exists on origin. Refusing duplicate publication."
+            exit 1
+          fi
+          gh release create "${tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Aegis OS ${tag}" \
+            --target "${GITHUB_SHA}" \
+            --prerelease \
+            --latest=false \
+            "${out_dir}/aegis-os.raw" \
+            "${out_dir}/aegis-os.efi" \
+            "${out_dir}/aegis-os.vmlinuz" \
+            "${out_dir}/aegis-os.initrd" \
+            "${out_dir}/aegis-os.roothash" \
+            "${out_dir}/boot-evidence.json" \
+            "${out_dir}/serial.log" \
+            "${out_dir}/SHA256SUMS" \
+            "${out_dir}/SHA256SUMS.bundle" \
+            "${out_dir}/result.json"
