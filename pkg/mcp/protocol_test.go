@@ -87,106 +87,79 @@ func TestMCPProtocolHandshakeAndToolListing(t *testing.T) {
 	}
 }
 
+// toolCase is one tool call over the protocol: the result must carry isError
+// as given, and its text must hold every want and none of the absent strings.
+type toolCase struct {
+	name    string
+	tool    string
+	args    map[string]any
+	isError bool
+	want    []string
+	absent  []string
+}
+
+var toolCases = []toolCase{
+	{name: "list_flavors_unfiltered", tool: "list_flavors", want: []string{"base-generic", "k8s-node-cilium"}},
+	{name: "list_flavors_filtered", tool: "list_flavors", args: map[string]any{"tier": "kubernetes"}, want: []string{"k8s-node-cilium"}, absent: []string{"base-generic"}},
+	{name: "get_flavor_valid", tool: "get_flavor", args: map[string]any{"flavor_id": "base-generic"}, want: []string{"base-generic", "00-base-strip.sh"}},
+	{name: "get_flavor_invalid", tool: "get_flavor", args: map[string]any{"flavor_id": "unknown-flavor-xyz"}, isError: true, want: []string{"not found across"}},
+	{name: "validate_manifest_default", tool: "validate_manifest", want: []string{"Validation SUCCESS"}},
+	{name: "validate_manifest_invalid_path", tool: "validate_manifest", args: map[string]any{"path": "non-existent-manifest.json"}, isError: true},
+	{name: "generate_cloudinit_valid", tool: "generate_cloudinit", args: map[string]any{
+		"flavor": "base-generic", "hostname": "test-host", "platform": "proxmox", "user": "ops",
+	}, want: []string{"#cloud-config", "test-host", "ops"}},
+	{name: "generate_cloudinit_invalid_flavor", tool: "generate_cloudinit", args: map[string]any{"flavor": "invalid-flavor"}, isError: true},
+	{name: "get_standards_valid", tool: "get_standards", args: map[string]any{"flavor_id": "base-generic"}, want: []string{"base-generic", "CIS Ubuntu Linux"}},
+	{name: "get_standards_invalid", tool: "get_standards", args: map[string]any{"flavor_id": "invalid-flavor"}, isError: true},
+	{name: "list_epics", tool: "list_epics", want: []string{"EPIC-01"}},
+	{name: "get_milestones", tool: "get_milestones", want: []string{"0.1.0 — First release"}},
+	{name: "inspect_compliance_default", tool: "inspect_compliance", want: []string{"kernel-param", "net.ipv4.tcp_syncookies"}},
+	{name: "inspect_compliance_invalid", tool: "inspect_compliance", args: map[string]any{"path": "non-existent-goss.yaml"}, isError: true},
+	{name: "apply_flavor_dry_run", tool: "apply_flavor", args: map[string]any{"flavor_id": "base-generic", "dry_run": true}, want: []string{"#!/usr/bin/env bash", "DRY-RUN:"}},
+	{name: "apply_flavor_invalid", tool: "apply_flavor", args: map[string]any{"flavor_id": "invalid-flavor", "dry_run": true}, isError: true},
+	{name: "trigger_build_dry_run", tool: "trigger_build", args: map[string]any{
+		"flavor": "base-generic", "backend": "local", "dry_run": true,
+	}, want: []string{"base-generic", "local"}},
+	{name: "trigger_build_invalid_flavor", tool: "trigger_build", args: map[string]any{
+		"flavor": "invalid-flavor-xyz", "backend": "local", "dry_run": true,
+	}, isError: true},
+}
+
+// callTool calls one tool and returns the result with the text of its first
+// content block.
+func callTool(t *testing.T, session *sdkmcp.ClientSession, tool string, args map[string]any) (*sdkmcp.CallToolResult, string) {
+	t.Helper()
+	params := &sdkmcp.CallToolParams{Name: tool}
+	if args != nil {
+		params.Arguments = args
+	}
+	res, err := session.CallTool(context.Background(), params)
+	require.NoError(t, err)
+	require.NotEmpty(t, res.Content)
+	return res, res.Content[0].(*sdkmcp.TextContent).Text
+}
+
 func TestMCPProtocolToolExecution(t *testing.T) {
 	session, cleanup := setupTestSession(t)
 	defer cleanup()
 
-	ctx := context.Background()
-
-	t.Run("list_flavors_unfiltered", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "list_flavors",
+	for _, tc := range toolCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, text := callTool(t, session, tc.tool, tc.args)
+			assert.Equal(t, tc.isError, res.IsError)
+			for _, want := range tc.want {
+				assert.Contains(t, text, want)
+			}
+			for _, absent := range tc.absent {
+				assert.NotContains(t, text, absent)
+			}
 		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		require.NotEmpty(t, res.Content)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "base-generic")
-		assert.Contains(t, text, "k8s-node-cilium")
-	})
+	}
+}
 
-	t.Run("list_flavors_filtered", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "list_flavors",
-			Arguments: map[string]any{"tier": "kubernetes"},
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "k8s-node-cilium")
-		assert.NotContains(t, text, "base-generic")
-	})
-
-	t.Run("get_flavor_valid", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "get_flavor",
-			Arguments: map[string]any{"flavor_id": "base-generic"},
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "base-generic")
-		assert.Contains(t, text, "00-base-strip.sh")
-	})
-
-	t.Run("get_flavor_invalid", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "get_flavor",
-			Arguments: map[string]any{"flavor_id": "unknown-flavor-xyz"},
-		})
-		require.NoError(t, err)
-		assert.True(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "not found across")
-	})
-
-	t.Run("validate_manifest_default", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "validate_manifest",
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "Validation SUCCESS")
-	})
-
-	t.Run("validate_manifest_invalid_path", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "validate_manifest",
-			Arguments: map[string]any{"path": "non-existent-manifest.json"},
-		})
-		require.NoError(t, err)
-		assert.True(t, res.IsError)
-	})
-
-	t.Run("generate_cloudinit_valid", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "generate_cloudinit",
-			Arguments: map[string]any{
-				"flavor":   "base-generic",
-				"hostname": "test-host",
-				"platform": "proxmox",
-				"user":     "ops",
-			},
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "#cloud-config")
-		assert.Contains(t, text, "test-host")
-		assert.Contains(t, text, "ops")
-	})
-
-	t.Run("generate_cloudinit_invalid_flavor", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "generate_cloudinit",
-			Arguments: map[string]any{
-				"flavor": "invalid-flavor",
-			},
-		})
-		require.NoError(t, err)
-		assert.True(t, res.IsError)
-	})
+func TestMCPProtocolCloudInitBounds(t *testing.T) {
+	session, cleanup := setupTestSession(t)
+	defer cleanup()
 
 	t.Run("generate_cloudinit_planted_values", func(t *testing.T) {
 		for _, args := range []map[string]any{
@@ -194,186 +167,38 @@ func TestMCPProtocolToolExecution(t *testing.T) {
 			{"flavor": "base-generic", "user": "root"},
 			{"flavor": "base-generic", "platform": "esxi"},
 		} {
-			res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{Name: "generate_cloudinit", Arguments: args})
-			require.NoError(t, err)
+			res, text := callTool(t, session, "generate_cloudinit", args)
 			assert.True(t, res.IsError, args)
-			assert.NotContains(t, res.Content[0].(*sdkmcp.TextContent).Text, "#cloud-config", args)
+			assert.NotContains(t, text, "#cloud-config", args)
 		}
 	})
 
 	t.Run("generate_cloudinit_boundary", func(t *testing.T) {
 		host := strings.Repeat("h", 63)
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "generate_cloudinit",
-			Arguments: map[string]any{"flavor": "base-generic", "hostname": host, "platform": "UTM"},
-		})
-		require.NoError(t, err)
+		res, text := callTool(t, session, "generate_cloudinit", map[string]any{"flavor": "base-generic", "hostname": host, "platform": "UTM"})
 		assert.False(t, res.IsError)
-		assert.Contains(t, res.Content[0].(*sdkmcp.TextContent).Text, `hostname: "`+host+`"`)
+		assert.Contains(t, text, `hostname: "`+host+`"`)
 	})
+}
 
-	t.Run("get_standards_valid", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "get_standards",
-			Arguments: map[string]any{"flavor_id": "base-generic"},
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "base-generic")
-		assert.Contains(t, text, "CIS Ubuntu Linux")
-	})
+func TestMCPProtocolStagingLifecycle(t *testing.T) {
+	session, cleanup := setupTestSession(t)
+	defer cleanup()
 
-	t.Run("get_standards_invalid", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "get_standards",
-			Arguments: map[string]any{"flavor_id": "invalid-flavor"},
-		})
-		require.NoError(t, err)
-		assert.True(t, res.IsError)
-	})
+	// trigger_build without confirmed or dry_run stages the build.
+	res, text := callTool(t, session, "trigger_build", map[string]any{"flavor": "base-generic", "backend": "local"})
+	assert.False(t, res.IsError)
+	assert.Contains(t, text, "ACTION STAGED")
+	assert.Contains(t, text, "Action ID: act-")
 
-	t.Run("list_epics", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "list_epics",
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "EPIC-01")
-	})
+	res, text = callTool(t, session, "list_staged_actions", map[string]any{})
+	assert.False(t, res.IsError)
+	assert.Contains(t, text, "trigger_build")
 
-	t.Run("get_milestones", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "get_milestones",
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "0.1.0 — First release")
-	})
-
-	t.Run("inspect_compliance_default", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "inspect_compliance",
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "kernel-param")
-		assert.Contains(t, text, "net.ipv4.tcp_syncookies")
-	})
-
-	t.Run("inspect_compliance_invalid", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "inspect_compliance",
-			Arguments: map[string]any{"path": "non-existent-goss.yaml"},
-		})
-		require.NoError(t, err)
-		assert.True(t, res.IsError)
-	})
-
-	t.Run("apply_flavor_dry_run", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "apply_flavor",
-			Arguments: map[string]any{
-				"flavor_id": "base-generic",
-				"dry_run":   true,
-			},
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "#!/usr/bin/env bash")
-		assert.Contains(t, text, "DRY-RUN:")
-	})
-
-	t.Run("apply_flavor_invalid", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "apply_flavor",
-			Arguments: map[string]any{
-				"flavor_id": "invalid-flavor",
-				"dry_run":   true,
-			},
-		})
-		require.NoError(t, err)
-		assert.True(t, res.IsError)
-	})
-
-	t.Run("trigger_build_dry_run", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "trigger_build",
-			Arguments: map[string]any{
-				"flavor":  "base-generic",
-				"backend": "local",
-				"dry_run": true,
-			},
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "base-generic")
-		assert.Contains(t, text, "local")
-	})
-
-	t.Run("trigger_build_invalid_flavor", func(t *testing.T) {
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "trigger_build",
-			Arguments: map[string]any{
-				"flavor":  "invalid-flavor-xyz",
-				"backend": "local",
-				"dry_run": true,
-			},
-		})
-		require.NoError(t, err)
-		assert.True(t, res.IsError)
-	})
-
-	t.Run("staging_lifecycle_via_protocol", func(t *testing.T) {
-		// 1. Calling trigger_build without confirmed or dry_run should stage
-		res, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "trigger_build",
-			Arguments: map[string]any{
-				"flavor":  "base-generic",
-				"backend": "local",
-			},
-		})
-		require.NoError(t, err)
-		assert.False(t, res.IsError)
-		text := res.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, text, "ACTION STAGED")
-		assert.Contains(t, text, "Action ID: act-")
-
-		// 2. List staged actions
-		resList, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name:      "list_staged_actions",
-			Arguments: map[string]any{},
-		})
-		require.NoError(t, err)
-		assert.False(t, resList.IsError)
-		listText := resList.Content[0].(*sdkmcp.TextContent).Text
-		assert.Contains(t, listText, "trigger_build")
-
-		// 3. Confirm with invalid action_id
-		resConfirmErr, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "confirm_action",
-			Arguments: map[string]any{
-				"action_id": "nonexistent-action-id",
-			},
-		})
-		require.NoError(t, err)
-		assert.True(t, resConfirmErr.IsError)
-
-		// 4. Discard with invalid action_id
-		resDiscardErr, err := session.CallTool(ctx, &sdkmcp.CallToolParams{
-			Name: "discard_staged_action",
-			Arguments: map[string]any{
-				"action_id": "nonexistent-action-id",
-			},
-		})
-		require.NoError(t, err)
-		assert.True(t, resDiscardErr.IsError)
-	})
+	for _, tool := range []string{"confirm_action", "discard_staged_action"} {
+		res, _ = callTool(t, session, tool, map[string]any{"action_id": "nonexistent-action-id"})
+		assert.True(t, res.IsError, tool)
+	}
 }
 
 func TestMCPProtocolRoutePlan(t *testing.T) {
