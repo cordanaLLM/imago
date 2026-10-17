@@ -121,104 +121,20 @@ func TestValidateDeepNegativeCases(t *testing.T) {
 		mutate    func(m *manifest.Manifest)
 		expectErr string
 	}{
-		{
-			name: "empty_distro_name",
-			mutate: func(m *manifest.Manifest) {
-				m.Distro.Name = ""
-			},
-			expectErr: "distro name and release must not be empty",
-		},
-		{
-			name: "empty_distro_release",
-			mutate: func(m *manifest.Manifest) {
-				m.Distro.Release = ""
-			},
-			expectErr: "distro name and release must not be empty",
-		},
-		{
-			name: "invalid_iso_url_scheme",
-			mutate: func(m *manifest.Manifest) {
-				m.Distro.ISOUrl = "ftp://example.com/iso.iso"
-			},
-			expectErr: "must be an HTTP/HTTPS URL",
-		},
-		{
-			name: "invalid_iso_checksum",
-			mutate: func(m *manifest.Manifest) {
-				m.Distro.ISOChecksum = "invalid-non-hex"
-			},
-			expectErr: "must be a 64-char hex",
-		},
-		{
-			name: "invalid_k8s_semver",
-			mutate: func(m *manifest.Manifest) {
-				m.Kubernetes.Version = "invalid-semver"
-			},
-			expectErr: "is not valid semver",
-		},
-		{
-			name: "missing_pause_image",
-			mutate: func(m *manifest.Manifest) {
-				m.Kubernetes.Images.Pause = ""
-			},
-			expectErr: "core images (pause, coredns, cilium) must be defined",
-		},
-		{
-			name: "empty_k3s_version",
-			mutate: func(m *manifest.Manifest) {
-				m.K3s.Version = ""
-			},
-			expectErr: "k3s version must not be empty",
-		},
-		{
-			name: "missing_intel_plugin",
-			mutate: func(m *manifest.Manifest) {
-				m.Drivers.Intel.K8sPlugin = ""
-			},
-			expectErr: "intel k8s_plugin must not be empty",
-		},
-		{
-			name: "missing_amd_rocm",
-			mutate: func(m *manifest.Manifest) {
-				m.Drivers.AMD.ROCmBleedingVersion = ""
-			},
-			expectErr: "amd rocm coordinates must not be empty",
-		},
-		{
-			name: "missing_nvidia_drivers",
-			mutate: func(m *manifest.Manifest) {
-				m.Drivers.NVIDIA.MainstreamDriver = ""
-			},
-			expectErr: "nvidia generational driver branches must not be empty",
-		},
-		{
-			name: "missing_containerd_runtime",
-			mutate: func(m *manifest.Manifest) {
-				m.Runtimes.Containerd = ""
-			},
-			expectErr: "containerd and docker_ce runtimes must not be empty",
-		},
-		{
-			name: "missing_cdebug_tool",
-			mutate: func(m *manifest.Manifest) {
-				m.Tools.Cdebug = ""
-			},
-			expectErr: "cdebug tool version must not be empty",
-		},
-		{
-			name: "missing_anycast_nts",
-			mutate: func(m *manifest.Manifest) {
-				m.Time.AnycastNTS = ""
-			},
-			expectErr: "time anycast_nts must not be empty",
-		},
-		{
-			name: "empty_stratum1_nts",
-			mutate: func(m *manifest.Manifest) {
-				m.Time.Stratum1NTS = nil
-			},
-			expectErr: "time stratum1_nts mesh must contain at least one endpoint",
-		},
+		{"empty_distro_name", func(m *manifest.Manifest) { m.Distro.Name = "" }, "distro name and release must not be empty"},
+		{"empty_distro_release", func(m *manifest.Manifest) { m.Distro.Release = "" }, "distro name and release must not be empty"},
+		{"invalid_iso_url_scheme", func(m *manifest.Manifest) { m.Distro.ISOUrl = "ftp://example.com/iso.iso" }, "must be an HTTP/HTTPS URL"},
+		{"invalid_iso_checksum", func(m *manifest.Manifest) { m.Distro.ISOChecksum = "invalid-non-hex" }, "must be a 64-char hex"},
+		{"invalid_k8s_semver", func(m *manifest.Manifest) { m.Kubernetes.Version = "invalid-semver" }, "is not valid semver"},
+		{"missing_pause_image", func(m *manifest.Manifest) { m.Kubernetes.Images.Pause = "" }, "core images (pause, coredns, cilium) must be defined"},
+		{"empty_k3s_version", func(m *manifest.Manifest) { m.K3s.Version = "" }, "k3s version must not be empty"},
+		{"missing_intel_plugin", func(m *manifest.Manifest) { m.Drivers.Intel.K8sPlugin = "" }, "intel k8s_plugin must not be empty"},
+		{"missing_amd_rocm", func(m *manifest.Manifest) { m.Drivers.AMD.ROCmBleedingVersion = "" }, "amd rocm coordinates must not be empty"},
+		{"missing_nvidia_drivers", func(m *manifest.Manifest) { m.Drivers.NVIDIA.MainstreamDriver = "" }, "nvidia generational driver branches must not be empty"},
+		{"missing_containerd_runtime", func(m *manifest.Manifest) { m.Runtimes.Containerd = "" }, "containerd and docker_ce runtimes must not be empty"},
+		{"missing_cdebug_tool", func(m *manifest.Manifest) { m.Tools.Cdebug = "" }, "cdebug tool version must not be empty"},
+		{"missing_anycast_nts", func(m *manifest.Manifest) { m.Time.AnycastNTS = "" }, "time anycast_nts must not be empty"},
+		{"empty_stratum1_nts", func(m *manifest.Manifest) { m.Time.Stratum1NTS = nil }, "time stratum1_nts mesh must contain at least one endpoint"},
 	}
 
 	for _, tc := range tests {

@@ -101,26 +101,24 @@ func Dispatch(ctx context.Context, req Request) (Result, error) {
 		return res, nil
 	}
 
-	switch req.Backend {
-	case BackendLocal:
-		return dispatchLocal(ctx, req, res)
-	case BackendGitea, BackendGitHub:
-		return dispatchWorkflow(ctx, req, res)
-	case BackendProxmox:
-		return dispatchProxmox(ctx, req, res)
-	case BackendGitLab:
-		return dispatchGitLab(ctx, req, res)
-	case BackendWoodpecker:
-		return dispatchWoodpecker(ctx, req, res)
-	case BackendHarbor:
-		return dispatchHarbor(ctx, req, res)
-	case BackendMinIO:
-		return dispatchMinIO(ctx, req, res)
-	case BackendJenkins:
-		return dispatchJenkins(ctx, req, res)
-	default:
+	dispatch, ok := dispatchers[req.Backend]
+	if !ok {
 		return Result{}, fmt.Errorf("builder: unsupported backend %q", req.Backend)
 	}
+	return dispatch(ctx, req, res)
+}
+
+// dispatchers routes each backend of the backends list; Validate has refused any other.
+var dispatchers = map[Backend]func(context.Context, Request, Result) (Result, error){
+	BackendLocal:      dispatchLocal,
+	BackendGitea:      dispatchWorkflow,
+	BackendGitHub:     dispatchWorkflow,
+	BackendProxmox:    dispatchProxmox,
+	BackendGitLab:     dispatchGitLab,
+	BackendWoodpecker: dispatchWoodpecker,
+	BackendHarbor:     dispatchHarbor,
+	BackendMinIO:      dispatchMinIO,
+	BackendJenkins:    dispatchJenkins,
 }
 
 func dispatchLocal(ctx context.Context, req Request, res Result) (Result, error) {

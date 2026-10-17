@@ -95,6 +95,25 @@ func Load(path string) (*Plan, error) {
 // Validate checks the schema version, identifier uniqueness, reference
 // integrity, and that the step dependency graph is acyclic.
 func (p *Plan) Validate() error {
+	if err := p.validateHeader(); err != nil {
+		return err
+	}
+	milestones, err := p.indexMilestones()
+	if err != nil {
+		return err
+	}
+	steps, err := p.indexSteps()
+	if err != nil {
+		return err
+	}
+	if err := p.checkReferences(milestones, steps); err != nil {
+		return err
+	}
+	return checkAcyclic(steps)
+}
+
+// validateHeader checks the schema version, the plan id and the step count.
+func (p *Plan) validateHeader() error {
 	if p.SchemaVersion != SchemaVersion {
 		return fmt.Errorf("planning: unsupported schema_version %d (want %d)", p.SchemaVersion, SchemaVersion)
 	}
@@ -104,17 +123,23 @@ func (p *Plan) Validate() error {
 	if len(p.Steps) == 0 || len(p.Steps) > MaxSteps {
 		return fmt.Errorf("planning: step count %d outside 1..%d", len(p.Steps), MaxSteps)
 	}
+	return nil
+}
+
+// indexMilestones collects the milestone IDs, rejecting duplicates.
+func (p *Plan) indexMilestones() (map[string]bool, error) {
 	milestones := make(map[string]bool, len(p.Milestones))
 	for _, m := range p.Milestones {
 		if milestones[m.ID] {
-			return fmt.Errorf("planning: duplicate milestone %q", m.ID)
+			return nil, fmt.Errorf("planning: duplicate milestone %q", m.ID)
 		}
 		milestones[m.ID] = true
 	}
-	steps, err := p.indexSteps()
-	if err != nil {
-		return err
-	}
+	return milestones, nil
+}
+
+// checkReferences rejects a step that names an unknown milestone or depends on an unknown step.
+func (p *Plan) checkReferences(milestones map[string]bool, steps map[string]Step) error {
 	for _, s := range p.Steps {
 		if !milestones[s.MilestoneID] {
 			return fmt.Errorf("planning: step %q references unknown milestone %q", s.ID, s.MilestoneID)
@@ -125,7 +150,7 @@ func (p *Plan) Validate() error {
 			}
 		}
 	}
-	return checkAcyclic(steps)
+	return nil
 }
 
 // indexSteps maps step IDs to steps, rejecting duplicates and empty IDs.
@@ -146,15 +171,7 @@ func (p *Plan) indexSteps() (map[string]Step, error) {
 // checkAcyclic runs Kahn's algorithm over the dependency edges. The loop is
 // bounded by the step count, so a cycle leaves unvisited nodes behind.
 func checkAcyclic(steps map[string]Step) error {
-	indegree := make(map[string]int, len(steps))
-	dependents := make(map[string][]string, len(steps))
-	for id, s := range steps {
-		indegree[id] += 0
-		for _, dep := range s.DependsOn {
-			indegree[id]++
-			dependents[dep] = append(dependents[dep], id)
-		}
-	}
+	indegree, dependents := dependencyGraph(steps)
 	queue := make([]string, 0, len(steps))
 	for id, deg := range indegree {
 		if deg == 0 {
@@ -165,15 +182,35 @@ func checkAcyclic(steps map[string]Step) error {
 	visited := 0
 	for i := 0; i < len(queue) && i < MaxSteps; i++ {
 		visited++
-		for _, next := range dependents[queue[i]] {
-			indegree[next]--
-			if indegree[next] == 0 {
-				queue = append(queue, next)
-			}
-		}
+		queue = releaseDependents(queue, dependents[queue[i]], indegree)
 	}
 	if visited != len(steps) {
 		return errors.New("planning: step dependency graph contains a cycle")
 	}
 	return nil
+}
+
+// dependencyGraph counts the dependencies of each step and lists the steps that wait on each one.
+func dependencyGraph(steps map[string]Step) (map[string]int, map[string][]string) {
+	indegree := make(map[string]int, len(steps))
+	dependents := make(map[string][]string, len(steps))
+	for id, s := range steps {
+		indegree[id] += 0
+		for _, dep := range s.DependsOn {
+			indegree[id]++
+			dependents[dep] = append(dependents[dep], id)
+		}
+	}
+	return indegree, dependents
+}
+
+// releaseDependents lowers the count of each waiting step and queues those left with none.
+func releaseDependents(queue, waiting []string, indegree map[string]int) []string {
+	for _, next := range waiting {
+		indegree[next]--
+		if indegree[next] == 0 {
+			queue = append(queue, next)
+		}
+	}
+	return queue
 }

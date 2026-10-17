@@ -27,47 +27,59 @@ func GenerateApplyScript(opts ApplyOptions) (string, error) {
 	}
 
 	var sb strings.Builder
+	writeApplyHeader(&sb, fl)
+	if opts.DryRun {
+		writeDryRun(&sb, fl)
+		return sb.String(), nil
+	}
+	writeEnvironment(&sb, fl)
+	writePipeline(&sb, fl, opts.SkipCleanup)
+	sb.WriteString("echo \"==> Imageless flavor application complete.\"\n")
+	return sb.String(), nil
+}
+
+func writeApplyHeader(sb *strings.Builder, fl flavors.Flavor) {
 	sb.WriteString("#!/usr/bin/env bash\n")
 	sb.WriteString("# Lusoris Imageless Provisioning Script\n")
-	fmt.Fprintf(&sb, "# Target Flavor: %s (%s)\n", fl.ID, fl.Name)
+	fmt.Fprintf(sb, "# Target Flavor: %s (%s)\n", fl.ID, fl.Name)
 	sb.WriteString("# Generated automatically by imago\n")
 	sb.WriteString("set -euo pipefail\n\n")
 
 	sb.WriteString("echo \"==> Initiating Lusoris imageless flavor application...\"\n")
-	fmt.Fprintf(&sb, "echo \"==> Flavor: %s | Hardware Stack: %s\"\n\n", fl.ID, fl.HardwareStack)
+	fmt.Fprintf(sb, "echo \"==> Flavor: %s | Hardware Stack: %s\"\n\n", fl.ID, fl.HardwareStack)
+}
 
-	if opts.DryRun {
-		sb.WriteString("echo \"==> DRY-RUN: Simulating provisioner execution for:\"\n")
-		for _, p := range fl.Provisioners {
-			fmt.Fprintf(&sb, "echo \"    [SIMULATED] %s\"\n", p)
-		}
-		sb.WriteString("echo \"==> DRY-RUN completed successfully.\"\n")
-		return sb.String(), nil
+func writeDryRun(sb *strings.Builder, fl flavors.Flavor) {
+	sb.WriteString("echo \"==> DRY-RUN: Simulating provisioner execution for:\"\n")
+	for _, p := range fl.Provisioners {
+		fmt.Fprintf(sb, "echo \"    [SIMULATED] %s\"\n", p)
 	}
+	sb.WriteString("echo \"==> DRY-RUN completed successfully.\"\n")
+}
 
+func writeEnvironment(sb *strings.Builder, fl flavors.Flavor) {
 	sb.WriteString("# Environment configuration\n")
-	fmt.Fprintf(&sb, "export FLAVOR=\"%s\"\n", fl.ID)
-	fmt.Fprintf(&sb, "export KERNEL_PROFILE=\"%s\"\n", fl.KernelProfile)
+	fmt.Fprintf(sb, "export FLAVOR=\"%s\"\n", fl.ID)
+	fmt.Fprintf(sb, "export KERNEL_PROFILE=\"%s\"\n", fl.KernelProfile)
 	if fl.PreheatProfile != "" {
-		fmt.Fprintf(&sb, "export PREHEAT_PROFILE=\"%s\"\n", fl.PreheatProfile)
+		fmt.Fprintf(sb, "export PREHEAT_PROFILE=\"%s\"\n", fl.PreheatProfile)
 	}
 	sb.WriteString("\n")
+}
 
+func writePipeline(sb *strings.Builder, fl flavors.Flavor, skipCleanup bool) {
 	sb.WriteString("# Execution pipeline\n")
 	for _, p := range fl.Provisioners {
-		if opts.SkipCleanup && p == "99-cleanup.sh" {
+		if skipCleanup && p == "99-cleanup.sh" {
 			continue
 		}
-		fmt.Fprintf(&sb, "echo \"==> Executing provisioner: %s\"\n", p)
-		fmt.Fprintf(&sb, "if [ -f \"packer/provisioners/%s\" ]; then\n", p)
-		fmt.Fprintf(&sb, "  bash \"packer/provisioners/%s\"\n", p)
+		fmt.Fprintf(sb, "echo \"==> Executing provisioner: %s\"\n", p)
+		fmt.Fprintf(sb, "if [ -f \"packer/provisioners/%s\" ]; then\n", p)
+		fmt.Fprintf(sb, "  bash \"packer/provisioners/%s\"\n", p)
 		sb.WriteString("else\n")
-		fmt.Fprintf(&sb, "  echo \"    Warning: provisioner %s not found in local workspace\"\n", p)
+		fmt.Fprintf(sb, "  echo \"    Warning: provisioner %s not found in local workspace\"\n", p)
 		sb.WriteString("fi\n\n")
 	}
-
-	sb.WriteString("echo \"==> Imageless flavor application complete.\"\n")
-	return sb.String(), nil
 }
 
 // MicroVMBootConfig defines direct kernel boot parameters for QEMU / Cloud-Hypervisor / Firecracker.
