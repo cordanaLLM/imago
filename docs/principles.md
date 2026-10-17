@@ -43,6 +43,7 @@ Gerard J. Holzmann's [_The Power of 10: Rules for Developing Safety-Critical Cod
 1. **Declarative Invariant**: Distribution image URLs, checksums, kernel versions, driver versions, Kubernetes releases, and container image tags reside exclusively in [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json).
 2. **Zero Hardcoded Versions**: Shell provisioners and Packer HCL templates never hardcode version numbers or branch names.
 3. **Automated Drift Prevention**: Automated dependency tools (Renovate) update only `versions.json`, producing minimal, verifiable pull request diffs.
+4. **Toolchain & Plugin Pinning**: Packer and required plugins (`qemu`, `proxmox`) are pinned with exact versions and binary SHA-256 digests in [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json) under `build.packer` (Packer 1.16.1) and `build.packer_plugins` (qemu 1.1.7, proxmox 1.2.4); CI workflows extract the version dynamically via `jq`, and `tests/test_packer_pins.py` enforces zero drift against `packer/versions.pkr.hcl`.
 
 ---
 
