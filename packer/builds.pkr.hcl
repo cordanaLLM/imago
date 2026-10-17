@@ -88,6 +88,7 @@ build {
       "${path.root}/provisioners/10-network-time.sh",
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -107,6 +108,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/30-gpu-intel.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -126,6 +128,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/31-gpu-amd-mesa.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -145,6 +148,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/33-gpu-nvidia-legacy.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -164,6 +168,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -183,6 +188,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/37-gpu-nvidia-modern.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -202,6 +208,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/36-gpu-nvidia-bleeding.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -221,6 +228,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/35-gpu-nvidia-datacenter.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -240,6 +248,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -260,6 +269,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/30-gpu-intel.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -280,6 +290,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/32-gpu-amd-rocm.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -300,6 +311,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -320,6 +332,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/37-gpu-nvidia-modern.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -340,6 +353,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/36-gpu-nvidia-bleeding.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -359,6 +373,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/41-podman-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -379,6 +394,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -399,6 +415,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -419,6 +436,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -439,6 +457,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -460,6 +479,7 @@ build {
       "${path.root}/provisioners/30-gpu-intel.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -481,6 +501,7 @@ build {
       "${path.root}/provisioners/32-gpu-amd-rocm.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -502,6 +523,7 @@ build {
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -523,6 +545,7 @@ build {
       "${path.root}/provisioners/37-gpu-nvidia-modern.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -544,6 +567,7 @@ build {
       "${path.root}/provisioners/36-gpu-nvidia-bleeding.sh",
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -564,6 +588,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -585,6 +610,7 @@ build {
       "${path.root}/provisioners/30-gpu-intel.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -606,6 +632,7 @@ build {
       "${path.root}/provisioners/32-gpu-amd-rocm.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -627,6 +654,7 @@ build {
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -648,6 +676,7 @@ build {
       "${path.root}/provisioners/37-gpu-nvidia-modern.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -669,6 +698,7 @@ build {
       "${path.root}/provisioners/36-gpu-nvidia-bleeding.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -688,6 +718,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -708,6 +739,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/30-gpu-intel.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -728,6 +760,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/32-gpu-amd-rocm.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -748,6 +781,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -767,6 +801,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -787,6 +822,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/61-cloudnative-immutable.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -808,6 +844,7 @@ build {
       "${path.root}/provisioners/50-k8s-runtime.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/61-cloudnative-immutable.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -827,6 +864,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/65-storage-cncf.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -847,6 +885,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/70-cloudnative-pg.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -871,6 +910,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/75-appliance-vision.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -890,6 +930,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/76-appliance-gateway.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -910,6 +951,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/77-appliance-media.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -930,6 +972,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/78-appliance-runner.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -950,6 +993,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/79-appliance-game.sh",
+      "${path.root}/provisioners/80-netboot-initrd.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }

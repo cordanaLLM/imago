@@ -89,13 +89,40 @@ When flashing a 20GB `.raw.zst` image onto a 1TB, 2TB, or larger physical drive,
 - **Physical NIC Drivers**: Pre-loads network firmware (`linux-firmware`) for Intel (`ice`, `i40e`, `ixgbe`), Broadcom (`bnxt_en`), and Mellanox ConnectX (`mlx5_core`).
 - **NVMe Storage Scheduling**: Udev rules enforce `none` scheduler for NVMe drives to bypass CPU scheduler latency.
 
-## 4. iPXE Netboot Chainloading
+## 4. iPXE Netboot
 
-A release ships no netboot kernel or initrd; serve them and the NoCloud seed from a boot server of your own. Example iPXE configuration snippet, with `boot.example.com` standing for that server:
+Each release flavor ships four netboot assets ([ADR-0034](../adr/0034-ipxe-netboot.md)):
+
+| Asset | Content |
+| :--- | :--- |
+| `<flavor>-netboot.vmlinuz` | the image's own kernel |
+| `<flavor>-netboot.initrd` | a dracut initrd with `livenet`, `dmsquash-live` and the `imago-netroot` check |
+| `<flavor>-root.squashfs` | the image's root file system, zstd-compressed |
+| `<flavor>.ipxe` | the boot script; it names the other three by relative URIs and carries the squashfs sha256 |
+
+iPXE checks no digest or signature, so check the four assets against the signed checksums before you serve them. With `OWNER`, `TAG` and `FLAVOR` set as in section 1:
+
+```bash
+FLAVOR=base-generic
+for asset in "${FLAVOR}-netboot.vmlinuz" "${FLAVOR}-netboot.initrd" "${FLAVOR}-root.squashfs" "${FLAVOR}.ipxe" SHA256SUMS SHA256SUMS.bundle; do
+  curl -fsSLO "https://github.com/${OWNER}/imago/releases/download/${TAG}/${asset}"
+done
+cosign verify-blob --bundle SHA256SUMS.bundle \
+  --certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-matrix.yml@refs/tags/${TAG}" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+Serve the four files from one directory of a web server, with `boot.example.com` standing for that server, and chain the script from your iPXE configuration:
 
 ```ipxe
 #!ipxe
-kernel https://boot.example.com/netboot/vmlinuz ip=dhcp root=/dev/ram0 ds=nocloud;s=http://boot.example.com/cloud-init/
-initrd https://boot.example.com/netboot/initrd.img
-boot
+dhcp
+chain https://boot.example.com/imago/base-generic.ipxe
 ```
+
+The script loads the kernel and initrd from its own directory (`${cwduri}`) and boots with `root=live:<directory>/<flavor>-root.squashfs`. Before the root is mounted, the initrd compares the fetched squashfs with the `imago.root-sha256=` value in the script. A missing, malformed or different value stops the boot with `imago-netroot: root sha256 missing`, `malformed` or `mismatch` on the console; no option skips the check.
+
+- **RAM**: the host holds the squashfs and its writable overlay in RAM. Plan for the squashfs size (about 605 MiB for `base-generic`; the release job summary lists every flavor) plus the overlay and the workload; the CI netboot test gives the guest 4 GiB.
+- **State**: every change lives in the overlay and is lost at reboot.
+- **cloud-init**: the script passes no data source. Add `ds=nocloud;s=https://boot.example.com/seed/` to the `kernel` line of a copy of the script to give the host a NoCloud seed; the copy no longer matches `SHA256SUMS`, but it keeps the `imago.root-sha256=` value, so the squashfs is still checked at boot.

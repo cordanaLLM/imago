@@ -125,3 +125,51 @@ def test_watch_mismatch_fails_on_deadline(tmp_path, monkeypatch, killpg_calls):
     with pytest.raises(smoke.BootError, match="no mismatch error line on serial console within"):
         smoke.watch_mismatch(proc, serial, "nonce123", timeout_s=0.01)
     assert killpg_calls == []
+
+
+SCRIPT = (
+    "#!ipxe\nkernel f-netboot.vmlinuz initrd=f-netboot.initrd imago.root-sha256="
+    + "a" * 64
+    + "\ninitrd f-netboot.initrd\nboot\n"
+)
+
+
+def test_boot_script_adds_the_seed_and_keeps_the_digest():
+    script = smoke.boot_script(SCRIPT, "ds=nocloud;s=http://192.0.2.2:1/seed/", expect_mismatch=False)
+    assert "imago.root-sha256=" + "a" * 64 + " ds=nocloud;s=http://192.0.2.2:1/seed/" in script
+
+
+def test_boot_script_replaces_the_digest_for_the_negative_run():
+    script = smoke.boot_script(SCRIPT, "ds=x", expect_mismatch=True)
+    assert "a" * 64 not in script
+    assert "imago.root-sha256=" + "0" * 64 in script
+
+
+@pytest.mark.parametrize("digest", ["", "0" * 64], ids=["absent", "already-wrong"])
+def test_boot_script_refuses_a_negative_run_that_changes_nothing(digest):
+    script = SCRIPT.replace("imago.root-sha256=" + "a" * 64, f"imago.root-sha256={digest}" if digest else "")
+    with pytest.raises(smoke.BootError):
+        smoke.boot_script(script, "ds=x", expect_mismatch=True)
+
+
+def test_stage_links_assets_and_leaves_the_asset_directory_alone(tmp_path):
+    assets = tmp_path / "assets"
+    staging = tmp_path / "staging"
+    assets.mkdir()
+    staging.mkdir()
+    for name in ("f-netboot.vmlinuz", "f-netboot.initrd", "f-root.squashfs"):
+        (assets / name).write_bytes(name.encode())
+    (assets / "f.ipxe").write_text(SCRIPT, encoding="utf-8")
+    before = sorted(p.name for p in assets.iterdir())
+    assert smoke.stage(assets, staging, "f") == SCRIPT
+    assert (staging / "f-root.squashfs").read_bytes() == b"f-root.squashfs"
+    assert sorted(p.name for p in assets.iterdir()) == before
+    assert (assets / "f.ipxe").read_text(encoding="utf-8") == SCRIPT
+
+
+def test_stage_refuses_a_missing_asset(tmp_path):
+    (tmp_path / "f.ipxe").write_text(SCRIPT, encoding="utf-8")
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    with pytest.raises(smoke.BootError, match="f-netboot.vmlinuz"):
+        smoke.stage(tmp_path, staging, "f")

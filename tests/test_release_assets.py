@@ -284,6 +284,15 @@ def test_sizes_limit_is_the_forge_limit():
     assert assets.ASSET_LIMIT_BYTES == 2_147_483_648
 
 
+def test_sizes_refuses_planted_2gib_squashfs_and_accepts_limit_minus_one(tmp_path, capsys):
+    squashfs_boundary = sparse(tmp_path / "base-generic-root.squashfs", assets.ASSET_LIMIT_BYTES - 1)
+    assert assets.main(["sizes", str(squashfs_boundary)]) == 0
+    squashfs_over = sparse(tmp_path / "base-generic-root.squashfs", assets.ASSET_LIMIT_BYTES)
+    assert assets.main(["sizes", str(squashfs_over)]) == 1
+    err = capsys.readouterr().err
+    assert "base-generic-root.squashfs reach the forge limit" in err
+
+
 def test_sizes_refuses_no_asset_a_missing_asset_and_too_many(tmp_path):
     assert assets.main(["sizes"]) == 1
     assert assets.main(["sizes", str(tmp_path / "absent.raw.zst")]) == 1
@@ -322,6 +331,7 @@ def test_build_job_generates_and_checks_sboms_before_compressing():
     wanted = [
         r"python3 -I tools/ci/release_assets\.py attach ",
         r"syft scan .* \|\| status=\$\?$",
+        r"python3 -I tools/ci/netboot_assets\.py extract .* \|\| status=\$\?$",
         r"python3 -I tools/ci/release_assets\.py detach ",
         r'test "\$\{status\}" -eq 0$',
         r"python3 -I tools/ci/release_assets\.py check ",
@@ -329,7 +339,10 @@ def test_build_job_generates_and_checks_sboms_before_compressing():
     order = [[i for i, line in enumerate(lines) if re.match(w, line)] for w in wanted]
     assert all(len(found) == 1 for found in order), order
     assert [found[0] for found in order] == sorted(found[0] for found in order)
-    assert runs(steps(job)[compress], r"sha256sum -- \*\.qcow2\.zst \*\.raw\.zst sbom-\*\.json > \"checksums-")
+    assert runs(
+        steps(job)[compress],
+        r'sha256sum -- \*\.qcow2\.zst \*\.raw\.zst sbom-\*\.json "\$\{netboot\[@\]#\./\}" > "checksums-',
+    )
 
 
 def test_compress_step_converts_to_raw_then_checks_sizes_before_the_checksums():
@@ -340,8 +353,9 @@ def test_compress_step_converts_to_raw_then_checks_sizes_before_the_checksums():
         r'test "\$\{#qcow2\[@\]\}" -eq 1$',
         r'qemu-img convert -O raw "\$\{qcow2\[0\]\}" "\$\{qcow2\[0\]%\.qcow2\}\.raw"$',
         r"zstd -T0 -19 --rm \./\*\.qcow2 \./\*\.raw$",
+        r"netboot=\(\./\*-netboot\.vmlinuz \./\*-netboot\.initrd \./\*-root\.squashfs \./\*\.ipxe\)$",
         r'python3 -I "\$\{GITHUB_WORKSPACE\}/tools/ci/release_assets\.py" sizes --summary "\$\{GITHUB_STEP_SUMMARY\}"'
-        + r" \./\*\.qcow2\.zst \./\*\.raw\.zst$",
+        + r' \./\*\.qcow2\.zst \./\*\.raw\.zst "\$\{netboot\[@\]\}"$',
         r"sha256sum -- ",
     ]
     order = [[i for i, line in enumerate(lines) if re.match(w, line)] for w in wanted]
@@ -368,6 +382,15 @@ def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
     job = load(RELEASE)["jobs"]["build-matrix"]
     keep = upload_artifact(job, "checksums-${{ matrix.flavor }}")
     assert keep["with"]["if-no-files-found"] == "error"
+    paths = keep["with"]["path"].strip().splitlines()
+    assert paths == [
+        "packer/output-images/${{ matrix.flavor }}/checksums-${{ matrix.flavor }}.sha256",
+        "packer/output-images/${{ matrix.flavor }}/sbom-*.json",
+        "packer/output-images/${{ matrix.flavor }}/*-netboot.vmlinuz",
+        "packer/output-images/${{ matrix.flavor }}/*-netboot.initrd",
+        "packer/output-images/${{ matrix.flavor }}/*-root.squashfs",
+        "packer/output-images/${{ matrix.flavor }}/*.ipxe",
+    ]
     upload = steps(job)[index(job, lambda s: runs(s, r"gh release upload "))]
     assert upload["if"] == "github.event_name == 'release'"
     assert upload["env"]["TAG"] == "${{ github.event.release.tag_name }}"
@@ -378,7 +401,23 @@ def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
         '"packer/output-images/${FLAVOR}"/*.qcow2.zst',
         '"packer/output-images/${FLAVOR}"/*.raw.zst',
         '"packer/output-images/${FLAVOR}"/sbom-*.json',
+        '"packer/output-images/${FLAVOR}"/*-netboot.vmlinuz',
+        '"packer/output-images/${FLAVOR}"/*-netboot.initrd',
+        '"packer/output-images/${FLAVOR}"/*-root.squashfs',
+        '"packer/output-images/${FLAVOR}"/*.ipxe',
     ]
+
+
+def test_netboot_smoke_step_runs_on_manual_dispatch_with_negative_check():
+    job = load(RELEASE)["jobs"]["build-matrix"]
+    step = steps(job)[index(job, lambda s: s.get("name") == "Netboot Smoke Test")]
+    assert step["if"] == "github.event_name == 'workflow_dispatch'"
+    assert step.get("continue-on-error") is None or step["continue-on-error"] is False
+    run_lines = step["run"].strip().splitlines()
+    positive = [line for line in run_lines if "tools/ci/netboot_smoke.py" in line and "--expect-mismatch" not in line]
+    negative = [line for line in run_lines if "tools/ci/netboot_smoke.py" in line and "--expect-mismatch" in line]
+    assert len(positive) == 1 and len(negative) == 1
+    assert "continue-on-error" not in step["run"]
 
 
 def test_sign_job_signs_verifies_then_uploads_on_release_only():

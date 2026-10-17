@@ -19,7 +19,7 @@ root transition; 4096 MiB provides safe headroom.
 All networking uses 192.0.2.x (RFC 5737 TEST-NET-1 documentation range), never RFC 1918.
 
 Usage:
-  python3 -I tools/ci/netboot_smoke.py --dir ASSET_DIR --flavor FLAVOR [--accel tcg] [--timeout 1500] [--expect-mismatch]
+  python3 -I tools/ci/netboot_smoke.py --assets ASSET_DIR --flavor FLAVOR [--accel tcg] [--timeout 1500] [--expect-mismatch]
 """
 
 from __future__ import annotations
@@ -33,6 +33,7 @@ import secrets
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -206,6 +207,56 @@ def prepare_seed(serve_dir: pathlib.Path, nonce: str) -> None:
     (seed_dir / "user-data").write_text(user_data(nonce), encoding="utf-8")
 
 
+def boot_script(original: str, seed_arg: str, *, expect_mismatch: bool) -> str:
+    """Return the script this run serves: the seed added and, for a negative run, a wrong digest."""
+    script = inject_cmdline(original, seed_arg)
+    if not expect_mismatch:
+        return script
+    wrong, count = re.subn(r"imago\.root-sha256=[0-9a-f]{64}", "imago.root-sha256=" + "0" * 64, script)
+    if count != 1 or wrong == script:
+        raise BootError("the iPXE script carries no imago.root-sha256 digest to replace")
+    return wrong
+
+
+def stage(asset_dir: pathlib.Path, staging: pathlib.Path, flavor: str) -> str:
+    """Link the three binary assets into the staging directory and return the script text.
+
+    The run serves the staging directory, so the published script and the asset directory
+    are never written, even when the run is killed.
+    """
+    script_path = asset_dir / f"{flavor}.ipxe"
+    if not script_path.is_file():
+        raise BootError(f"iPXE script {script_path} does not exist")
+    for name in (f"{flavor}-netboot.vmlinuz", f"{flavor}-netboot.initrd", f"{flavor}-root.squashfs"):
+        source = asset_dir / name
+        if not source.is_file():
+            raise BootError(f"netboot asset {source} does not exist")
+        (staging / name).symlink_to(source.resolve())
+    return script_path.read_text(encoding="utf-8")
+
+
+def boot_and_watch(cmd: list[str], serial: pathlib.Path, nonce: str, timeout_s: float, expect_mismatch: bool) -> str:
+    errors = serial.with_name("qemu.err")
+    with errors.open("w", encoding="utf-8") as sink:
+        process = subprocess.Popen(
+            cmd,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=sink,
+            start_new_session=True,
+        )
+        try:
+            if expect_mismatch:
+                return watch_mismatch(process, serial, nonce, timeout_s)
+            return watch(process, serial, nonce, timeout_s)
+        except BootError:
+            tail = (read_log(errors) + read_log(serial)).splitlines()[-LOG_TAIL_LINES:]
+            print("\n".join(["--- QEMU and serial console tail ---", *tail, "---"]), file=sys.stderr)
+            raise
+        finally:
+            kill_process_group(process)
+
+
 def run_boot(
     asset_dir: pathlib.Path,
     flavor: str,
@@ -217,53 +268,17 @@ def run_boot(
 ) -> str:
     if accel not in ACCELERATORS:
         raise BootError(f"unknown accelerator {accel}; known: {', '.join(ACCELERATORS)}")
-
-    script_path = asset_dir / f"{flavor}.ipxe"
-    if not script_path.is_file():
-        raise BootError(f"iPXE script {script_path} does not exist")
-
-    original_script = script_path.read_text(encoding="utf-8")
     nonce = secrets.token_hex(8)
-
-    with AssetServer(asset_dir) as server:
-        prepare_seed(asset_dir, nonce)
-        seed_arg = f"ds=nocloud;s=http://{NET_HOST}:{server.port}/seed/"
-        test_script = inject_cmdline(original_script, seed_arg)
-        if expect_mismatch and "imago.root-sha256=0000" not in test_script:
-            test_script = re.sub(
-                r"imago\.root-sha256=[0-9a-f]{64}",
-                "imago.root-sha256=" + "0" * 64,
-                test_script,
-            )
-        script_path.write_text(test_script, encoding="utf-8")
-
-        serial = asset_dir / "serial.log"
-        errors = asset_dir / "qemu.err"
-        if serial.exists():
-            serial.unlink()
-
-        try:
-            with errors.open("w", encoding="utf-8") as sink:
-                cmd = command(qemu, server.port, flavor, serial, accel)
-                process = subprocess.Popen(
-                    cmd,
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=sink,
-                    start_new_session=True,
-                )
-                try:
-                    if expect_mismatch:
-                        return watch_mismatch(process, serial, nonce, timeout_s)
-                    return watch(process, serial, nonce, timeout_s)
-                except BootError:
-                    tail = (read_log(errors) + read_log(serial)).splitlines()[-LOG_TAIL_LINES:]
-                    print("\n".join(["--- QEMU and serial console tail ---", *tail, "---"]), file=sys.stderr)
-                    raise
-                finally:
-                    kill_process_group(process)
-        finally:
-            script_path.write_text(original_script, encoding="utf-8")
+    with tempfile.TemporaryDirectory(prefix="imago-netboot-") as tmp:
+        staging = pathlib.Path(tmp)
+        original = stage(asset_dir, staging, flavor)
+        with AssetServer(staging) as server:
+            prepare_seed(staging, nonce)
+            seed_arg = f"ds=nocloud;s=http://{NET_HOST}:{server.port}/seed/"
+            script = boot_script(original, seed_arg, expect_mismatch=expect_mismatch)
+            (staging / f"{flavor}.ipxe").write_text(script, encoding="utf-8")
+            cmd = command(qemu, server.port, flavor, staging / "serial.log", accel)
+            return boot_and_watch(cmd, staging / "serial.log", nonce, timeout_s, expect_mismatch)
 
 
 def main(argv: list[str] | None = None) -> int:

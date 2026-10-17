@@ -35,6 +35,8 @@ The facts below were measured on 2026-10-17. The raw notes live in the local evi
 3. **Root integrity check.** A new dracut module `imago-netroot` closes the gap in Context 2. It reads `imago.root-sha256=<64 hex>` from the kernel command line and compares it with the sha256 of the fetched squashfs. It runs before `dmsquash-live` mounts the image.
    - A mismatch, a missing value or a malformed value stops the boot with a console message.
    - It never falls back to an unchecked root, and no option skips the check.
+   - Hook point: `livenetroot.sh` (dracut 110, `modules.d/70livenet/livenetroot.sh:83`) ends its bounded fetch loop with `exec /sbin/dmsquash-live-root "$root"`, which `70dmsquash-live/module-setup.sh:32` installs. The module installs after `70dmsquash-live` (dracut installs modules in `modules.d` glob order), renames that program to `dmsquash-live-root.orig` and takes its place, so every fetched image, including one fetched after a retry, passes the check before the original runs.
+   - dracut ignores a failing module `install()`, so the provisioner reads the built initrd back with `lsinitrd` and fails the build when the module or the renamed original is missing.
 4. **The iPXE script.** The script fetches the kernel and initrd by URIs relative to itself. It passes `root=live:${cwduri}<flavor>-root.squashfs`, `ip=dhcp`, `rd.neednet=1` and `imago.root-sha256=<digest>`. An operator therefore serves the four assets from one directory and chains the script. The digest is written into the script at build time from the same file that goes into `SHA256SUMS`.
 5. **Kernel and initrd integrity.** iPXE cannot verify these (Context 3). The operator verifies `SHA256SUMS` with `cosign verify-blob` and checks the four assets against it before serving them. `docs/platforms/baremetal.md` states this step. The squashfs digest is checked again at boot (item 3).
 6. **Size limit.** The matrix's `release_assets.py sizes` step covers the new assets. An asset at or above 2 GiB fails the flavor build, and a planted oversize asset in the tests proves that.
@@ -51,7 +53,7 @@ The facts below were measured on 2026-10-17. The raw notes live in the local evi
 ## References
 
 - Issue #5.
-- `dracut.cmdline(7)`, dracut 110; `modules.d/90livenet` and `modules.d/90dmsquash-live` at that version.
+- `dracut.cmdline(7)`, dracut 110; `modules.d/70livenet` (`livenetroot.sh`, `parse-livenet.sh`), `modules.d/70dmsquash-live` (`module-setup.sh`) and `dracut.sh` at that version.
 - iPXE `src/hci/commands/digest_cmd.c`, `src/hci/commands/image_trust_cmd.c`, `src/core/settings.c` at `c51ca76a6e56`.
 - Ubuntu resolute cloud image manifest; `casper(7)` 26.04.2; live-boot 1:20250815.
 - [ADR-0033](0033-aegis-build-workflow.md) for the 2 GiB asset limit as applied to Aegis.
