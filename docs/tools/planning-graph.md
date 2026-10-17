@@ -6,15 +6,14 @@ The migration to `cordanaLLM/imago` is tracked as a typed dependency graph under
 
 Since 2026-10-11 the forge is the record of open work: issues under milestones ([ADR-0025](../adr/0025-forge-as-record-of-open-work-and-frozen-planning-graph.md)). The graph under `planning/` stays as the record of the migration and receives no new step. `imago plan validate` and `imago plan route` keep working on it.
 
-Nineteen of the 22 steps are done. The three open steps are carried by issues:
+Twenty of the 22 steps are done. The two open steps are carried by issues:
 
 | Step | Carried by | Closes when |
 | :--- | :--- | :--- |
-| `step-lefthook-verify` | [#80](https://github.com/cordanaLLM/imago/issues/80) | each gate has one recorded run in which it refuses a planted defect |
-| `step-app-hardening` | [#81](https://github.com/cordanaLLM/imago/issues/81) | the audit baseline is zero and no function exceeds the complexity limits |
 | `step-aegis-pair` | [#46](https://github.com/cordanaLLM/imago/issues/46) | the executor returns a real result for an accepted Aegis request |
+| `step-nucleus-contract` | [#47](https://github.com/cordanaLLM/imago/issues/47) | a nucleus release crosses the contract and imago verifies it |
 
-The overlay names the issue in the `evidence` field of each open step. When an issue closes, its step is marked done there with the pull request as evidence.
+The overlay names the issue in the `evidence` field of each open step. When an issue closes, its step is marked done there with the pull request as evidence. A step marked done whose acceptance turns out unmet is reopened with the issue that carries it ([ADR-0029](../adr/0029-a-planning-step-reopens-when-its-acceptance-is-unmet.md)); `tests/test_planning_overlay.py` fails when this table and the overlay name different open steps.
 
 ## Files
 

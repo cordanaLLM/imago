@@ -241,13 +241,32 @@ func TestConformPolicy(t *testing.T) {
 	assert.Error(t, m.Conform(kernel.Policy{Tag: "v7.2.5-lusoris1"}))
 }
 
+// manifestMutation breaks one field of a valid manifest document; want is a
+// fragment of the rejection the parser must report.
+type manifestMutation struct {
+	name   string
+	mutate func(doc map[string]any)
+	want   string
+}
+
 func TestParseArtifactManifestNegative(t *testing.T) {
+	cases := append(headerMutations(), artifactMutations()...)
+	cases = append(cases, provenanceMutations()...)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			doc := manifestDoc(t, writeRelease(t, t.TempDir()))
+			tc.mutate(doc)
+			_, err := parseManifestDoc(t, doc)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.want)
+		})
+	}
+}
+
+// headerMutations break the schema, provider, stream, version and kernel fields.
+func headerMutations() []manifestMutation {
 	validDigest := "sha256:" + strings.Repeat("a", 64)
-	cases := []struct {
-		name   string
-		mutate func(doc map[string]any)
-		want   string
-	}{
+	return []manifestMutation{
 		{"unknown field", func(d map[string]any) { d["signature"] = "x" }, `unknown field "signature"`},
 		{"schema", func(d map[string]any) { d["schema"] = "imago.nucleus.kernel-artifact.v2" }, "schema: must be"},
 		{"provider slug", func(d map[string]any) { d["provider"] = "nucleus" }, "provider: must be an owner/repository slug"},
@@ -257,6 +276,12 @@ func TestParseArtifactManifestNegative(t *testing.T) {
 		{"config digest", func(d map[string]any) {
 			d["kernel"] = map[string]any{"release": "7.2.4", "config_digest": "sha256:short"}
 		}, "kernel.config_digest: must be sha256:<64 hex>"},
+	}
+}
+
+// artifactMutations break the artifact list and the checksums entry.
+func artifactMutations() []manifestMutation {
+	return []manifestMutation{
 		{"empty artifacts", func(d map[string]any) { d["artifacts"] = []any{} }, "artifacts: must list 1..64 entries"},
 		{"path traversal name", func(d map[string]any) {
 			d["artifacts"] = []any{map[string]any{"name": "../etc/passwd", "sha256": strings.Repeat("b", 64), "size": 1}}
@@ -281,6 +306,12 @@ func TestParseArtifactManifestNegative(t *testing.T) {
 			d["checksums"] = map[string]any{"file": "sums.txt", "sha256": strings.Repeat("b", 64)}
 		}, `checksums.file: must be "SHA256SUMS"`},
 		{"checksums digest", func(d map[string]any) { d["checksums"] = map[string]any{"file": "SHA256SUMS", "sha256": "abc"} }, "checksums.sha256"},
+	}
+}
+
+// provenanceMutations break the provenance block.
+func provenanceMutations() []manifestMutation {
+	return []manifestMutation{
 		{"provenance repository", func(d map[string]any) {
 			d["provenance"].(map[string]any)["repository"] = "lusoris/lusoris-kernel-forge"
 		}, "provenance.repository: must equal provider"},
@@ -291,15 +322,6 @@ func TestParseArtifactManifestNegative(t *testing.T) {
 			d["provenance"].(map[string]any)["signer_identity"] = "https://github.com/someone-else/nucleus/.github/workflows/publish-release.yml@refs/tags/v1"
 		}, "provenance.signer_identity"},
 		{"signer identity empty", func(d map[string]any) { d["provenance"].(map[string]any)["signer_identity"] = "" }, "provenance.signer_identity"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			doc := manifestDoc(t, writeRelease(t, t.TempDir()))
-			tc.mutate(doc)
-			_, err := parseManifestDoc(t, doc)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), tc.want)
-		})
 	}
 }
 

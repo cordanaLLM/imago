@@ -77,9 +77,9 @@
     },
     "step-lefthook-verify": {
       "cost": "small",
-      "done": false,
+      "done": true,
       "owner": "cordanaLLM/imago",
-      "evidence": "Open; carried by https://github.com/cordanaLLM/imago/issues/80 since 2026-10-11"
+      "evidence": "Done 2026-10-17: tools/ci/prove_hooks.py records one planted-defect refusal per governance gate; https://github.com/cordanaLLM/imago/pull/128 closed issue #80"
     },
     "step-archetype-draft": {
       "cost": "small",
@@ -130,16 +130,16 @@
     },
     "step-nucleus-contract": {
       "cost": "medium",
-      "done": true,
+      "done": false,
       "owner": "cordanaLLM/imago",
       "needs_external_contract": true,
-      "evidence": "feat/nucleus-kernel-contract-20260915: pkg/kernel (Aegis requirement decoder, imago.nucleus.kernel-artifact.v1 verifier), imago kernel CLI, versions.json kernel pin, sync-kernel-manifest.yml verification order, ADR-0021; nucleus manifest generation in cordanaLLM/nucleus#11"
+      "evidence": "Reopened 2026-10-17 (ADR-0029): imago-side code delivered by feat/nucleus-kernel-contract-20260915 (pkg/kernel, imago kernel CLI, sync-kernel-manifest.yml, ADR-0021; nucleus manifest generation in cordanaLLM/nucleus#11); open until the first nucleus release crossing the contract is verified, carried by https://github.com/cordanaLLM/imago/issues/47"
     },
     "step-app-hardening": {
       "cost": "medium",
-      "done": false,
+      "done": true,
       "owner": "cordanaLLM/imago",
-      "evidence": "Open; carried by https://github.com/cordanaLLM/imago/issues/81 since 2026-10-11"
+      "evidence": "Done 2026-10-17: audit baseline empty, no Go function over the HISS-04 limits; https://github.com/cordanaLLM/imago/pull/127 closed issue #81, test functions split in https://github.com/cordanaLLM/imago/pull/129"
     }
   }
 }

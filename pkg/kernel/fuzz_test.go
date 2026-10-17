@@ -4,6 +4,7 @@ package kernel_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -32,24 +33,7 @@ func FuzzParseRequirement(f *testing.F) {
 	f.Add([]byte(`{} {}`))
 	f.Add([]byte{})
 	f.Fuzz(func(t *testing.T, data []byte) {
-		q, err := kernel.ParseRequirement(bytes.NewReader(data))
-		if err != nil {
-			requireBoundedText(t, err)
-			if q != nil {
-				t.Fatalf("a rejected requirement returned a value: %+v", q)
-			}
-			return
-		}
-		if err := q.Validate(); err != nil {
-			t.Fatalf("the parser accepted a requirement that Validate rejects: %v", err)
-		}
-		again, err := kernel.ParseRequirement(bytes.NewReader(encode(t, q)))
-		if err != nil {
-			t.Fatalf("the encoding of an accepted requirement is rejected: %v", err)
-		}
-		if !reflect.DeepEqual(q, again) {
-			t.Fatalf("round trip changed the requirement:\n first %+v\nsecond %+v", q, again)
-		}
+		checkParse(t, "requirement", kernel.ParseRequirement, data)
 	})
 }
 
@@ -68,25 +52,36 @@ func FuzzParseArtifactManifest(f *testing.F) {
 	f.Add([]byte(`{} {}`))
 	f.Add([]byte{})
 	f.Fuzz(func(t *testing.T, data []byte) {
-		m, err := kernel.ParseArtifactManifest(bytes.NewReader(data))
-		if err != nil {
-			requireBoundedText(t, err)
-			if m != nil {
-				t.Fatalf("a rejected manifest returned a value: %+v", m)
-			}
-			return
-		}
-		if err := m.Validate(); err != nil {
-			t.Fatalf("the parser accepted a manifest that Validate rejects: %v", err)
-		}
-		again, err := kernel.ParseArtifactManifest(bytes.NewReader(encode(t, m)))
-		if err != nil {
-			t.Fatalf("the encoding of an accepted manifest is rejected: %v", err)
-		}
-		if !reflect.DeepEqual(m, again) {
-			t.Fatalf("round trip changed the manifest:\n first %+v\nsecond %+v", m, again)
-		}
+		checkParse(t, "manifest", kernel.ParseArtifactManifest, data)
 	})
+}
+
+// checkParse holds every fuzz input to one contract: a rejection carries a
+// bounded text and no value; an accepted document passes Validate and
+// survives an encode and parse round trip unchanged.
+func checkParse[T any, P interface {
+	*T
+	Validate() error
+}](t *testing.T, kind string, parse func(io.Reader) (P, error), data []byte) {
+	t.Helper()
+	v, err := parse(bytes.NewReader(data))
+	if err != nil {
+		requireBoundedText(t, err)
+		if v != nil {
+			t.Fatalf("a rejected %s returned a value: %+v", kind, v)
+		}
+		return
+	}
+	if err := v.Validate(); err != nil {
+		t.Fatalf("the parser accepted a %s that Validate rejects: %v", kind, err)
+	}
+	again, err := parse(bytes.NewReader(encode(t, v)))
+	if err != nil {
+		t.Fatalf("the encoding of an accepted %s is rejected: %v", kind, err)
+	}
+	if !reflect.DeepEqual(v, again) {
+		t.Fatalf("round trip changed the %s:\n first %+v\nsecond %+v", kind, v, again)
+	}
 }
 
 // requireBoundedText fails when a rejection's text exceeds the reason bound
