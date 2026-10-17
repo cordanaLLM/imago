@@ -31,6 +31,17 @@ HINDSIGHT_URL = os.environ.get("HINDSIGHT_URL", "http://127.0.0.1:8888").rstrip(
 HINDSIGHT_TENANT = os.environ.get("HINDSIGHT_TENANT", "default")
 DEFAULT_BANK = os.environ.get("HINDSIGHT_BANK", "lusoris-cloud-images")
 REQUEST_TIMEOUT = int(os.environ.get("HINDSIGHT_TIMEOUT", "15"))
+API_KEY_VAR = "HINDSIGHT_API_KEY"
+
+
+def read_api_key() -> str:
+    """Return the tenant key, or "" when unset or left as an unexpanded `${...}` placeholder by the client."""
+    key = os.environ.get(API_KEY_VAR, "").strip()
+    return "" if key.startswith("${") else key
+
+
+# The server compares the bearer token with its HINDSIGHT_API_TENANT_API_KEY (secret hindsight-tenant-api-key).
+HINDSIGHT_API_KEY = read_api_key()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LOCAL_CACHE_DIR = REPO_ROOT / ".workingdir" / "memory"
@@ -93,6 +104,8 @@ def http_api(method: str, path: str, body: dict[str, Any] | None = None) -> tupl
 
     data = json.dumps(body).encode("utf-8") if body is not None else None
     headers = {"Content-Type": "application/json"}
+    if HINDSIGHT_API_KEY:
+        headers["Authorization"] = f"Bearer {HINDSIGHT_API_KEY}"
     full_path = parsed.path or "/"
     if parsed.query:
         full_path += f"?{parsed.query}"
@@ -117,21 +130,40 @@ def http_api(method: str, path: str, body: dict[str, Any] | None = None) -> tupl
         return 0, {"error": str(exc)[:300]}
 
 
-def flush_local_pending(bank_id: str) -> int:
-    """Sync locally buffered facts to upstream Hindsight if reachable."""
+def flush_local_pending() -> int:
+    """Sync buffered facts, each into its own bank; stop at the first refusal and keep the rest pending."""
     entries = read_local_buffer()
     synced = 0
     for item in entries:
         if not item.get("pending_sync"):
             continue
         payload = {"content": item["content"], "context": item.get("context", "")}
-        st, _ = http_api("POST", f"/v1/{HINDSIGHT_TENANT}/banks/{bank_id}/retain", payload)
-        if 200 <= st < 300:
-            item["pending_sync"] = False
-            synced += 1
+        quoted_bank = urllib.parse.quote(str(item.get("bank_id", DEFAULT_BANK)), safe="")
+        st, _ = http_api("POST", f"/v1/{HINDSIGHT_TENANT}/banks/{quoted_bank}/retain", payload)
+        if not 200 <= st < 300:
+            break
+        item["pending_sync"] = False
+        synced += 1
     if synced > 0:
         write_local_buffer(entries)
     return synced
+
+
+def succeeded(st: int) -> bool:
+    """Report a 2xx status; the first one drains the offline buffer before the caller goes on."""
+    if not 200 <= st < 300:
+        return False
+    flush_local_pending()
+    return True
+
+
+def failure_reason(st: int) -> str:
+    """Name why a request failed: no response, a refused tenant key, or a server error."""
+    if st == 0:
+        return "unreachable"
+    if st in (401, 403):
+        return f"unauthorised (HTTP {st})"
+    return f"error (HTTP {st})"
 
 
 def tool_hindsight_retain(content: str, context: str = "", bank_id: str = DEFAULT_BANK) -> str:
@@ -145,14 +177,13 @@ def tool_hindsight_retain(content: str, context: str = "", bank_id: str = DEFAUL
     quoted_bank = urllib.parse.quote(bank_id, safe="")
     st, data = http_api("POST", f"/v1/{HINDSIGHT_TENANT}/banks/{quoted_bank}/retain", payload)
 
-    if 200 <= st < 300:
-        flush_local_pending(quoted_bank)
+    if succeeded(st):
         doc_id = data.get("document_id") or data.get("id") or "stored"
         return f"[Hindsight Upstream] Retained fact in bank '{bank_id}' (document_id: {doc_id})."
 
     entry = append_local_fact(clean_content, clean_context, bank_id)
     return (
-        f"[Hindsight Offline Buffer] Upstream unreachable. Stored locally in "
+        f"[Hindsight Offline Buffer] Upstream {failure_reason(st)}. Stored locally in "
         f"bank '{bank_id}' (buffer_id: {entry['id']}, pending_sync: true)."
     )
 
@@ -165,7 +196,7 @@ def tool_hindsight_recall(query: str, top_k: int = 5, bank_id: str = DEFAULT_BAN
     payload = {"query": clean_query, "k": k}
 
     st, data = http_api("POST", f"/v1/{HINDSIGHT_TENANT}/banks/{quoted_bank}/recall", payload)
-    if 200 <= st < 300:
+    if succeeded(st):
         results = data if isinstance(data, list) else data.get("results", data.get("memories", []))
         if not results:
             return f"[Hindsight Upstream] No relevant memories found in bank '{bank_id}' for query: '{clean_query}'."
@@ -185,51 +216,69 @@ def tool_hindsight_recall(query: str, top_k: int = 5, bank_id: str = DEFAULT_BAN
         for idx, item in enumerate(matched[:k], 1):
             lines.append(f"{idx}. {item['content']} (saved: {item['timestamp']})")
         return "\n".join(lines)
-    return f"[Hindsight Offline Buffer] Upstream unreachable. No matching buffered facts for '{clean_query}'."
+    return f"[Hindsight Offline Buffer] Upstream {failure_reason(st)}. No matching buffered facts for '{clean_query}'."
 
 
 def tool_hindsight_reflect(bank_id: str = DEFAULT_BANK) -> str:
     """Trigger reflection to distill observations into mental models."""
     quoted_bank = urllib.parse.quote(bank_id, safe="")
     st, data = http_api("POST", f"/v1/{HINDSIGHT_TENANT}/banks/{quoted_bank}/reflect", {})
-    if 200 <= st < 300:
+    if succeeded(st):
         op = data.get("operation_id") or "completed"
         return f"[Hindsight Upstream] Reflection cycle triggered for bank '{bank_id}' (operation: {op})."
-    return f"[Hindsight Notice] Upstream unreachable. Reflection skipped (HTTP {st})."
+    return f"[Hindsight Notice] Upstream {failure_reason(st)}. Reflection skipped."
+
+
+def pending_count() -> int:
+    """Count buffered facts that have not reached upstream yet."""
+    return sum(1 for entry in read_local_buffer() if entry.get("pending_sync"))
+
+
+def status_failure(st: int, data: Any) -> tuple[str, str]:
+    """Return the status headline and the notice that tells the operator what to fix."""
+    if st == 0:
+        return (
+            "UNREACHABLE (no HTTP response)",
+            "Port-forward 'service/hindsight 8888:8888' is not currently connected.",
+        )
+    if st in (401, 403):
+        state = "was rejected" if HINDSIGHT_API_KEY else "is not set"
+        return f"UNAUTHORISED (HTTP {st})", f"{API_KEY_VAR} {state}; set it to the tenant key of the deployment."
+    return f"ERROR (HTTP {st})", f"The server answered with an error: {sanitize_privacy(str(data))[:300]}"
 
 
 def tool_hindsight_status() -> str:
     """Probe status of Hindsight cluster API and local cache."""
     st, data = http_api("GET", f"/v1/{HINDSIGHT_TENANT}/banks")
-    local_count = len(read_local_buffer())
-    if 200 <= st < 300:
+    if succeeded(st):
         banks = data if isinstance(data, list) else data.get("banks", data.get("items", []))
         return (
-            f"Hindsight Status: ONLINE (HTTP 200)\n"
+            f"Hindsight Status: ONLINE (HTTP {st})\n"
             f"Upstream URL: {HINDSIGHT_URL}\n"
             f"Tenant: {HINDSIGHT_TENANT}\n"
             f"Active Banks: {len(banks)}\n"
-            f"Local Offline Buffer: {local_count} entries"
+            f"Local Offline Buffer: {pending_count()} entries pending"
         )
+    headline, notice = status_failure(st, data)
     return (
-        f"Hindsight Status: OFFLINE / DISCONNECTED (HTTP {st})\n"
+        f"Hindsight Status: {headline}\n"
         f"Target URL: {HINDSIGHT_URL}\n"
-        f"Notice: Port-forward 'service/hindsight 8888:8888' is not currently connected.\n"
-        f"Local Offline Buffer: {local_count} entries available"
+        f"Notice: {notice}\n"
+        f"Local Offline Buffer: {pending_count()} entries pending"
     )
 
 
 def tool_hindsight_list_banks() -> str:
     """List all available memory banks."""
     st, data = http_api("GET", f"/v1/{HINDSIGHT_TENANT}/banks")
-    if 200 <= st < 300:
+    if succeeded(st):
         banks = data if isinstance(data, list) else data.get("banks", data.get("items", []))
         lines = [f"Available Hindsight memory banks ({len(banks)}):"]
         for b in banks:
             name = b if isinstance(b, str) else b.get("bank_id") or b.get("id") or str(b)
             lines.append(f"- {name}")
         return "\n".join(lines)
-    return f"Unable to list banks (upstream unreachable at {HINDSIGHT_URL}). Default bank: '{DEFAULT_BANK}'."
+    return f"Unable to list banks (upstream {failure_reason(st)} at {HINDSIGHT_URL}). Default bank: '{DEFAULT_BANK}'."
 
 
 def bank_id_property() -> dict[str, Any]:
