@@ -21,7 +21,7 @@
    - **`mainstream`**: Linux 7.2.x (Intel Xe2 Battlemage, AMD ROCm 10, NVIDIA 565/610, container hosts).
    - **`bleeding`**: Linux 7.3-rc2 / mainline (NVIDIA 615 Blackwell RTX 5090 / B200, CXL 3.0, `sched-ext`).
    - **`realtime`**: Linux 7.2-rt / 6.18-rt (`PREEMPT_RT` / BORE scheduler, 1000Hz timer, WireGuard).
-4. **Packaging & Delivery**: Output standard Debian `.deb` packages, debug symbols, and signed Unified Kernel Image (UKI) `.efi` binaries to an APT repository (`apt.example.com/kernels`) and an OCI registry (`ghcr.io/lusoris/kernels`).
+4. **Packaging & Delivery**: Output standard Debian `.deb` packages and the `vmlinuz` image to the GitHub Release of each tag (section 4.1). Debug symbols, signed Unified Kernel Image (UKI) `.efi` binaries, an APT repository (`apt.example.com/kernels`) and an OCI registry are planned; no release publishes them yet.
 
 ---
 
@@ -154,7 +154,7 @@ main "$@"
 {"stream": "mainstream", "version": "7.2.4-lusoris1", "tag": "v7.2.4-lusoris1"}
 ```
 
-Release assets: `*.deb`, `linux-<stream>-<version>-uki.efi`, `kernel-<stream>.config` (the merged kconfig the build used), `kernel-<stream>.cdx.json`, `kernel-<stream>.spdx.json`, `SHA256SUMS`, `SHA256SUMS.bundle`, and `kernel-<stream>.manifest.json`. The manifest is written after `SHA256SUMS` is signed and is deliberately not listed in it.
+Release assets: `*.deb` (linux-image, linux-headers, linux-libc-dev), `vmlinuz-<version>-<stream>`, `kernel-<stream>-<arch>.config` (the merged kconfig the build used), `kernel-<stream>.cdx.json`, `kernel-<stream>.spdx.json`, `SHA256SUMS`, `SHA256SUMS.bundle`, and `kernel-<stream>.manifest.json` (`cordanaLLM/nucleus` `.github/workflows/publish-release.yml` lines 73-80 at commit `bcb5ebf`). The manifest is written after `SHA256SUMS` is signed and is deliberately not listed in it. A UKI (`.efi`) is planned and not published; nucleus `scripts/package-uki.sh` refuses to emit one since cordanaLLM/nucleus#27, and the entry changes to published in the same change that pins the first nucleus release carrying a UKI.
 
 The manifest schema `imago.nucleus.kernel-artifact.v1` is owned by `imago` (`pkg/kernel`) and decoded strictly: unknown fields, trailing data, and documents above 1 MiB are rejected.
 
