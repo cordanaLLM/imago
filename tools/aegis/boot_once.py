@@ -87,7 +87,8 @@ def get_tool_version(cmd: list[str], default: str = "unknown") -> str:
             if line_str:
                 return line_str
     except (OSError, subprocess.TimeoutExpired):
-        pass
+        # A missing or hanging tool leaves its version unknown; the evidence records the default.
+        return default
     return default
 
 
@@ -139,7 +140,8 @@ def kill_process_group(pgid: int | None) -> None:
         time.sleep(0.5)
         os.killpg(pgid, signal.SIGKILL)
     except (ProcessLookupError, PermissionError):
-        pass
+        # The group already exited after SIGTERM, or was reaped; nothing is left to kill.
+        return
 
 
 def setup_swtpm(state_dir: pathlib.Path, swtpm_setup_bin: str) -> None:
@@ -260,7 +262,8 @@ def detect_runner_image() -> str:
                 if line.startswith("PRETTY_NAME="):
                     return line.partition("=")[2].strip().strip('"')
     except OSError:
-        pass
+        # Without os-release the runner is recorded under the generic name below.
+        return "linux-host"
     return "linux-host"
 
 
