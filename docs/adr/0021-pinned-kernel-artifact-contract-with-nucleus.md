@@ -4,7 +4,7 @@ Date: 2026-09-15
 
 ## Status
 
-Accepted. Amended by [ADR-0028](0028-one-reason-bound-for-every-contract-parser.md).
+Accepted. Amended by [ADR-0028](0028-one-reason-bound-for-every-contract-parser.md); decision 4 superseded by [ADR-0030](0030-kernel-requirement-decoder-follows-the-schema-owner.md).
 
 ## Context
 

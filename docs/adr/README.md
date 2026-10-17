@@ -29,7 +29,7 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0017](0017-developer-workstations-single-node-k8s-and-orchestration-expansion.md) | Developer Workstation Environments, Single-Node Kubernetes, and Clustered Orchestration Expansion | Accepted | 2026-09-10 |
 | [0018](0018-nas-and-storage-appliance-ecosystem.md) | Open-Source and Virtual Network Attached Storage (NAS) Ecosystem Architecture | Accepted | 2026-09-10 |
 | [0019](0019-imago-fleet-migration-praetor-golusoris-planning-graph.md) | Fleet Migration to cordanaLLM/imago: Praetor Governance, Golusoris Core, and a Routed Planning Graph | Accepted | 2026-09-15 |
-| [0020](0020-aegis-product-input-contract-acceptance.md) | Aegis Product-Input Contract Acceptance | Accepted; amended by [0028](0028-one-reason-bound-for-every-contract-parser.md) | 2026-09-15 |
+| [0020](0020-aegis-product-input-contract-acceptance.md) | Aegis Product-Input Contract Acceptance | Accepted; amended by [0028](0028-one-reason-bound-for-every-contract-parser.md); decision 4 superseded by [0030](0030-kernel-requirement-decoder-follows-the-schema-owner.md) | 2026-09-15 |
 | [0021](0021-pinned-kernel-artifact-contract-with-nucleus.md) | Pinned Kernel Artifact Contract with cordanaLLM/nucleus | Accepted; amended by [0028](0028-one-reason-bound-for-every-contract-parser.md) | 2026-09-15 |
 | [0022](0022-fail-closed-provisioners-and-declared-main-protection.md) | Fail-Closed Provisioners and a Declared Rule Set for `main` | Accepted | 2026-10-11 |
 | [0023](0023-eupl-1.2-licence-and-reuse-annotations.md) | EUPL-1.2 Licence and REUSE Annotations | Accepted | 2026-10-11 |
@@ -39,3 +39,4 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0027](0027-pull-request-jobs-never-skip-path-filter-per-job.md) | Pull Request Jobs Never Skip; Each Job Filters Its Own Paths | Accepted | 2026-10-14 |
 | [0028](0028-one-reason-bound-for-every-contract-parser.md) | One Reason Bound for Every Contract Parser | Accepted | 2026-10-14 |
 | [0029](0029-a-planning-step-reopens-when-its-acceptance-is-unmet.md) | A Planning Step Reopens When Its Acceptance Is Unmet | Accepted | 2026-10-17 |
+| [0030](0030-kernel-requirement-decoder-follows-the-schema-owner.md) | The Kernel Requirement Decoder Follows the Schema Owner | Accepted | 2026-10-17 |

@@ -126,6 +126,7 @@ nav:
       - "0027: Pull Request Jobs Never Skip; Each Job Filters Its Own Paths": adr/0027-pull-request-jobs-never-skip-path-filter-per-job.md
       - "0028: One Reason Bound for Every Contract Parser": adr/0028-one-reason-bound-for-every-contract-parser.md
       - "0029: A Planning Step Reopens When Its Acceptance Is Unmet": adr/0029-a-planning-step-reopens-when-its-acceptance-is-unmet.md
+      - "0030: The Kernel Requirement Decoder Follows the Schema Owner": adr/0030-kernel-requirement-decoder-follows-the-schema-owner.md
       - "0018: NAS & Storage Appliance Ecosystem": adr/0018-nas-and-storage-appliance-ecosystem.md
   - Engineering & Governance:
       - Engineering Principles: principles.md
