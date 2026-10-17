@@ -61,11 +61,13 @@ Prior to retaining any memory into Hindsight, `scripts/hindsight_mcp_server.py` 
 
 ### 4. Resilient Offline Buffer & Reconnection Sync
 
-If the cluster backend is temporarily unreachable:
+If a call to the cluster backend fails (no response, a refused tenant key, or a server error):
 
-- Retained memories are safely appended to an ignored local buffer at `.workingdir2/memory/hindsight-local-buffer.json` with `pending_sync: true`.
-- Recall operations seamlessly query both local buffer facts and report offline status.
-- Once the cluster endpoint is restored, subsequent operations flush pending buffered items to Hindsight.
+- Retained memories are appended to an ignored local buffer at `.workingdir/memory/hindsight-local-buffer.json` with `pending_sync: true`, and the reply names the failure.
+- Recall operations query the local buffer facts and report the failure.
+- The first successful call of any tool sends each pending item to its own bank, stopping at the first refusal (amended for issue #36; before, only a successful retain flushed, and into the bank of that retain).
+
+Every request carries the tenant key from `HINDSIGHT_API_KEY` as `Authorization: Bearer <key>` (issue #36); `hindsight_status` reports unreachable, unauthorised and erroring backends as separate states.
 
 ### 5. Cluster Tunnel Supervisor (`scripts/tunnel_hindsight.py`)
 
