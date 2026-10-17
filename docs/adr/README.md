@@ -43,3 +43,4 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0031](0031-fail-closed-build-dispatch.md) | Fail-Closed Build Dispatch | Accepted | 2026-10-17 |
 | [0032](0032-local-packer-executor.md) | Local Packer Executor | Accepted | 2026-10-17 |
 | [0033](0033-aegis-build-workflow.md) | Aegis OS Image Build and Release Workflow | Accepted | 2026-10-17 |
+| [0034](0034-ipxe-netboot.md) | iPXE Netboot Assets and Root Integrity | Accepted | 2026-10-17 |
