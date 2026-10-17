@@ -779,11 +779,11 @@ func printKernelRequirement(w io.Writer, q *kernel.Requirement) error {
 	}
 	fmt.Fprintf(w, "  Architectures: %s\n", strings.Join(q.Architectures, ", "))
 	fmt.Fprintf(w, "  ABI: minimum-release %s", q.ABI.MinimumRelease)
-	if q.ABI.TargetRelease != "" {
-		fmt.Fprintf(w, ", target-release %s", q.ABI.TargetRelease)
+	if t := q.ABI.TargetRelease; t != nil {
+		fmt.Fprintf(w, ", target-release %s", *t)
 	}
-	if q.ABI.ModuleABI != "" {
-		fmt.Fprintf(w, ", module-abi %s", q.ABI.ModuleABI)
+	if m := q.ABI.ModuleABI; m != nil {
+		fmt.Fprintf(w, ", module-abi %s", *m)
 	}
 	fmt.Fprintf(w, "\n  Features: %d\n", len(q.Features))
 	for _, f := range q.Features {

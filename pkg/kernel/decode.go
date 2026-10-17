@@ -8,9 +8,11 @@
 package kernel
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -60,24 +62,38 @@ func bounded(err error) error {
 }
 
 // decodeStrict decodes exactly one JSON document of at most limit bytes into v.
-// Unknown fields, trailing data, and oversized input are rejected.
+// Unknown members, member names that differ only in case, duplicate members,
+// trailing data, and oversized input are rejected, as the schema owner's
+// decoder rejects them (ADR-0030).
 func decodeStrict(r io.Reader, limit int64, v any) error {
-	lr := &io.LimitedReader{R: r, N: limit + 1}
-	dec := json.NewDecoder(lr)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(v); err != nil {
-		if lr.N <= 0 {
-			return fmt.Errorf("document %w of %d bytes", ErrTooLarge, limit)
-		}
-		return fmt.Errorf("decode: %w", err)
+	data, err := io.ReadAll(io.LimitReader(r, limit+1))
+	if err != nil {
+		return fmt.Errorf("read: %w", err)
 	}
-	if lr.N <= 0 {
+	if int64(len(data)) > limit {
 		return fmt.Errorf("document %w of %d bytes", ErrTooLarge, limit)
 	}
-	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
+	dec := jsontext.NewDecoder(bytes.NewReader(data))
+	if err := json.UnmarshalDecode(dec, v, json.RejectUnknownMembers(true)); err != nil {
+		return fmt.Errorf("decode: %w", decodeError(err))
+	}
+	if _, err := dec.ReadToken(); !errors.Is(err, io.EOF) {
 		return errors.New("decode: trailing data after document")
 	}
 	return nil
+}
+
+// decodeError reports an unknown or duplicate member by its name alone, in the
+// text the package reported before ADR-0030, and keeps the cause in the chain.
+// The caller bounds the text.
+func decodeError(err error) error {
+	if serr, ok := errors.AsType[*json.SemanticError](err); ok && serr.Err == json.ErrUnknownName {
+		return &boundedError{text: fmt.Sprintf("json: unknown field %q", serr.JSONPointer.LastToken()), err: err}
+	}
+	if serr, ok := errors.AsType[*jsontext.SyntacticError](err); ok && serr.Err == jsontext.ErrDuplicateName {
+		return &boundedError{text: fmt.Sprintf("json: duplicate field %q", serr.JSONPointer.LastToken()), err: err}
+	}
+	return err
 }
 
 // boundedToken reports whether s is non-empty, at most max bytes, and matches re.

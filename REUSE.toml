@@ -54,3 +54,15 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Ayoub Ghriss"
 SPDX-License-Identifier = "MIT"
+
+# Copied byte for byte from build/ of cordanaLLM/Aegis-OS at commit
+# e915c654e6c1e497c976c02ae977067516575552 (ADR-0030); the schema owner's notice applies.
+[[annotations]]
+path = [
+  "pkg/kernel/testdata/aegis/kernel-requirement.json",
+  "pkg/kernel/testdata/aegis/kernel-requirement.reference.json",
+  "pkg/kernel/testdata/aegis/kernel-requirement.schema.json",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Lusoris <lusoris@proton.me>"
+SPDX-License-Identifier = "EUPL-1.2"

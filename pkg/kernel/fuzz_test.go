@@ -18,8 +18,8 @@ import (
 // seed corpus is the two vendored Aegis payloads plus one input per early
 // rejection path; the seeds run as ordinary cases in every `go test`.
 func FuzzParseRequirement(f *testing.F) {
-	for _, name := range []string{"aegis-kernel-requirement.json", "aegis-kernel-requirement.reference.json"} {
-		data, err := os.ReadFile(filepath.Join("testdata", name))
+	for _, name := range []string{"kernel-requirement.json", "kernel-requirement.reference.json"} {
+		data, err := os.ReadFile(filepath.Join("testdata", "aegis", name))
 		if err != nil {
 			f.Fatal(err)
 		}

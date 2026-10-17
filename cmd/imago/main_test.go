@@ -391,7 +391,7 @@ func writeKernelRelease(t *testing.T) (manifestPath, dir string) {
 }
 
 func TestKernelRequirementValidateAegisFixture(t *testing.T) {
-	fixture, err := filepath.Abs("../../pkg/kernel/testdata/aegis-kernel-requirement.json")
+	fixture, err := filepath.Abs("../../pkg/kernel/testdata/aegis/kernel-requirement.json")
 	require.NoError(t, err)
 
 	out, err := executeCommand("kernel", "requirement", "validate", fixture)
