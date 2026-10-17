@@ -245,3 +245,170 @@ class TestTunnelStartBound:
     def test_default_bound_is_declared(self, tunnel) -> None:
         assert tunnel.MAX_STARTS == 7200
         assert tunnel.run_tunnel.__defaults__ == (tunnel.DEFAULT_PORT, tunnel.MAX_STARTS)
+
+
+class _ScriptedConnection:
+    """Connection that records every request and answers with the status the test sets."""
+
+    sent: list[tuple[str, str, dict]] = []
+    status = 200
+
+    def __init__(self, host: str, port: int, timeout: int) -> None:
+        self.target = (host, port, timeout)
+
+    def request(self, method: str, path: str, body: bytes | None, headers: dict) -> None:
+        self.sent.append((method, path, dict(headers)))
+
+    def getresponse(self) -> _ScriptedConnection:
+        return self
+
+    def read(self) -> bytes:
+        return b"{}" if 200 <= self.status < 300 else b'{"detail": "planted"}'
+
+    def close(self) -> None:
+        return None
+
+
+def load_server(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, key: str | None):
+    """Load the server with HINDSIGHT_API_KEY as given, a scripted backend and a buffer under tmp_path."""
+    if key is None:
+        monkeypatch.delenv("HINDSIGHT_API_KEY", raising=False)
+    else:
+        monkeypatch.setenv("HINDSIGHT_API_KEY", key)
+    spec = importlib.util.spec_from_file_location("hindsight_mcp_server", SERVER_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    monkeypatch.setattr(http.client, "HTTPConnection", _ScriptedConnection)
+    monkeypatch.setattr(_ScriptedConnection, "sent", [])
+    monkeypatch.setattr(_ScriptedConnection, "status", 200)
+    monkeypatch.setattr(module, "LOCAL_CACHE_DIR", tmp_path)
+    monkeypatch.setattr(module, "LOCAL_CACHE_FILE", tmp_path / "buffer.json")
+    return module
+
+
+def buffered(bank_id: str, content: str) -> dict:
+    return {"id": f"local-{content}", "bank_id": bank_id, "content": content, "context": "", "pending_sync": True}
+
+
+class TestTenantKey:
+    """Every request carries the tenant key from HINDSIGHT_API_KEY as a bearer token (issue #36)."""
+
+    def test_key_is_sent_on_every_request(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        server.tool_hindsight_status()
+        server.tool_hindsight_retain("a fact")
+        server.tool_hindsight_recall("a fact")
+        server.tool_hindsight_reflect()
+        server.tool_hindsight_list_banks()
+        assert len(_ScriptedConnection.sent) == 5
+        assert {sent[2].get("Authorization") for sent in _ScriptedConnection.sent} == {"Bearer planted-key"}
+
+    @pytest.mark.parametrize("key", [None, "", "${HINDSIGHT_API_KEY}"])
+    def test_missing_key_sends_no_header(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, key) -> None:
+        server = load_server(monkeypatch, tmp_path, key)
+        server.tool_hindsight_status()
+        assert "Authorization" not in _ScriptedConnection.sent[0][2]
+
+    def test_mcp_configs_declare_the_key_without_a_value(self) -> None:
+        for path in (ROOT_MCP_JSON, WORKSPACE_MCP_JSON):
+            env = json.loads(path.read_text(encoding="utf-8"))["mcpServers"]["hindsight"]["env"]
+            assert env["HINDSIGHT_API_KEY"] == "${HINDSIGHT_API_KEY:-}", path
+
+
+class TestStatusFailureModes:
+    """hindsight_status names the actual failure instead of always blaming the port-forward (issue #36)."""
+
+    def test_reachable_with_key_is_online(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        assert server.tool_hindsight_status().startswith("Hindsight Status: ONLINE (HTTP 200)")
+
+    @pytest.mark.parametrize("status", [401, 403])
+    def test_rejected_key_is_unauthorised(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, status) -> None:
+        server = load_server(monkeypatch, tmp_path, "wrong-key")
+        monkeypatch.setattr(_ScriptedConnection, "status", status)
+        text = server.tool_hindsight_status()
+        assert text.startswith(f"Hindsight Status: UNAUTHORISED (HTTP {status})")
+        assert "HINDSIGHT_API_KEY was rejected" in text
+        assert "Port-forward" not in text
+
+    def test_missing_key_is_unauthorised_and_names_the_variable(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        server = load_server(monkeypatch, tmp_path, None)
+        monkeypatch.setattr(_ScriptedConnection, "status", 401)
+        text = server.tool_hindsight_status()
+        assert text.startswith("Hindsight Status: UNAUTHORISED (HTTP 401)")
+        assert "HINDSIGHT_API_KEY is not set" in text
+
+    def test_server_error_is_not_blamed_on_the_tunnel_or_the_key(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        monkeypatch.setattr(_ScriptedConnection, "status", 500)
+        text = server.tool_hindsight_status()
+        assert text.startswith("Hindsight Status: ERROR (HTTP 500)")
+        assert "planted" in text
+        assert "Port-forward" not in text and "HINDSIGHT_API_KEY" not in text
+
+    def test_unreachable_names_the_port_forward(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        monkeypatch.setattr(http.client, "HTTPConnection", _FailingConnection)
+        monkeypatch.setattr(_FailingConnection, "close_error", None)
+        text = server.tool_hindsight_status()
+        assert text.startswith("Hindsight Status: UNREACHABLE (no HTTP response)")
+        assert "Port-forward" in text
+
+    def test_rejected_retain_says_why_it_buffered(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        server = load_server(monkeypatch, tmp_path, "wrong-key")
+        monkeypatch.setattr(_ScriptedConnection, "status", 401)
+        text = server.tool_hindsight_retain("a fact")
+        assert "unauthorised (HTTP 401)" in text and "unreachable" not in text
+        assert server.read_local_buffer()[0]["pending_sync"] is True
+
+
+class TestBufferDrain:
+    """The offline buffer drains on the first successful call, each entry into its own bank (issue #36)."""
+
+    @pytest.mark.parametrize(
+        "call",
+        [
+            lambda s: s.tool_hindsight_status(),
+            lambda s: s.tool_hindsight_recall("query"),
+            lambda s: s.tool_hindsight_reflect(),
+            lambda s: s.tool_hindsight_list_banks(),
+            lambda s: s.tool_hindsight_retain("new fact"),
+        ],
+    )
+    def test_buffer_drains_on_first_success(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, call) -> None:
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        server.write_local_buffer([buffered("bank-a", "one"), buffered("bank b", "two")])
+        call(server)
+        retained = [path for method, path, _ in _ScriptedConnection.sent[1:] if method == "POST"]
+        assert "/v1/default/banks/bank-a/retain" in retained
+        assert "/v1/default/banks/bank%20b/retain" in retained
+        assert [e["pending_sync"] for e in server.read_local_buffer()] == [False, False]
+        call(server)
+        drained = [path for method, path, _ in _ScriptedConnection.sent if path == "/v1/default/banks/bank-a/retain"]
+        assert len(drained) == 1
+
+    def test_empty_buffer_is_a_no_op(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        server.tool_hindsight_status()
+        assert len(_ScriptedConnection.sent) == 1
+        assert not (tmp_path / "buffer.json").exists()
+
+    def test_failed_call_keeps_the_buffer(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        server = load_server(monkeypatch, tmp_path, "wrong-key")
+        server.write_local_buffer([buffered("bank-a", "one")])
+        monkeypatch.setattr(_ScriptedConnection, "status", 401)
+        server.tool_hindsight_recall("query")
+        assert len(_ScriptedConnection.sent) == 1
+        assert server.read_local_buffer()[0]["pending_sync"] is True
+
+    def test_drain_stops_at_the_first_refused_entry(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        server.write_local_buffer([buffered("bank-a", "one"), buffered("bank-a", "two")])
+        monkeypatch.setattr(_ScriptedConnection, "status", 503)
+        assert server.flush_local_pending() == 0
+        assert len(_ScriptedConnection.sent) == 1
+        assert [e["pending_sync"] for e in server.read_local_buffer()] == [True, True]
