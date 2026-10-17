@@ -102,7 +102,7 @@ func TestMCPToolsAcceptBoundaryInput(t *testing.T) {
 		{"list_epics_ignores_unknown_argument", "list_epics", map[string]any{"unused": true}, "EPIC-01"},
 		{"get_milestones_ignores_unknown_argument", "get_milestones", map[string]any{"unused": true}, "1.0"},
 		{"apply_flavor_live_script", "apply_flavor", map[string]any{"flavor_id": "base-generic", "dry_run": false}, "#!/usr/bin/env bash"},
-		{"trigger_build_dry_run_last_backend", "trigger_build", map[string]any{"flavor": "appliance-game-server", "backend": "github", "dry_run": true}, "dry-run"},
+		{"trigger_build_dry_run_last_backend", "trigger_build", map[string]any{"flavor": "appliance-game-server", "backend": "github", "dry_run": true}, `"status": "planned"`},
 		{"list_staged_actions_empty", "list_staged_actions", nil, "[]"},
 	}
 	for _, tc := range cases {
@@ -131,7 +131,9 @@ func TestMCPTrackerToolsFailWithoutTrackedFiles(t *testing.T) {
 	}
 }
 
-func TestMCPConfirmActionExecutesOnce(t *testing.T) {
+// Confirming a staged build attempts it once: the attempt fails because no
+// backend has an executor, and the action cannot be confirmed again.
+func TestMCPConfirmActionAttemptsOnce(t *testing.T) {
 	session, cleanup := setupTestSession(t)
 	defer cleanup()
 	id := stage(t, session)
@@ -141,9 +143,9 @@ func TestMCPConfirmActionExecutesOnce(t *testing.T) {
 	assert.Contains(t, text, id)
 
 	text, refused = call(t, session, "confirm_action", map[string]any{"action_id": id})
-	require.False(t, refused, text)
-	assert.Contains(t, text, "confirmed and executed")
-	assert.Contains(t, text, "local build command formulated")
+	require.True(t, refused, text)
+	assert.Contains(t, text, "not implemented")
+	assert.NotContains(t, text, "executed")
 
 	text, refused = call(t, session, "confirm_action", map[string]any{"action_id": id})
 	assert.True(t, refused, text)

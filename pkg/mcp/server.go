@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/golusoris/golusoris/core/clock"
 	coremcp "github.com/golusoris/golusoris/core/mcp"
 
 	"github.com/cordanaLLM/imago/pkg/builder"
@@ -30,19 +29,18 @@ type Server = coremcp.Server
 // ServerName is the MCP implementation name advertised to clients.
 const ServerName = "imago"
 
-// Deps carries the injected collaborators the mutating tools need. Both are
-// provided through fx in production (clock.Module, NewStager) and faked in tests.
+// Deps carries the injected collaborator the mutating tools need. It is
+// provided through fx in production (NewStager) and faked in tests.
 type Deps struct {
 	Stager *Stager
-	Clock  clock.Clock
 }
 
 // RegisterTools registers every imago tool on the given server. The server is
 // provided by golusoris core/mcp.Module, which also owns the transport lifecycle
 // and stdout-purity guard for stdio mode.
 func RegisterTools(s *Server, deps Deps) error {
-	if s == nil || deps.Stager == nil || deps.Clock == nil {
-		return errors.New("mcp: server, stager and clock are required")
+	if s == nil || deps.Stager == nil {
+		return errors.New("mcp: server and stager are required")
 	}
 	registerFlavorTools(s)
 	registerManifestTools(s)
@@ -276,7 +274,7 @@ func inspectComplianceHandler(_ context.Context, req *coremcp.CallToolRequest) (
 
 func registerExecutionTools(s *coremcp.Server, deps Deps) {
 	s.AddTool(tool("trigger_build",
-		"Dispatch an image build to local Packer or remote CI backends (Gitea, Proxmox, GitLab, GitHub). Mutating operations stage a confirmation card unless confirmed=true or dry_run=true.",
+		"Validate an image build plan with dry_run=true. No backend has an executor: a confirmed request returns an error. Requests stage a confirmation card unless confirmed=true or dry_run=true; confirmation does not imply execution.",
 		`{"type":"object","required":["flavor","backend"],"properties":{"flavor":{"type":"string"},"backend":{"type":"string"},"dry_run":{"type":"boolean"},"confirmed":{"type":"boolean"}}}`,
 	), triggerBuildHandler(deps))
 	s.AddTool(tool("apply_flavor",
@@ -310,23 +308,22 @@ func triggerBuildHandler(deps Deps) coremcp.ToolHandler {
 			}, preview)
 			return textResult(stagedMessage(staged, args.Flavor, args.Backend)), nil
 		}
-		return dispatchBuild(ctx, deps, args.Backend, args.Flavor, args.DryRun, "")
+		return dispatchBuild(ctx, args.Backend, args.Flavor, args.DryRun, "")
 	}
 }
 
 func stagedMessage(staged *StagedAction, flavor, backend string) string {
-	return fmt.Sprintf("⚠️ ACTION STAGED (Two-Phase Verification Guardrail)\nAction ID: %s\nTool: trigger_build\nTarget Flavor: %s\nBackend: %s\n\nTo execute this build, invoke `confirm_action` with `{\"action_id\": %q}` or re-run `trigger_build` with `\"confirmed\": true`.",
+	return fmt.Sprintf("⚠️ ACTION STAGED (Two-Phase Verification Guardrail)\nAction ID: %s\nTool: trigger_build\nTarget Flavor: %s\nBackend: %s\n\nTo attempt this build, invoke `confirm_action` with `{\"action_id\": %q}` or re-run `trigger_build` with `\"confirmed\": true`.",
 		staged.ID, flavor, backend, staged.ID)
 }
 
-// dispatchBuild runs the build dispatcher with the injected clock and renders
-// the result, prefixed by an optional confirmation banner.
-func dispatchBuild(ctx context.Context, deps Deps, backend, flavor string, dryRun bool, prefix string) (*coremcp.CallToolResult, error) {
+// dispatchBuild runs the build dispatcher and renders the result, prefixed by
+// an optional confirmation banner. A refused dispatch is an error result.
+func dispatchBuild(ctx context.Context, backend, flavor string, dryRun bool, prefix string) (*coremcp.CallToolResult, error) {
 	res, err := builder.Dispatch(ctx, builder.Request{
 		Backend: builder.Backend(backend),
 		Flavor:  flavor,
 		DryRun:  dryRun,
-		Clock:   deps.Clock,
 	})
 	if err != nil {
 		return errorResult(err), nil
@@ -364,7 +361,7 @@ func registerStagingTools(s *coremcp.Server, deps Deps) {
 		return jsonResult(deps.Stager.List())
 	})
 	s.AddTool(tool("confirm_action",
-		"Confirm and execute a pending staged action by its action_id",
+		"Confirm a pending staged action by its action_id and attempt it; a build backend without an executor returns an error",
 		`{"type":"object","required":["action_id"],"properties":{"action_id":{"type":"string"}}}`,
 	), confirmActionHandler(deps))
 	s.AddTool(tool("discard_staged_action",
@@ -391,8 +388,8 @@ func confirmActionHandler(deps Deps) coremcp.ToolHandler {
 		flavor, _ := act.Payload["flavor"].(string)
 		backend, _ := act.Payload["backend"].(string)
 		dryRun, _ := act.Payload["dry_run"].(bool)
-		prefix := fmt.Sprintf("✅ Action %s confirmed and executed:\n", act.ID)
-		return dispatchBuild(ctx, deps, backend, flavor, dryRun, prefix)
+		prefix := fmt.Sprintf("Action %s confirmed; dispatch result:\n", act.ID)
+		return dispatchBuild(ctx, backend, flavor, dryRun, prefix)
 	}
 }
 

@@ -110,22 +110,19 @@ Every value written into the YAML passes an allow-list first, and the generator 
 
 Accepted values are written as double-quoted YAML scalars, so a value can never open a new key. `cloud-init metadata` applies the same hostname rule.
 
-### 2.4 Multi-Backend Build Dispatcher (`build`)
+### 2.4 Build Plan Validation (`build`)
 
-Dispatches builds to local Packer or remote CI backends:
+`imago build` validates a build plan: the flavor must be in the catalog and the backend must be one of `local`, `gitea`, `proxmox`, `gitlab`, `woodpecker`, `harbor`, `minio`, `jenkins`, `github`. No backend has an executor yet ([ADR-0031](../adr/0031-fail-closed-build-dispatch.md)), so the command never starts a build:
 
 ```bash
-# Formulate local packer build command
-imago build --flavor=base-generic --backend=local
-
-# Simulate dispatch to self-hosted Gitea / Forgejo Actions
+# Validate a plan; prints "==> Build plan (planned): dry-run: ..." and exits 0
 imago build --flavor=k8s-node-cilium --backend=gitea --dry-run
 
-# Trigger Proxmox VE template clone
+# Without --dry-run: exits 1 with "builder: backend \"proxmox\": build backend not implemented"
 imago build --flavor=cloudnative-storage --backend=proxmox
 ```
 
-Supported Backends: `local`, `gitea`, `proxmox`, `gitlab`, `woodpecker`, `harbor`, `minio`, `jenkins`, `github`.
+An unknown flavor or backend fails in both modes. Images are built with the `make build-<flavor>` targets and the release workflow, not with this command. In Go, `builder.Dispatch` returns `*builder.BackendUnavailableError`, which matches `builder.ErrBackendUnavailable` under `errors.Is`; a dry-run `Result` has `status: "planned"`, `dry_run: true` and `success: false`, because `success` is reserved for an execution a backend acknowledged (`pkg/builder/builder_test.go`).
 
 ### 2.5 Imageless Host Provisioning (`apply`)
 
@@ -283,11 +280,11 @@ imago mcp --transport=http --addr=:8899
 | **`get_standards`** | `flavor_id` (string) | Query machine-readable CIS/BSI hardening requirements |
 | **`list_epics`** | None | List recurring operational and architectural epics |
 | **`get_milestones`** | None | List release milestones with state and due date |
-| **`trigger_build`** | `flavor`, `backend`, `dry_run`, `confirmed` | Dispatch build to local or remote CI backends (supports staging); an unknown flavor or backend is refused before a dry run or staging |
+| **`trigger_build`** | `flavor`, `backend`, `dry_run`, `confirmed` | Validate a build plan with `dry_run=true` (`status: "planned"`, `success: false`); no backend has an executor, so a confirmed request returns an error. Staging still applies; an unknown flavor or backend is refused before a dry run or staging |
 | **`apply_flavor`** | `flavor_id`, `dry_run` | Generate in-place host provisioning bash script |
 | **`inspect_compliance`** | `path` (optional, repository-relative; default `tests/compliance/goss.yaml`) | Inspect declarative CIS/NIST compliance profile; an absolute path or one leaving the repository is refused |
 | **`list_staged_actions`** | None | List pending staged actions requiring operator confirmation |
-| **`confirm_action`** | `action_id` (string) | Confirm and execute a pending staged mutation |
+| **`confirm_action`** | `action_id` (string) | Confirm a pending staged action and attempt it; a build backend without an executor returns an error |
 | **`discard_staged_action`** | `action_id` (string) | Discard and abort a pending staged mutation |
 | **`route_plan`** | `plan_path`, `routing_path` (optional, repository-relative), `ready_only` (bool) | Validate the planning graph and return steps ranked by (1 + transitive unblocks) / cost |
 
@@ -339,8 +336,8 @@ sequenceDiagram
         Forge->>PipeRedirect: Third-party logs / fmt.Print / warnings
         PipeRedirect->>Stderr: Emitted cleanly on stderr (colored via tint)
     end
-    Forge->>Backend: Execute confirmed build
-    Backend-->>Forge: Execution results & payload
+    Forge->>Backend: Attempt confirmed build
+    Backend-->>Forge: Error: build backend not implemented (ADR-0031)
     Forge->>PipeOut: Write pristine JSON-RPC Response frame
     PipeOut->>Agent: Delivered without stdout framing corruption
 ```
