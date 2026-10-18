@@ -64,7 +64,7 @@ flowchart TD
 
 | Agent ID | Base Agent Engine | Core Specialization | Tools Enabled |
 | :--- | :--- | :--- | :--- |
-| **`lusoris-infra-forge`** | `antigravity-preview-05-2026` | Packer HCL2, standalone QEMU, Proxmox VE, GPU passthrough (Intel Xe2, AMD ROCm 10, NVIDIA 535–615), VirtIO storage tuning | `code_execution`, `filesystem_tools`, `google_search`, `url_context` |
+| **`lusoris-infra-forge`** | `antigravity-preview-05-2026` | Packer HCL2, standalone QEMU, Proxmox VE, GPU passthrough (Intel Xe2, AMD ROCm 10, NVIDIA 580–615), VirtIO storage tuning | `code_execution`, `filesystem_tools`, `google_search`, `url_context` |
 | **`lusoris-security-compliance`** | `antigravity-preview-05-2026` | CIS L2 Server baseline, DISA STIG, OpenSSH CA integration (`00-hardened-sshd.conf`), NIST SP 800-53/190 crosswalks, Goss specs | `code_execution`, `filesystem_tools`, `google_search` |
 | **`lusoris-container-k8s`** | `antigravity-preview-05-2026` | containerd 2.3.5, `crun` RuntimeClass, Cilium eBPF, Calico BGP, Flannel, kube-vip HA, and CDI device plugin integration | `code_execution`, `filesystem_tools`, `google_search`, `url_context` |
 | **`lusoris-qa-gatekeeper`** | `antigravity-preview-05-2026` | Pytest verification suite (55+ tests), ShellCheck static analysis, Shfmt, Yamllint, and PR `required-aggregator` validation | `code_execution`, `filesystem_tools` |

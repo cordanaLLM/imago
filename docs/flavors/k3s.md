@@ -13,7 +13,7 @@ Unlike enterprise `k8s-node-*` flavors requiring $\ge$ 2GB of RAM for the contro
 | **`k3s-agent-generic`** | Worker node | VirtIO / CPU | Lightweight K3s agent, pre-configured containerd, Flannel | Intel N95/N100, Raspberry Pi 5, mini-PCs |
 | **`k3s-agent-intel`** | Transcode worker | Intel GPU | Intel Media Driver (`iHD`), QuickSync `/dev/dri/renderD128`, Level Zero | Alder Lake-N (N100/N305), Core Ultra (Meteor Lake) |
 | **`k3s-agent-amd`** | Compute worker | AMD GPU | AMD ROCm 7.2 compute runtime, `/dev/kfd` permissions, RADV Vulkan | AMD Ryzen 7040/8040 APUs, Radeon RX 7000 |
-| **`k3s-agent-nvidia`** | GPU worker | NVIDIA Mainstream | NVIDIA 565 driver branch, CUDA 12.8, Container Toolkit & CDI | NVIDIA RTX 3060/4090, Tesla P4/P40 |
+| **`k3s-agent-nvidia`** | GPU worker | NVIDIA Mainstream | NVIDIA 595 driver branch, CUDA 13.2, Container Toolkit & CDI | NVIDIA RTX 3060/4090, Tesla P4/P40 |
 | **`k3s-server-generic`** | Control plane | VirtIO / CPU | K3s server, embedded SQLite/etcd, local-path-provisioner storage | Proxmox standalone VM, micro-cluster master |
 
 ---

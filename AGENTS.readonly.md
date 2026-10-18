@@ -123,7 +123,7 @@ These rules apply to ALL agents, ALL tools, and ALL commits — without exceptio
 
 Key capabilities:
 - **Zero Base Bloat**: Purges `snapd`, `lxd`, Ubuntu Pro telemetry, motd news, and unneeded documentation/locales.
-- **Hardware Acceleration Flavors**: Dedicated flavors for Intel Arc/Xe, AMD Mesa/ROCm, and NVIDIA generational CUDA (Pascal 535, Ampere/Ada 565, Hopper/Blackwell Open + Fabric Manager).
+- **Hardware Acceleration Flavors**: Dedicated flavors for Intel Arc/Xe, AMD Mesa/ROCm, and NVIDIA generational CUDA (Pascal 580, Ampere/Ada 595, Hopper/Blackwell Open + Fabric Manager).
 - **Multi-Hypervisor Portability**: Coexistence of `qemu-guest-agent`, `open-vm-tools`, Unraid `virtiofs`/`9p` host sharing, and ACPI clean power shutdown.
 - **Bare-Metal & Hypervisor Performance Engine**: NVMe/VirtIO `mq-deadline` I/O scheduling, automated weekly `fstrim.timer`, ZRAM in-memory swap guard, fast-boot `NoCloud` cloud-init discovery, BBR congestion control, and direct disk streaming (`lusoris-install-to-disk`).
 - **Resilient Global Time**: Cryptographically authenticated Network Time Security (NTS) combining Cloudflare Anycast NTS and European Stratum-1 national laboratories (PTB, Netnod, SIDN, 3eck) with graceful fallback.
@@ -156,16 +156,16 @@ Release + weekly schedule build `base-generic`, `docker-generic`, `k8s-node-gene
 | **Base** | Generic (VirtIO) | `base-generic` | Minimal hardened OS, Anycast NTS, QEMU+VMware agents |
 | **Base** | Intel GPU | `base-intel` | Intel Media Driver (`iHD`), Level Zero, vainfo, Battlemage Xe2 |
 | **Base** | AMD GPU | `base-amd` | AMD Mesa VA-API (`radeonsi`), RADV Vulkan, AMDGPU DRM |
-| **Base** | NVIDIA Legacy | `base-nvidia-legacy` | NVIDIA 535 driver branch, CUDA 12.2 (Pascal/Volta) |
-| **Base** | NVIDIA Mainstream | `base-nvidia-mainstream`| NVIDIA 565 driver branch, CUDA 12.8 (RTX/Ampere) |
-| **Base** | NVIDIA Modern | `base-nvidia-modern` | NVIDIA 610 driver branch, CUDA 13.3 (Ada/Hopper) |
+| **Base** | NVIDIA Legacy | `base-nvidia-legacy` | NVIDIA 580 driver branch, CUDA 13.0 (Pascal/Volta) |
+| **Base** | NVIDIA Mainstream | `base-nvidia-mainstream`| NVIDIA 595 driver branch, CUDA 13.2 (RTX/Ampere) |
+| **Base** | NVIDIA Modern | `base-nvidia-modern` | NVIDIA 615 driver branch, CUDA 13.4 (Ada/Hopper) |
 | **Base** | NVIDIA Bleeding | `base-nvidia-bleeding` | NVIDIA 615 driver branch, CUDA 13.4 (Blackwell RTX 5090) |
 | **Base** | NVIDIA Datacenter | `base-nvidia-datacenter`| NVIDIA Open Kernel Modules, Fabric Manager (Hopper/Blackwell) |
 | **Docker** | Generic (VirtIO) | `docker-generic` | Docker CE 29.8, Docker Compose v2, containerd, log rotation |
 | **Docker** | Intel GPU | `docker-intel` | Docker CE + Intel Media/Compute + QuickSync passthrough |
 | **Docker** | AMD GPU | `docker-amd` | Docker CE + AMD ROCm 7.2 compute runtime |
 | **Docker** | NVIDIA Mainstream | `docker-nvidia` | Docker CE + NVIDIA Container Toolkit + CDI specifications |
-| **Docker** | NVIDIA Modern | `docker-nvidia-modern` | Docker CE + NVIDIA 610 + NVIDIA Container Toolkit CDI |
+| **Docker** | NVIDIA Modern | `docker-nvidia-modern` | Docker CE + NVIDIA 615 + NVIDIA Container Toolkit CDI |
 | **Docker** | NVIDIA Bleeding | `docker-nvidia-bleeding`| Docker CE + NVIDIA 615 + NVIDIA Container Toolkit CDI |
 | **Podman** | Generic (VirtIO) | `podman-generic` | Podman 5.x, Buildah, Skopeo, Quadlet, Netavark CNI |
 | **Kubernetes**| Generic (VirtIO) | `k8s-node-generic` | containerd 2.3.5, kubelet/kubeadm 1.37.0, lean zero-preheat |
@@ -174,13 +174,13 @@ Release + weekly schedule build `base-generic`, `docker-generic`, `k8s-node-gene
 | **Kubernetes**| Generic (VirtIO) | `k8s-node-flannel` | containerd 2.3.5, preheated Flannel 0.28.9 & kube-vip 1.2.3 |
 | **Kubernetes**| Intel GPU | `k8s-node-intel` | containerd 2.3.5 + Intel drivers + Intel K8s Device Plugin |
 | **Kubernetes**| AMD GPU | `k8s-node-amd` | containerd 2.3.5 + AMD ROCm 7.2 + AMD K8s Device Plugin |
-| **Kubernetes**| NVIDIA Mainstream | `k8s-node-nvidia` | containerd 2.3.5 + NVIDIA 565 + NVIDIA K8s Device Plugin |
-| **Kubernetes**| NVIDIA Modern | `k8s-node-nvidia-modern` | containerd 2.3.5 + NVIDIA 610 + NVIDIA K8s Device Plugin |
+| **Kubernetes**| NVIDIA Mainstream | `k8s-node-nvidia` | containerd 2.3.5 + NVIDIA 595 + NVIDIA K8s Device Plugin |
+| **Kubernetes**| NVIDIA Modern | `k8s-node-nvidia-modern` | containerd 2.3.5 + NVIDIA 615 + NVIDIA K8s Device Plugin |
 | **Kubernetes**| NVIDIA Bleeding | `k8s-node-nvidia-bleeding`| containerd 2.3.5 + NVIDIA 615 + NVIDIA K8s Device Plugin |
 | **K3s Edge** | Generic (VirtIO) | `k3s-agent-generic` | Lightweight K3s agent, containerd, Flannel (< 300MB RAM) |
 | **K3s Edge** | Intel GPU | `k3s-agent-intel` | K3s agent + Intel QuickSync passthrough (`iHD`) + Level Zero |
 | **K3s Edge** | AMD GPU | `k3s-agent-amd` | K3s agent + AMD ROCm 7.2 compute runtime + RADV Vulkan |
-| **K3s Edge** | NVIDIA Mainstream | `k3s-agent-nvidia` | K3s agent + NVIDIA 565 + Container Toolkit CDI |
+| **K3s Edge** | NVIDIA Mainstream | `k3s-agent-nvidia` | K3s agent + NVIDIA 595 + Container Toolkit CDI |
 | **K3s Edge** | Control Plane | `k3s-server-generic` | K3s standalone master, embedded SQLite, local-path storage |
 | **CloudNative**| Generic (VirtIO) | `cloudnative-generic` | Immutable container host, read-only root, ephemeral tmpfs, containerd CDI |
 | **CloudNative**| Generic (VirtIO) | `cloudnative-k8s` | Immutable Kubernetes node, read-only root, containerd 2.3.5, kubelet 1.37.0 |
@@ -189,8 +189,8 @@ Release + weekly schedule build `base-generic`, `docker-generic`, `k8s-node-gene
 | **AI Infer** | Generic (CPU) | `ai-infer-generic` | AMX, AVX-512, NUMA, vLLM/Ollama CPU, Docker CE |
 | **AI Infer** | Intel GPU | `ai-infer-intel` | Intel Level Zero, OpenVINO, IPEX-LLM, CDI, Docker CE |
 | **AI Infer** | AMD GPU | `ai-infer-amd` | AMD ROCm 7.2, /dev/kfd, RDNA 3/4 & Instinct, CDI, Docker CE |
-| **AI Infer** | NVIDIA Mainstream | `ai-infer-nvidia` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 565) |
-| **AI Infer** | NVIDIA Modern | `ai-infer-nvidia-modern` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 610) |
+| **AI Infer** | NVIDIA Mainstream | `ai-infer-nvidia` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 595) |
+| **AI Infer** | NVIDIA Modern | `ai-infer-nvidia-modern` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 615) |
 | **AI Infer** | NVIDIA Bleeding | `ai-infer-nvidia-bleeding`| Transparent hugepages, Blackwell RTX 5090 / B200 (NVIDIA 615) |
 | **Homelab** | Intel GPU + Coral | `appliance-vision-nvr` | Coral Edge TPU (`gasket-dkms`, udev), Intel QuickSync (`iHD`), CDI, Docker CE |
 | **Homelab** | VirtIO / Low-Power | `appliance-gateway-dns` | Port 53 stub disabled, WireGuard, line-rate forwarding (< 150MB RAM) |

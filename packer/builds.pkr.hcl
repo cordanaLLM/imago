@@ -37,7 +37,7 @@ locals {
   k3s_version              = try(local.manifest.k3s.version, "v1.36.4+k3s1")
   crun_version             = try(local.manifest.runtimes.crun, "1.20")
   stargz_version           = try(local.manifest.runtimes.stargz_snapshotter, "0.18.2")
-  cdebug_version           = try(local.manifest.tools.cdebug, "0.5.1")
+  cdebug_version           = local.manifest.tools.cdebug
   cst_version              = local.manifest.tools.container_structure_test
   enroot_version           = try(local.manifest.tools.enroot, "3.4.1")
 
@@ -158,7 +158,7 @@ build {
   }
 }
 
-# 4. Base NVIDIA Legacy: NVIDIA 535 LTSB for Pascal and Volta
+# 4. Base NVIDIA Legacy: NVIDIA 580 for Pascal and Volta
 build {
   name    = "base-nvidia-legacy"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -184,7 +184,7 @@ build {
   }
 }
 
-# 5. Base NVIDIA Mainstream: NVIDIA 565 for Turing, Ampere, and Ada
+# 5. Base NVIDIA Mainstream: NVIDIA 595 for Turing, Ampere, and Ada
 build {
   name    = "base-nvidia-mainstream"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -210,7 +210,7 @@ build {
   }
 }
 
-# 6. Base NVIDIA Modern: NVIDIA 610 for Ada Lovelace and Hopper
+# 6. Base NVIDIA Modern: NVIDIA 615 for Ada Lovelace and Hopper
 build {
   name    = "base-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -236,7 +236,7 @@ build {
   }
 }
 
-# 7. Base NVIDIA Bleeding: NVIDIA R615 / CUDA 13.4 for Blackwell RTX 5090 & B200
+# 7. Base NVIDIA Bleeding: NVIDIA 615 / CUDA 13.4 for Blackwell RTX 5090 & B200
 build {
   name    = "base-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -396,7 +396,7 @@ build {
   }
 }
 
-# 12. Docker NVIDIA Modern: Docker CE + NVIDIA 610 / CUDA 13.3
+# 12. Docker NVIDIA Modern: Docker CE + NVIDIA 615 / CUDA 13.4
 build {
   name    = "docker-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -423,7 +423,7 @@ build {
   }
 }
 
-# 13. Docker NVIDIA Bleeding: Docker CE + NVIDIA R615 / CUDA 13.4
+# 13. Docker NVIDIA Bleeding: Docker CE + NVIDIA 615 / CUDA 13.4
 build {
   name    = "docker-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -646,7 +646,7 @@ build {
   }
 }
 
-# 20. K8s Node NVIDIA Mainstream: NVIDIA 565/595 + Device Plugin v0.20
+# 20. K8s Node NVIDIA Mainstream: NVIDIA 595 + Device Plugin v0.20
 build {
   name    = "k8s-node-nvidia"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -675,7 +675,7 @@ build {
   }
 }
 
-# 21. K8s Node NVIDIA Modern: NVIDIA 610 / CUDA 13.3 + Device Plugin v0.20
+# 21. K8s Node NVIDIA Modern: NVIDIA 615 / CUDA 13.4 + Device Plugin v0.20
 build {
   name    = "k8s-node-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -704,7 +704,7 @@ build {
   }
 }
 
-# 22. K8s Node NVIDIA Bleeding: NVIDIA R615 / CUDA 13.4 + Device Plugin v0.20
+# 22. K8s Node NVIDIA Bleeding: NVIDIA 615 / CUDA 13.4 + Device Plugin v0.20
 build {
   name    = "k8s-node-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -819,7 +819,7 @@ build {
   }
 }
 
-# 25. AI Infer NVIDIA Mainstream: NVIDIA 565 + THP always + vLLM/Ollama
+# 25. AI Infer NVIDIA Mainstream: NVIDIA 595 + THP always + vLLM/Ollama
 build {
   name    = "ai-infer-nvidia"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -849,7 +849,7 @@ build {
   }
 }
 
-# 26. AI Infer NVIDIA Modern: NVIDIA 610 / CUDA 13.3 + Ada Lovelace / Hopper + THP
+# 26. AI Infer NVIDIA Modern: NVIDIA 615 / CUDA 13.4 + Ada Lovelace / Hopper + THP
 build {
   name    = "ai-infer-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -879,7 +879,7 @@ build {
   }
 }
 
-# 27. AI Infer NVIDIA Bleeding: NVIDIA R615 / CUDA 13.4 + Blackwell RTX 5090 / B200 + THP
+# 27. AI Infer NVIDIA Bleeding: NVIDIA 615 / CUDA 13.4 + Blackwell RTX 5090 / B200 + THP
 build {
   name    = "ai-infer-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
@@ -989,7 +989,7 @@ build {
   }
 }
 
-# 31. K3s Agent NVIDIA: K3s worker + NVIDIA 565 / CUDA 12.8 & CDI
+# 31. K3s Agent NVIDIA: K3s worker + NVIDIA 595 / CUDA 13.2 & CDI
 build {
   name    = "k3s-agent-nvidia"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
