@@ -94,6 +94,18 @@ exceptions:
           actions/attest-build-provenance into a reusable workflow as docs/guides/releasing.md in
           Praetor describes, then remove this entry
       expires: "2027-01-09"
+    - rule: codespell
+      path: tools/figures/player/player.js
+      category: C
+      reason: minified third-party interfig bundle
+      entered: "2026-10-18"
+      expires: "2026-10-28"
+    - rule: codespell
+      path: tools/figures/player/loader.js
+      category: C
+      reason: minified third-party interfig bundle
+      entered: "2026-10-18"
+      expires: "2026-10-28"
 register:
     sources:
         expected: 13

@@ -19,7 +19,7 @@ env:
   PACKER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # Praetor engine commit the local hooks and `make verify-all` run. Read by
   # .config/lefthook/engine.sh on the workstation; no job in this workflow uses it.
-  PRAETOR_REF: 32a35c8fb947b449ff46ae0a3b32017b409dccad
+  PRAETOR_REF: 019b879ec69178570f53b97a113f67d62629e4c1
 
 jobs:
   lint-packer:
