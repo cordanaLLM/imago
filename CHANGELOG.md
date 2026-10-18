@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Manifest validation in Go (`pkg/manifest`): `manifest.Load` embeds `versions.schema.json` via root package `schema.go` and validates `versions.json` against the Draft 2020-12 schema using `github.com/google/jsonschema-go` before evaluating semantic invariants.
+- Manifest schema tests (`pkg/manifest/manifest_test.go`): each planted schema error now asserts the schema path and keyword the validator reports (for a removed nested `drivers.intel.k8s_plugin`: `validating /properties/drivers/properties/intel: required: missing properties: ["k8s_plugin"]`) instead of the `manifest: schema` prefix alone, so an error raised for the wrong property no longer passes.
 - Cloud-init generator: `pkg/cloudinit` serializes user-data and meta-data from typed structs with the `go.yaml.in/yaml/v3` encoder instead of concatenated strings, a second barrier behind the allow-lists; keys and values are unchanged, scalars are quoted only where YAML 1.1 would read them as another type (`docs/tools/cli-mcp.md`).
 
 ### Fixed

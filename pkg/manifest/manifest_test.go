@@ -278,7 +278,14 @@ func TestLoadPlantedSchemaErrors(t *testing.T) {
 			mutate: func(doc map[string]any) {
 				delete(doc, "build")
 			},
-			expectErr: "manifest: schema",
+			expectErr: `validating root: required: missing properties: ["build"]`,
+		},
+		{
+			name: "missing_nested_k8s_plugin",
+			mutate: func(doc map[string]any) {
+				delete(doc["drivers"].(map[string]any)["intel"].(map[string]any), "k8s_plugin")
+			},
+			expectErr: `validating /properties/drivers/properties/intel: required: missing properties: ["k8s_plugin"]`,
 		},
 		{
 			// ctr has no docker.io default; this reference failed the k8s-node-intel build.
@@ -287,7 +294,7 @@ func TestLoadPlantedSchemaErrors(t *testing.T) {
 				intel := doc["drivers"].(map[string]any)["intel"].(map[string]any)
 				intel["k8s_plugin"] = "intel/intel-gpu-plugin:0.36.0"
 			},
-			expectErr: "manifest: schema",
+			expectErr: `validating /properties/drivers/properties/intel/properties/k8s_plugin: validating /$defs/imageRef: pattern: "intel/intel-gpu-plugin:0.36.0"`,
 		},
 		{
 			name: "wrong_pattern_distro_version",
@@ -295,7 +302,7 @@ func TestLoadPlantedSchemaErrors(t *testing.T) {
 				distro := doc["distro"].(map[string]any)
 				distro["version"] = "v26.04"
 			},
-			expectErr: "manifest: schema",
+			expectErr: `validating /properties/distro/properties/version: pattern: "v26.04"`,
 		},
 		{
 			name: "unknown_type_stratum1_nts",
@@ -303,7 +310,7 @@ func TestLoadPlantedSchemaErrors(t *testing.T) {
 				timeMap := doc["time"].(map[string]any)
 				timeMap["stratum1_nts"] = "ptbtime1.ptb.de"
 			},
-			expectErr: "manifest: schema",
+			expectErr: `validating /properties/time/properties/stratum1_nts: type:`,
 		},
 		{
 			name: "empty_stratum1_nts",
@@ -311,7 +318,7 @@ func TestLoadPlantedSchemaErrors(t *testing.T) {
 				timeMap := doc["time"].(map[string]any)
 				timeMap["stratum1_nts"] = []any{}
 			},
-			expectErr: "manifest: schema",
+			expectErr: `validating /properties/time/properties/stratum1_nts: minItems:`,
 		},
 	}
 
@@ -324,6 +331,7 @@ func TestLoadPlantedSchemaErrors(t *testing.T) {
 			m, err := manifest.Load(path)
 			require.Error(t, err)
 			assert.Nil(t, m)
+			assert.Contains(t, err.Error(), "manifest: schema")
 			assert.Contains(t, err.Error(), tc.expectErr)
 		})
 	}
