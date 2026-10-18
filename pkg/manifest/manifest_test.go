@@ -38,11 +38,11 @@ func validTestManifest() *manifest.Manifest {
 		},
 		Drivers: manifest.Drivers{
 			Intel: manifest.IntelDrivers{
-				K8sPlugin: "intel/intel-device-plugins-operator:0.32.0",
+				K8sPlugin: "docker.io/intel/intel-device-plugins-operator:0.32.0",
 			},
 			AMD: manifest.AMDDrivers{
 				ROCmBleedingVersion: "10.0",
-				K8sPlugin:           "rocm/k8s-device-plugin:1.32.0",
+				K8sPlugin:           "docker.io/rocm/k8s-device-plugin:1.32.0",
 			},
 			NVIDIA: manifest.NVIDIADrivers{
 				MainstreamDriver: "565",
@@ -281,6 +281,15 @@ func TestLoadPlantedSchemaErrors(t *testing.T) {
 			expectErr: "manifest: schema",
 		},
 		{
+			// ctr has no docker.io default; this reference failed the k8s-node-intel build.
+			name: "image_without_registry_host",
+			mutate: func(doc map[string]any) {
+				intel := doc["drivers"].(map[string]any)["intel"].(map[string]any)
+				intel["k8s_plugin"] = "intel/intel-gpu-plugin:0.36.0"
+			},
+			expectErr: "manifest: schema",
+		},
+		{
 			name: "wrong_pattern_distro_version",
 			mutate: func(doc map[string]any) {
 				distro := doc["distro"].(map[string]any)
@@ -325,17 +334,17 @@ func minimalKubernetesDoc() map[string]any {
 		"version":     "1.37.0",
 		"major_minor": "1.37",
 		"images": map[string]any{
-			"pause":              "pause:3.10",
-			"coredns":            "coredns:1.12.0",
-			"cilium":             "cilium:1.20.1",
-			"cilium_operator":    "operator:1.20.1",
-			"kube_vip":           "kube-vip:1.2.3",
-			"node_exporter":      "node-exporter:1.12.1",
-			"calico_cni":         "calico-cni:3.32.2",
-			"calico_node":        "calico-node:3.32.2",
-			"calico_controllers": "calico-controllers:3.32.2",
-			"flannel":            "flannel:0.28.9",
-			"flannel_cni":        "flannel-cni:1.6.2",
+			"pause":              "registry.example.com/pause:3.10",
+			"coredns":            "registry.example.com/coredns:1.12.0",
+			"cilium":             "registry.example.com/cilium:1.20.1",
+			"cilium_operator":    "registry.example.com/operator:1.20.1",
+			"kube_vip":           "registry.example.com/kube-vip:1.2.3",
+			"node_exporter":      "registry.example.com/node-exporter:1.12.1",
+			"calico_cni":         "registry.example.com/calico-cni:3.32.2",
+			"calico_node":        "registry.example.com/calico-node:3.32.2",
+			"calico_controllers": "registry.example.com/calico-controllers:3.32.2",
+			"flannel":            "registry.example.com/flannel:0.28.9",
+			"flannel_cni":        "registry.example.com/flannel-cni:1.6.2",
 		},
 	}
 }
@@ -343,12 +352,12 @@ func minimalKubernetesDoc() map[string]any {
 func minimalDriversDoc() map[string]any {
 	return map[string]any{
 		"intel": map[string]any{
-			"k8s_plugin": "intel-plugin:1.0",
+			"k8s_plugin": "registry.example.com/intel-plugin:1.0",
 		},
 		"amd": map[string]any{
 			"rocm_legacy_version":   "6.0",
 			"rocm_bleeding_version": "10.0",
-			"k8s_plugin":            "amd-plugin:1.0",
+			"k8s_plugin":            "registry.example.com/amd-plugin:1.0",
 		},
 		"nvidia": map[string]any{
 			"legacy_driver":     "535",
@@ -361,7 +370,7 @@ func minimalDriversDoc() map[string]any {
 			"cuda_modern":       "13.3",
 			"cuda_bleeding":     "13.4",
 			"container_toolkit": "1.17",
-			"k8s_plugin":        "nvidia-plugin:1.0",
+			"k8s_plugin":        "registry.example.com/nvidia-plugin:1.0",
 		},
 	}
 }
