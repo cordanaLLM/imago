@@ -19,6 +19,7 @@ import json
 import pathlib
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Callable
 
@@ -47,10 +48,25 @@ def source_urls(manifest: dict) -> list[str]:
     return urls
 
 
+def https_opener() -> urllib.request.OpenerDirector:
+    """Return an opener that speaks HTTPS only: no file://, ftp:// or plain http:// handler."""
+    opener = urllib.request.OpenerDirector()
+    for handler in (
+        urllib.request.HTTPSHandler(),
+        urllib.request.HTTPRedirectHandler(),
+        urllib.request.HTTPDefaultErrorHandler(),
+        urllib.request.HTTPErrorProcessor(),
+    ):
+        opener.add_handler(handler)
+    return opener
+
+
 def http_status(url: str) -> int:
+    if urllib.parse.urlsplit(url).scheme != "https":
+        raise ValueError(f"upstream source is not an https URL: {url}")
     request = urllib.request.Request(url, method="HEAD")
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+        with https_opener().open(request, timeout=TIMEOUT_SECONDS) as response:
             return response.status
     except urllib.error.HTTPError as error:
         return error.code

@@ -19,7 +19,7 @@ Supported hardware: AMD Radeon RX 6000/7000/8000 series, Ryzen APUs, Radeon Pro,
 
 ### Version pins and apt source
 
-`versions.json` (`drivers.amd`) holds every coordinate [`32-gpu-amd-rocm.sh`](../../packer/provisioners/32-gpu-amd-rocm.sh) fetches:
+`versions.json` (`drivers.amd`) holds every coordinate [`32-gpu-amd-rocm.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/32-gpu-amd-rocm.sh) fetches:
 
 | Field | Value | Use |
 | :--- | :--- | :--- |

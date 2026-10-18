@@ -92,3 +92,16 @@ def test_preflight_runs_before_the_packer_build() -> None:
     check = names.index("Check Upstream Package Sources")
     assert "tools/ci/upstream_sources.py check" in steps[check]["run"]
     assert check < names.index("Build Image with Packer")
+
+
+@pytest.mark.parametrize("url", ["file:///etc/passwd", "http://repo.radeon.com/rocm/rocm.gpg.key"])
+def test_http_status_refuses_a_url_that_is_not_https(url: str) -> None:
+    with pytest.raises(ValueError, match="not an https URL"):
+        upstream_sources.http_status(url)
+
+
+def test_opener_has_no_handler_for_other_schemes() -> None:
+    opener = upstream_sources.https_opener()
+    schemes = {name[: -len("_open")] for handler in opener.handlers for name in dir(handler) if name.endswith("_open")}
+    assert "https" in schemes
+    assert not schemes & {"file", "ftp", "http", "data"}
