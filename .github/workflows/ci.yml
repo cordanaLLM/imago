@@ -326,6 +326,29 @@ jobs:
           pip install --require-hashes -r .github/requirements/test.txt
           # tests/test_python_lint_gate.py runs ruff on the files ruff.toml exempts.
           pip install --require-hashes -r .github/requirements/lint.txt
+      - name: Measure the Docker daemon answer time
+        # tests/test_container_integration.py bases its probe bounds on this value.
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
+        run: |
+          set -euo pipefail
+          answered=0
+          for attempt in 1 2 3 4 5; do
+            start="$(date +%s.%N)"
+            if timeout 60 docker info --format '{{.ServerVersion}}' > /dev/null; then
+              code=0
+            else
+              code=$?
+            fi
+            seconds="$(awk -v s="${start}" -v e="$(date +%s.%N)" 'BEGIN { printf "%.3f", e - s }')"
+            echo "attempt=${attempt} seconds=${seconds} exit=${code}" | tee -a "${GITHUB_STEP_SUMMARY}"
+            if [ "${code}" -eq 0 ]; then
+              answered=$((answered + 1))
+            fi
+          done
+          if [ "${answered}" -eq 0 ]; then
+            echo "::error::docker info failed in all 5 attempts"
+            exit 1
+          fi
       - name: Run Pytest Suite
         if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         env:
