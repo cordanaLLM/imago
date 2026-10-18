@@ -119,5 +119,6 @@ Following insights from the container ecosystem and [`pditommaso/awesome-contain
 2. **Zero-Footprint Troubleshooting (`cdebug`)**:
    - Production images strictly avoid bundling debugging utilities (`gdb`, `strace`, `tcpdump`, `curl`, `netshoot`) into container base layers.
    - Instead, the host operating system provides `cdebug` (`/usr/local/bin/cdebug`), enabling operators to attach ephemeral troubleshooting toolkits into any running container or Pod namespace on-demand without image modification.
-3. **Lazy-Pulling Snapshotter Roadmap (eStargz)**:
-   - For multi-gigabyte AI/ML inference containers (Ollama, vLLM, PyTorch), `stargz-snapshotter` enables startup in $< 2\text{s}$ by streaming content on-demand over HTTP range requests rather than waiting for full-image downloads.
+3. **Lazy-Pulling Snapshotter & HPC Sandboxing (`stargz-snapshotter` & `enroot`)**:
+   - `stargz-snapshotter` is registered as an opt-in proxy plugin in containerd (`[proxy_plugins.stargz]`) across Kubernetes and AI inference images, enabling on-demand block streaming for eStargz images while overlayfs remains the default.
+   - NVIDIA `enroot` is installed on `base-nvidia-datacenter` and `ai-infer-nvidia-*` for rootless, unprivileged user-space container sandboxing with native GPU driver integration.

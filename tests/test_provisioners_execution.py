@@ -121,6 +121,96 @@ class TestProvisionersExecution:
         assert "crun" in containerd_conf
         assert 'plugins."io.containerd.cri.v1.runtime".containerd.runtimes.crun' in containerd_conf
 
+    def test_51_stargz_snapshotter_execution(self, tmp_path: Path, require_bash) -> None:
+        """Verify 51-stargz-snapshotter.sh configures service and containerd proxy plugin idempotently."""
+        sandbox = MockSandbox(tmp_path)
+        script = PROVISIONERS_DIR / "51-stargz-snapshotter.sh"
+
+        res = sandbox.run_script(script, env_vars={"STARGZ_VERSION": "0.18.2"})
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+
+        # containerd config has proxy plugin block
+        containerd_conf = res.read_file("etc/containerd/config.toml")
+        assert containerd_conf is not None
+        assert "[proxy_plugins.stargz]" in containerd_conf
+        assert 'type = "snapshot"' in containerd_conf
+        assert 'address = "/run/containerd-stargz-grpc/containerd-stargz-grpc.sock"' in containerd_conf
+
+        # Systemd service and config created
+        svc = res.read_file("etc/systemd/system/stargz-snapshotter.service")
+        assert svc is not None
+        assert "ExecStart=/usr/local/bin/containerd-stargz-grpc" in svc
+        assert "--log-level=info" in svc
+
+        cfg = res.read_file("etc/containerd-stargz-grpc/config.toml")
+        assert cfg is not None
+
+        sys_cmds = res.find_commands("systemctl")
+        assert any("enable" in cmd and "stargz-snapshotter" in cmd for cmd in sys_cmds)
+
+        # Idempotency check: second run should not duplicate the proxy plugin block
+        res2 = sandbox.run_script(script, env_vars={"STARGZ_VERSION": "0.18.2"})
+        assert res2.returncode == 0
+        containerd_conf2 = res2.read_file("etc/containerd/config.toml")
+        assert containerd_conf2.count("[proxy_plugins.stargz]") == 1
+
+    def test_51_stargz_snapshotter_checksum_mismatch(self, tmp_path: Path, require_bash) -> None:
+        """Negative: checksum mismatch must fail closed and install nothing."""
+        sandbox = MockSandbox(tmp_path)
+        script = PROVISIONERS_DIR / "51-stargz-snapshotter.sh"
+
+        res = sandbox.run_script(script, env_vars={"STARGZ_VERSION": "0.18.2", "MOCK_MISMATCH_SHA": "1"})
+        assert res.returncode != 0
+        assert "Checksum verification failed" in res.stderr
+        assert res.read_file("etc/containerd/config.toml") is None
+        assert res.read_file("etc/systemd/system/stargz-snapshotter.service") is None
+
+    def test_51_stargz_snapshotter_boundaries(self, tmp_path: Path, require_bash) -> None:
+        """Boundary: unknown architecture and missing STARGZ_VERSION must fail nonzero."""
+        script = PROVISIONERS_DIR / "51-stargz-snapshotter.sh"
+
+        # Boundary 1: unknown arch
+        sandbox_mips = MockSandbox(tmp_path / "mips", arch="mips64")
+        res_mips = sandbox_mips.run_script(script, env_vars={"STARGZ_VERSION": "0.18.2"})
+        assert res_mips.returncode != 0
+        assert "Unsupported architecture" in res_mips.stderr
+
+        # Boundary 2: missing STARGZ_VERSION
+        sandbox_no_ver = MockSandbox(tmp_path / "no_ver")
+        res_no_ver = sandbox_no_ver.run_script(script, env_vars={"STARGZ_VERSION": ""})
+        assert res_no_ver.returncode != 0
+
+    def test_62_hpc_enroot_execution(self, tmp_path: Path, require_bash) -> None:
+        """Positive: apt-get called with both ./debs and version verification succeeds."""
+        sandbox = MockSandbox(tmp_path)
+        script = PROVISIONERS_DIR / "62-hpc-enroot.sh"
+
+        res = sandbox.run_script(script, env_vars={"ENROOT_VERSION": "3.4.1"})
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+
+        apt_cmds = res.find_commands("apt-get")
+        assert any(
+            "install" in cmd and "enroot_3.4.1-1_amd64.deb" in cmd and "enroot+caps_3.4.1-1_amd64.deb" in cmd
+            for cmd in apt_cmds
+        )
+
+    def test_62_hpc_enroot_version_mismatch(self, tmp_path: Path, require_bash) -> None:
+        """Negative: version mismatch fails closed."""
+        sandbox = MockSandbox(tmp_path)
+        script = PROVISIONERS_DIR / "62-hpc-enroot.sh"
+
+        res = sandbox.run_script(script, env_vars={"ENROOT_VERSION": "3.4.1", "MOCK_ENROOT_VERSION": "1.0.0"})
+        assert res.returncode != 0
+        assert "enroot version check failed" in res.stderr
+
+    def test_62_hpc_enroot_boundaries(self, tmp_path: Path, require_bash) -> None:
+        """Boundary: missing ENROOT_VERSION must fail nonzero."""
+        sandbox = MockSandbox(tmp_path)
+        script = PROVISIONERS_DIR / "62-hpc-enroot.sh"
+
+        res = sandbox.run_script(script, env_vars={"ENROOT_VERSION": ""})
+        assert res.returncode != 0
+
     def test_75_appliance_vision_cdi_version(self, tmp_path: Path, require_bash) -> None:
         """Verify 75-appliance-vision.sh writes CDI specification with version '0.6.0'."""
         sandbox = MockSandbox(tmp_path)

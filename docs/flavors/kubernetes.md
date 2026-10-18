@@ -145,3 +145,9 @@ sudo cdebug exec -it --runtime containerd <container-id>
 # Attach a fully-equipped network diagnostic toolkit (netshoot) to a pod namespace
 sudo cdebug exec -it --image nicolaka/netshoot --runtime containerd <container-id>
 ```
+
+---
+
+## Lazy-Pulling Snapshotter (`stargz-snapshotter`)
+
+Following [ADR-0010](../adr/0010-container-ecosystem-runtimes-and-tooling.md), the Kubernetes images that run `50-k8s-runtime.sh` (`k8s-node-*`, `cloudnative-k8s`) register `stargz-snapshotter` as an opt-in proxy plugin in `/etc/containerd/config.toml` (`[proxy_plugins.stargz]`). overlayfs stays the default snapshotter. A pull opts in with `sudo ctr-remote image rpull <image>`; making it the CRI default is an operator choice in the same file.
