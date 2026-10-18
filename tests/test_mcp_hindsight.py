@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import http.client
 import importlib.util
+import io
 import json
 import subprocess
 import sys
@@ -412,3 +413,77 @@ class TestBufferDrain:
         assert server.flush_local_pending() == 0
         assert len(_ScriptedConnection.sent) == 1
         assert [e["pending_sync"] for e in server.read_local_buffer()] == [True, True]
+
+
+def drive_server_main(server_module, monkeypatch: pytest.MonkeyPatch, raw_input: str) -> list[dict]:
+    """Drive server main() in-process with monkeypatched stdin and stdout."""
+    stdin_buf = io.StringIO(raw_input)
+    stdout_buf = io.StringIO()
+    monkeypatch.setattr(sys, "stdin", stdin_buf)
+    monkeypatch.setattr(sys, "stdout", stdout_buf)
+    server_module.main()
+    lines = [line.strip() for line in stdout_buf.getvalue().splitlines() if line.strip()]
+    return [json.loads(line) for line in lines]
+
+
+class TestJSONRPCNegative:
+    """Negative and boundary conditions for stdio JSON-RPC loop."""
+
+    def test_invalid_json_parse_error_keeps_serving(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        """Invalid JSON emits -32700 with id null and server keeps serving valid requests."""
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        boundary_request = {
+            "jsonrpc": "2.0",
+            "id": "bound-1",
+            "method": "tools/list",
+            "params": {},
+        }
+        raw_input = "not-valid-json {[\n" + json.dumps(boundary_request) + "\n"
+        responses = drive_server_main(server, monkeypatch, raw_input)
+
+        assert len(responses) == 2
+        # Parse error response frame
+        assert responses[0]["jsonrpc"] == "2.0"
+        assert responses[0]["id"] is None
+        assert responses[0]["error"]["code"] == -32700
+        assert responses[0]["error"]["message"].startswith("Parse error:")
+
+        # Boundary valid request response frame
+        assert responses[1]["jsonrpc"] == "2.0"
+        assert responses[1]["id"] == "bound-1"
+        assert "tools" in responses[1]["result"]
+
+    def test_unknown_method_error(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        """Unknown method emits -32601 echoing request id and naming method."""
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+        req = {
+            "jsonrpc": "2.0",
+            "id": "unknown-test-42",
+            "method": "nonexistent/custom_method",
+            "params": {},
+        }
+        responses = drive_server_main(server, monkeypatch, json.dumps(req) + "\n")
+
+        assert len(responses) == 1
+        assert responses[0]["jsonrpc"] == "2.0"
+        assert responses[0]["id"] == "unknown-test-42"
+        assert responses[0]["error"]["code"] == -32601
+        assert responses[0]["error"]["message"] == "Method not found: nonexistent/custom_method"
+
+    def test_empty_and_whitespace_lines_ignored(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        """Empty and whitespace-only lines are ignored and do not produce error responses."""
+        server = load_server(monkeypatch, tmp_path, "planted-key")
+
+        # Whitespace-only input produces zero responses
+        whitespace_input = "\n   \n\t\n  \r\n\n"
+        empty_responses = drive_server_main(server, monkeypatch, whitespace_input)
+        assert empty_responses == []
+
+        # Interleaved whitespace around valid request
+        ping_req = {"jsonrpc": "2.0", "id": "ping-1", "method": "ping"}
+        interleaved_input = "\n   \n\t  \n" + json.dumps(ping_req) + "\n\n   \n"
+        responses = drive_server_main(server, monkeypatch, interleaved_input)
+        assert len(responses) == 1
+        assert responses[0]["jsonrpc"] == "2.0"
+        assert responses[0]["id"] == "ping-1"
+        assert responses[0]["result"] == {}
