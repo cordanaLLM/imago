@@ -56,6 +56,8 @@ type IntelDrivers struct {
 type AMDDrivers struct {
 	ROCmLegacyVersion   string `json:"rocm_legacy_version"`
 	ROCmBleedingVersion string `json:"rocm_bleeding_version"`
+	ROCmRepo            string `json:"rocm_repo"`
+	ROCmAptSuite        string `json:"rocm_apt_suite"`
 	K8sPlugin           string `json:"k8s_plugin"`
 }
 

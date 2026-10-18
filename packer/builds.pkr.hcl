@@ -32,6 +32,8 @@ locals {
   cuda_bleeding            = local.manifest.drivers.nvidia.cuda_bleeding
   rocm_legacy_version      = local.manifest.drivers.amd.rocm_legacy_version
   rocm_bleeding_version    = local.manifest.drivers.amd.rocm_bleeding_version
+  rocm_repo                = local.manifest.drivers.amd.rocm_repo
+  rocm_apt_suite           = local.manifest.drivers.amd.rocm_apt_suite
   k3s_version              = try(local.manifest.k3s.version, "v1.36.4+k3s1")
   crun_version             = try(local.manifest.runtimes.crun, "1.20")
   stargz_version           = try(local.manifest.runtimes.stargz_snapshotter, "0.18.2")
@@ -73,7 +75,9 @@ locals {
     "CUDA_MODERN=${local.cuda_modern}",
     "CUDA_BLEEDING=${local.cuda_bleeding}",
     "ROCM_VERSION=${local.rocm_bleeding_version}",
-    "ROCM_LEGACY_VERSION=${local.rocm_legacy_version}"
+    "ROCM_LEGACY_VERSION=${local.rocm_legacy_version}",
+    "ROCM_REPO=${local.rocm_repo}",
+    "ROCM_APT_SUITE=${local.rocm_apt_suite}"
   ]
 }
 

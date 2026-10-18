@@ -173,7 +173,7 @@ Release + weekly schedule build `base-generic`, `docker-generic`, `k8s-node-gene
 | **Base** | NVIDIA Datacenter | `base-nvidia-datacenter`| NVIDIA Open Kernel Modules, Fabric Manager (Hopper/Blackwell) |
 | **Docker** | Generic (VirtIO) | `docker-generic` | Docker CE 29.8, Docker Compose v2, containerd, log rotation |
 | **Docker** | Intel GPU | `docker-intel` | Docker CE + Intel Media/Compute + QuickSync passthrough |
-| **Docker** | AMD GPU | `docker-amd` | Docker CE + AMD ROCm 10 compute runtime |
+| **Docker** | AMD GPU | `docker-amd` | Docker CE + AMD ROCm 7.2 compute runtime |
 | **Docker** | NVIDIA Mainstream | `docker-nvidia` | Docker CE + NVIDIA Container Toolkit + CDI specifications |
 | **Docker** | NVIDIA Modern | `docker-nvidia-modern` | Docker CE + NVIDIA 610 + NVIDIA Container Toolkit CDI |
 | **Docker** | NVIDIA Bleeding | `docker-nvidia-bleeding`| Docker CE + NVIDIA 615 + NVIDIA Container Toolkit CDI |
@@ -183,13 +183,13 @@ Release + weekly schedule build `base-generic`, `docker-generic`, `k8s-node-gene
 | **Kubernetes**| Generic (VirtIO) | `k8s-node-calico` | containerd 2.3.5, preheated Calico 3.32.2 & kube-vip 1.2.3 |
 | **Kubernetes**| Generic (VirtIO) | `k8s-node-flannel` | containerd 2.3.5, preheated Flannel 0.28.9 & kube-vip 1.2.3 |
 | **Kubernetes**| Intel GPU | `k8s-node-intel` | containerd 2.3.5 + Intel drivers + Intel K8s Device Plugin |
-| **Kubernetes**| AMD GPU | `k8s-node-amd` | containerd 2.3.5 + AMD ROCm 10 + AMD K8s Device Plugin |
+| **Kubernetes**| AMD GPU | `k8s-node-amd` | containerd 2.3.5 + AMD ROCm 7.2 + AMD K8s Device Plugin |
 | **Kubernetes**| NVIDIA Mainstream | `k8s-node-nvidia` | containerd 2.3.5 + NVIDIA 565 + NVIDIA K8s Device Plugin |
 | **Kubernetes**| NVIDIA Modern | `k8s-node-nvidia-modern` | containerd 2.3.5 + NVIDIA 610 + NVIDIA K8s Device Plugin |
 | **Kubernetes**| NVIDIA Bleeding | `k8s-node-nvidia-bleeding`| containerd 2.3.5 + NVIDIA 615 + NVIDIA K8s Device Plugin |
 | **K3s Edge** | Generic (VirtIO) | `k3s-agent-generic` | Lightweight K3s agent, containerd, Flannel (< 300MB RAM) |
 | **K3s Edge** | Intel GPU | `k3s-agent-intel` | K3s agent + Intel QuickSync passthrough (`iHD`) + Level Zero |
-| **K3s Edge** | AMD GPU | `k3s-agent-amd` | K3s agent + AMD ROCm 10 compute runtime + RADV Vulkan |
+| **K3s Edge** | AMD GPU | `k3s-agent-amd` | K3s agent + AMD ROCm 7.2 compute runtime + RADV Vulkan |
 | **K3s Edge** | NVIDIA Mainstream | `k3s-agent-nvidia` | K3s agent + NVIDIA 565 + Container Toolkit CDI |
 | **K3s Edge** | Control Plane | `k3s-server-generic` | K3s standalone master, embedded SQLite, local-path storage |
 | **CloudNative**| Generic (VirtIO) | `cloudnative-generic` | Immutable container host, read-only root, ephemeral tmpfs, containerd CDI |
@@ -198,7 +198,7 @@ Release + weekly schedule build `base-generic`, `docker-generic`, `k8s-node-gene
 | **CloudNative**| Database (CNPG) | `cloudnative-pg` | PostgreSQL / CloudNativePG kernel tuning, hugepages, strict overcommit |
 | **AI Infer** | Generic (CPU) | `ai-infer-generic` | AMX, AVX-512, NUMA, vLLM/Ollama CPU, Docker CE |
 | **AI Infer** | Intel GPU | `ai-infer-intel` | Intel Level Zero, OpenVINO, IPEX-LLM, CDI, Docker CE |
-| **AI Infer** | AMD GPU | `ai-infer-amd` | AMD ROCm 10, /dev/kfd, RDNA 3/4 & Instinct, CDI, Docker CE |
+| **AI Infer** | AMD GPU | `ai-infer-amd` | AMD ROCm 7.2, /dev/kfd, RDNA 3/4 & Instinct, CDI, Docker CE |
 | **AI Infer** | NVIDIA Mainstream | `ai-infer-nvidia` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 565) |
 | **AI Infer** | NVIDIA Modern | `ai-infer-nvidia-modern` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 610) |
 | **AI Infer** | NVIDIA Bleeding | `ai-infer-nvidia-bleeding`| Transparent hugepages, Blackwell RTX 5090 / B200 (NVIDIA 615) |

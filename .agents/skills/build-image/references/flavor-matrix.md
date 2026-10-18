@@ -25,7 +25,7 @@
 | :--- | :--- | :--- | :--- |
 | `docker-generic` | Docker CE | `-only="docker-generic.qemu.image"` | Docker CE 29.8, Docker Compose v2, containerd 2.3.5 |
 | `docker-intel` | Docker CE + Intel | `-only="docker-intel.qemu.image"` | Docker CE + Intel QuickSync / Level Zero passthrough |
-| `docker-amd` | Docker CE + AMD | `-only="docker-amd.qemu.image"` | Docker CE + AMD ROCm 10 compute runtime |
+| `docker-amd` | Docker CE + AMD | `-only="docker-amd.qemu.image"` | Docker CE + AMD ROCm 7.2 compute runtime |
 | `docker-nvidia` | Docker CE + NVIDIA 565 | `-only="docker-nvidia.qemu.image"` | Docker CE + NVIDIA Container Toolkit + CDI specifications |
 | `docker-nvidia-modern` | Docker CE + NVIDIA 610 | `-only="docker-nvidia-modern.qemu.image"` | Docker CE + NVIDIA 610 + NVIDIA Container Toolkit CDI |
 | `docker-nvidia-bleeding`| Docker CE + NVIDIA 615 | `-only="docker-nvidia-bleeding.qemu.image"`| Docker CE + NVIDIA 615 + NVIDIA Container Toolkit CDI |
@@ -42,7 +42,7 @@
 | `k8s-node-calico` | Preheated Calico | `-only="k8s-node-calico.qemu.image"` | containerd 2.3.5, pre-cached Calico 3.32.2 & kube-vip 1.2.3 |
 | `k8s-node-flannel` | Preheated Flannel | `-only="k8s-node-flannel.qemu.image"` | containerd 2.3.5, pre-cached Flannel 0.28.9 & kube-vip 1.2.3 |
 | `k8s-node-intel` | Intel GPU Plugin | `-only="k8s-node-intel.qemu.image"` | containerd 2.3.5 + Intel drivers + Intel K8s Device Plugin |
-| `k8s-node-amd` | AMD GPU Plugin | `-only="k8s-node-amd.qemu.image"` | containerd 2.3.5 + AMD ROCm 10 + AMD K8s Device Plugin |
+| `k8s-node-amd` | AMD GPU Plugin | `-only="k8s-node-amd.qemu.image"` | containerd 2.3.5 + AMD ROCm 7.2 + AMD K8s Device Plugin |
 | `k8s-node-nvidia` | NVIDIA Mainstream | `-only="k8s-node-nvidia.qemu.image"` | containerd 2.3.5 + NVIDIA 565 + NVIDIA K8s Device Plugin |
 | `k8s-node-nvidia-modern`| NVIDIA Modern | `-only="k8s-node-nvidia-modern.qemu.image"` | containerd 2.3.5 + NVIDIA 610 + NVIDIA K8s Device Plugin |
 | `k8s-node-nvidia-bleeding`| NVIDIA Bleeding | `-only="k8s-node-nvidia-bleeding.qemu.image"`| containerd 2.3.5 + NVIDIA 615 + NVIDIA K8s Device Plugin |
@@ -55,7 +55,7 @@
 | :--- | :--- | :--- | :--- |
 | `k3s-agent-generic` | Generic Edge Worker | `-only="k3s-agent-generic.qemu.image"` | Lightweight K3s agent, containerd, Flannel (< 300MB RAM) |
 | `k3s-agent-intel` | Intel GPU Worker | `-only="k3s-agent-intel.qemu.image"` | K3s agent + Intel QuickSync passthrough (`iHD`) + Level Zero |
-| `k3s-agent-amd` | AMD GPU Worker | `-only="k3s-agent-amd.qemu.image"` | K3s agent + AMD ROCm 10 compute runtime + RADV Vulkan |
+| `k3s-agent-amd` | AMD GPU Worker | `-only="k3s-agent-amd.qemu.image"` | K3s agent + AMD ROCm 7.2 compute runtime + RADV Vulkan |
 | `k3s-agent-nvidia` | NVIDIA GPU Worker | `-only="k3s-agent-nvidia.qemu.image"` | K3s agent + NVIDIA 565 + Container Toolkit CDI |
 | `k3s-server-generic` | Master Control Plane | `-only="k3s-server-generic.qemu.image"` | K3s standalone master, embedded SQLite, local-path storage |
 
@@ -78,7 +78,7 @@
 | :--- | :--- | :--- | :--- |
 | `ai-infer-generic` | CPU (AVX-512 / AMX) | `-only="ai-infer-generic.qemu.image"` | AMX, AVX-512, NUMA tuning, vLLM/Ollama CPU, Docker CE |
 | `ai-infer-intel` | Intel Level Zero / XPU | `-only="ai-infer-intel.qemu.image"` | Intel Level Zero, OpenVINO, IPEX-LLM, CDI, Docker CE |
-| `ai-infer-amd` | AMD ROCm 10 Instinct | `-only="ai-infer-amd.qemu.image"` | AMD ROCm 10, `/dev/kfd`, RDNA 3/4 & Instinct, CDI, Docker CE |
+| `ai-infer-amd` | AMD ROCm 7.2 Instinct | `-only="ai-infer-amd.qemu.image"` | AMD ROCm 7.2, `/dev/kfd`, RDNA 3/4 & Instinct, CDI, Docker CE |
 | `ai-infer-nvidia` | NVIDIA Mainstream 565 | `-only="ai-infer-nvidia.qemu.image"` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 565) |
 | `ai-infer-nvidia-modern`| NVIDIA Modern 610 | `-only="ai-infer-nvidia-modern.qemu.image"` | Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 610) |
 | `ai-infer-nvidia-bleeding`| NVIDIA Bleeding 615 | `-only="ai-infer-nvidia-bleeding.qemu.image"`| Transparent hugepages, Blackwell RTX 5090 / B200 (NVIDIA 615) |

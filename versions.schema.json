@@ -62,10 +62,12 @@
         },
         "amd": {
           "type": "object",
-          "required": ["rocm_legacy_version", "rocm_bleeding_version", "k8s_plugin"],
+          "required": ["rocm_legacy_version", "rocm_bleeding_version", "rocm_repo", "rocm_apt_suite", "k8s_plugin"],
           "properties": {
             "rocm_legacy_version": { "type": "string" },
             "rocm_bleeding_version": { "type": "string" },
+            "rocm_repo": { "type": "string", "pattern": "^https://[^\\s]+[^/]$" },
+            "rocm_apt_suite": { "type": "string", "pattern": "^[a-z]+$" },
             "k8s_plugin": { "$ref": "#/$defs/imageRef" }
           }
         },

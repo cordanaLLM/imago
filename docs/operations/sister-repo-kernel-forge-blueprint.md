@@ -18,7 +18,7 @@
 2. **Multi-Architecture Support**: Produce reproducible kernel packages across **`x86_64` (AMD64)**, **`arm64` (aarch64)**, and **`riscv64`** (roadmap).
 3. **Multi-Stream Kernel Matrix**: Build and maintain 4 live-verified kernel streams aligned with `kernel.org`:
    - **`lts`**: Linux 6.18 LTS / 6.12 LTS (Enterprise Kubernetes, OpenZFS 2.3+ storage, databases).
-   - **`mainstream`**: Linux 7.2.x (Intel Xe2 Battlemage, AMD ROCm 10, NVIDIA 565/610, container hosts).
+   - **`mainstream`**: Linux 7.2.x (Intel Xe2 Battlemage, AMD ROCm 7.2, NVIDIA 565/610, container hosts).
    - **`bleeding`**: Linux 7.3-rc2 / mainline (NVIDIA 615 Blackwell RTX 5090 / B200, CXL 3.0, `sched-ext`).
    - **`realtime`**: Linux 7.2-rt / 6.18-rt (`PREEMPT_RT` / BORE scheduler, 1000Hz timer, WireGuard).
 4. **Packaging & Delivery**: Output standard Debian `.deb` packages and the `vmlinuz` image to the GitHub Release of each tag (section 4.1). Debug symbols, signed Unified Kernel Image (UKI) `.efi` binaries, an APT repository (`apt.example.com/kernels`) and an OCI registry are planned; no release publishes them yet.

@@ -68,7 +68,7 @@ Stock cloud distributions waste minutes downloading gigabytes of kernel modules,
 
 - **Zero Base Bloat**: Complete elimination of Canonical snaps, telemetry services (`ubuntu-pro-client`, `landscape-common`, `popularity-contest`), motd news, and unneeded documentation.
 - **Single Source of Truth (`versions.json`)**: Every upstream URL, driver branch, and container tag originates from a single declarative manifest validated against `versions.schema.json`.
-- **Multi-Generational Hardware**: Tailored driver stacks for Intel Arc/Flex/Xe2, AMD Mesa/ROCm 10, and NVIDIA generational CUDA (Pascal 535, Ampere/Ada 565, Hopper/Blackwell 610/615).
+- **Multi-Generational Hardware**: Tailored driver stacks for Intel Arc/Flex/Xe2, AMD Mesa/ROCm 7.2, and NVIDIA generational CUDA (Pascal 535, Ampere/Ada 565, Hopper/Blackwell 610/615).
 - **Hypervisor & Bare-Metal Speed Engine**: Coexisting `qemu-guest-agent` + `open-vm-tools`, Unraid `virtiofs`/`9p` host sharing, fast-boot `NoCloud` discovery (< 2s), ZRAM compressed swap guard, weekly `fstrim.timer`, and VirtIO `mq-deadline` I/O scheduling.
 - **Multi-Distribution Upstream Roadmap**: Standardized on Ubuntu 26.04/24.04 LTS for accelerator-rich workloads, with an active architectural roadmap ([ADR-0009](docs/adr/0009-multi-distribution-base-roadmap.md)) targeting Debian Bookworm/Trixie for lean microVMs and storage appliances, and Alpine for ultra-lean edge gateways.
 - **Resilient Global Time**: Cryptographically authenticated Network Time Security (NTS RFC 8915) combining Cloudflare Anycast and European national metrology laboratories (PTB, Netnod, SIDN, 3eck).
@@ -142,10 +142,10 @@ A published release and the weekly schedule build `base-generic`, `docker-generi
 | :--- | :---: | :--- | :--- | :--- |
 | **1. Base Cloud** | 8 | Generic, Intel Xe, AMD Mesa, NVIDIA (535 to 615) | Hardened OS, Anycast NTS, enroot (datacenter), QEMU/VMware agents | [📖 Base Guide](docs/flavors/base.md) |
 | **2. Container Hosts** | 7 | Generic, Intel QuickSync, AMD ROCm, NVIDIA CDI | Docker CE 29.8, Docker Compose v2, Podman 5.x | [📖 Containers Guide](docs/flavors/containers.md) |
-| **3. Enterprise K8s** | 9 | Generic, Intel Arc, AMD ROCm 10, NVIDIA Mainstream/Bleeding | containerd 2.3.5, kubelet 1.37.0, stargz-snapshotter (opt-in), Cilium/Calico preheat | [📖 Kubernetes Guide](docs/flavors/kubernetes.md) |
-| **4. K3s Edge Fleet** | 5 | Generic, Intel QuickSync, AMD ROCm 10, NVIDIA CDI | Lightweight K3s (< 300MB RAM), Flannel, SQLite | [📖 K3s Guide](docs/flavors/k3s.md) |
+| **3. Enterprise K8s** | 9 | Generic, Intel Arc, AMD ROCm 7.2, NVIDIA Mainstream/Bleeding | containerd 2.3.5, kubelet 1.37.0, stargz-snapshotter (opt-in), Cilium/Calico preheat | [📖 Kubernetes Guide](docs/flavors/kubernetes.md) |
+| **4. K3s Edge Fleet** | 5 | Generic, Intel QuickSync, AMD ROCm 7.2, NVIDIA CDI | Lightweight K3s (< 300MB RAM), Flannel, SQLite | [📖 K3s Guide](docs/flavors/k3s.md) |
 | **5. CloudNative & Storage** | 4 | Generic, Baremetal, NVMe-oF, OpenZFS 2.3 | Read-only root immutability, OpenZFS, CloudNativePG | [📖 CloudNative Guide](docs/flavors/cloudnative.md) |
-| **6. AI & LLM Inference** | 6 | AMX/AVX-512, Intel Xe2, AMD ROCm 10, NVIDIA (565/610/615) | Transparent Hugepages, NUMA, stargz-snapshotter (opt-in), enroot (NVIDIA), vLLM / Ollama | [📖 AI Inference Guide](docs/flavors/ai-infer.md) |
+| **6. AI & LLM Inference** | 6 | AMX/AVX-512, Intel Xe2, AMD ROCm 7.2, NVIDIA (565/610/615) | Transparent Hugepages, NUMA, stargz-snapshotter (opt-in), enroot (NVIDIA), vLLM / Ollama | [📖 AI Inference Guide](docs/flavors/ai-infer.md) |
 | **7. Homelab Appliances** | 5 | Coral TPU, QuickSync, Dual VA-API, ARM64 binfmt, i386 | Frigate NVR, AdGuard/Pi-hole, Jellyfin, CI runner, SteamCMD | [📖 Homelab Guide](docs/flavors/homelab-appliances.md) |
 
 > 📋 **Detailed Specifications**: Browse the complete list of all 44 target configurations in [**`FLAVORS.md`**](FLAVORS.md) or explore them interactively in the [**Documentation Portal Matrix**](https://cordanallm.github.io/imago/flavors/matrix/).

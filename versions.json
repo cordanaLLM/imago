@@ -29,8 +29,10 @@
       "k8s_plugin": "docker.io/intel/intel-gpu-plugin:0.36.0"
     },
     "amd": {
-      "rocm_legacy_version": "7.14",
-      "rocm_bleeding_version": "10.0",
+      "rocm_legacy_version": "6.4.4",
+      "rocm_bleeding_version": "7.2.4",
+      "rocm_repo": "https://repo.radeon.com/rocm",
+      "rocm_apt_suite": "noble",
       "k8s_plugin": "docker.io/rocm/k8s-device-plugin:1.31.0.11"
     },
     "nvidia": {

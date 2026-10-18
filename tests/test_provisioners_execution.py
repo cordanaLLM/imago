@@ -14,6 +14,7 @@ from tests.harness.live import skip_or_fail
 from tests.harness.mock_runner import GIT_BASH, MockSandbox
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+ROCM_ENV = {"ROCM_VERSION": "7.2.4", "ROCM_REPO": "https://repo.example.com/rocm", "ROCM_APT_SUITE": "noble"}
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
 
@@ -89,11 +90,20 @@ class TestProvisionersExecution:
         sandbox = MockSandbox(tmp_path, arch="arm64")
         script = PROVISIONERS_DIR / "32-gpu-amd-rocm.sh"
 
-        res = sandbox.run_script(script)
+        res = sandbox.run_script(script, env_vars=ROCM_ENV)
         assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
 
         dpkg_cmds = res.find_commands("dpkg")
         assert any("--print-architecture" in cmd for cmd in dpkg_cmds)
+
+    @pytest.mark.parametrize("unset", sorted(ROCM_ENV))
+    def test_32_gpu_amd_rocm_refuses_a_missing_pin(self, tmp_path: Path, require_bash, unset: str) -> None:
+        """Without a versions.json value the script stops before it fetches anything."""
+        sandbox = MockSandbox(tmp_path)
+        res = sandbox.run_script(PROVISIONERS_DIR / "32-gpu-amd-rocm.sh", env_vars={**ROCM_ENV, unset: ""})
+        assert res.returncode != 0
+        assert unset in res.stderr
+        assert not res.find_commands("curl")
 
     def test_40_docker_runtime_execution(self, tmp_path: Path, require_bash) -> None:
         """Verify 40-docker-runtime.sh generates daemon.json and uses dynamic arch."""
@@ -435,7 +445,7 @@ class TestProvisionersFailClosed:
         self, tmp_path: Path, require_bash, script_name: str, failing_command: str
     ) -> None:
         sandbox = MockSandbox(tmp_path)
-        res = sandbox.run_script(PROVISIONERS_DIR / script_name, env_vars={"MOCK_FAIL": failing_command})
+        res = sandbox.run_script(PROVISIONERS_DIR / script_name, env_vars={**ROCM_ENV, "MOCK_FAIL": failing_command})
         assert res.returncode != 0, f"{script_name} ignored a failed {failing_command}"
         assert res.has_command(failing_command), f"{failing_command} was never reached"
 
