@@ -97,10 +97,10 @@ All hardware-specific flavors include the respective Container Device Interface 
 - **`k8s-node-cilium`**: Standard CPU worker node with preheated Cilium eBPF stack.
 - **`k8s-node-calico`**: Standard CPU worker node with preheated Calico networking.
 - **`k8s-node-flannel`**: Standard CPU worker node with preheated Flannel overlay.
-- **`k8s-node-intel`**: Intel Arc/Xe2 acceleration with Intel Device Plugin (`intel/intel-device-plugins-gpu:v0.36.0`).
-- **`k8s-node-amd`**: AMD ROCm 10 compute runtime with AMD GPU Device Plugin (`rocm/k8s-device-plugin:v1.37.0`).
-- **`k8s-node-nvidia`**: NVIDIA Mainstream 565 driver with NVIDIA K8s Device Plugin (`nvcr.io/nvidia/k8s-device-plugin:v0.20.0`).
-- **`k8s-node-nvidia-modern`**: NVIDIA Modern 610 driver (Ada Lovelace / Hopper) with NVIDIA K8s Device Plugin.
+- **`k8s-node-intel`**: Intel Arc/Xe2 acceleration with Intel Device Plugin (`docker.io/intel/intel-gpu-plugin:0.36.0`).
+- **`k8s-node-amd`**: AMD ROCm 7.2 compute runtime with AMD GPU Device Plugin (`docker.io/rocm/k8s-device-plugin:1.31.0.11`).
+- **`k8s-node-nvidia`**: NVIDIA Mainstream 595 driver with NVIDIA K8s Device Plugin (`nvcr.io/nvidia/k8s-device-plugin:v0.20.0`).
+- **`k8s-node-nvidia-modern`**: NVIDIA Modern 615 driver (Ada Lovelace / Hopper) with NVIDIA K8s Device Plugin.
 - **`k8s-node-nvidia-bleeding`**: NVIDIA Bleeding 615 driver (Blackwell RTX 5090 / B200) with NVIDIA K8s Device Plugin.
 
 ---
@@ -145,3 +145,9 @@ sudo cdebug exec -it --runtime containerd <container-id>
 # Attach a fully-equipped network diagnostic toolkit (netshoot) to a pod namespace
 sudo cdebug exec -it --image nicolaka/netshoot --runtime containerd <container-id>
 ```
+
+---
+
+## Lazy-Pulling Snapshotter (`stargz-snapshotter`)
+
+Following [ADR-0010](../adr/0010-container-ecosystem-runtimes-and-tooling.md), the Kubernetes images that run `50-k8s-runtime.sh` (`k8s-node-*`, `cloudnative-k8s`) register `stargz-snapshotter` as an opt-in proxy plugin in `/etc/containerd/config.toml` (`[proxy_plugins.stargz]`). overlayfs stays the default snapshotter. A pull opts in with `sudo ctr-remote image rpull <image>`; making it the CRI default is an operator choice in the same file.

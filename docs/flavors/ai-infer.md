@@ -12,9 +12,9 @@ All appliances come pre-configured with **Docker CE 29.8**, vendor Container Dev
 | :--- | :--- | :--- | :--- | :--- |
 | **`ai-infer-generic`** | CPU High-Throughput | AMX, AVX-512, OpenMP | Multi-socket EPYC, Xeon, Threadripper | Docker CE (CPU isolation) |
 | **`ai-infer-intel`** | Intel Xe / Arc / Xe2 | Level Zero, OpenCL, OpenVINO | Arc A770, Battlemage Xe2 (B580), Flex, Max | CDI (`/etc/cdi/intel.yaml`) |
-| **`ai-infer-amd`** | AMD ROCm 10 | ROCm HIP, rocBLAS, MIOpen | Radeon RX 7900/8000, Instinct MI200/MI300 | CDI (`/etc/cdi/amd.yaml`) |
-| **`ai-infer-nvidia`** | NVIDIA Mainstream | CUDA 12.8, TensorRT-LLM | RTX 20/30, A100, L4, RTX A6000 | CDI (`/etc/cdi/nvidia.yaml`) |
-| **`ai-infer-nvidia-modern`** | NVIDIA Modern | CUDA 13.3, Ada / Hopper TE | RTX 4080/4090, L40, L40S, H100 PCIe | CDI (`/etc/cdi/nvidia.yaml`) |
+| **`ai-infer-amd`** | AMD ROCm 7.2 | ROCm HIP, rocBLAS, MIOpen | Radeon RX 7900/8000, Instinct MI200/MI300 | CDI (`/etc/cdi/amd.yaml`) |
+| **`ai-infer-nvidia`** | NVIDIA Mainstream | CUDA 13.2, TensorRT-LLM | RTX 20/30, A100, L4, RTX A6000 | CDI (`/etc/cdi/nvidia.yaml`) |
+| **`ai-infer-nvidia-modern`** | NVIDIA Modern | CUDA 13.4, Ada / Hopper TE | RTX 4080/4090, L40, L40S, H100 PCIe | CDI (`/etc/cdi/nvidia.yaml`) |
 | **`ai-infer-nvidia-bleeding`** | NVIDIA Bleeding | CUDA 13.4, Blackwell 2nd-gen TE | GeForce RTX 5090, B100, B200, GB200 NVL | CDI (`/etc/cdi/nvidia.yaml`) |
 
 ```mermaid
@@ -30,7 +30,7 @@ flowchart TD
         CPU["High-Throughput CPU<br/><small>EPYC / Xeon (AMX, AVX-512)</small>"]:::hw
         Intel["Intel Arc & Xe2<br/><small>Battlemage / Flex / Max</small>"]:::hw
         AMD["AMD RDNA & Instinct<br/><small>RX 7900 / MI300</small>"]:::hw
-        Nvidia["NVIDIA Generational<br/><small>535 / 565 / 610 / 615 Blackwell</small>"]:::hw
+        Nvidia["NVIDIA Generational<br/><small>580 / 595 / 615 Blackwell</small>"]:::hw
     end
 
     subgraph KernelTuning["2. Appliance Kernel & Memory Optimizations"]
@@ -99,7 +99,7 @@ docker run -d --name vllm \
   --model meta-llama/Llama-3.3-70B-Instruct
 ```
 
-### 2. AMD ROCm 10 (Radeon & Instinct)
+### 2. AMD ROCm 7.2 (Radeon & Instinct)
 
 Deploy vLLM ROCm or Ollama with direct access to `/dev/kfd` and `/dev/dri`:
 
@@ -138,3 +138,12 @@ docker run -d --name llama-cpp-cpu \
   ghcr.io/ggerganov/llama.cpp:server \
   -m /models/Llama-3.2-3B-Instruct-Q4_K_M.gguf -c 4096 --threads 32
 ```
+
+---
+
+## Lazy-Pulling Snapshotter & HPC Sandboxing (`stargz-snapshotter` & `enroot`)
+
+Following [ADR-0010](../adr/0010-container-ecosystem-runtimes-and-tooling.md):
+
+- **`stargz-snapshotter`**: Pre-installed and registered as an opt-in proxy plugin in containerd (`[proxy_plugins.stargz]`), for on-demand block streaming of eStargz images pulled through containerd (`ctr-remote image rpull`, `nerdctl --snapshotter=stargz`). Docker pulls keep their own storage driver and are not affected.
+- **NVIDIA `enroot`**: Pre-installed on `ai-infer-nvidia*` and `base-nvidia-datacenter` for rootless, unprivileged user-space container sandboxing with native GPU driver integration.

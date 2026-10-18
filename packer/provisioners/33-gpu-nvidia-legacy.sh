@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Copyright 2026 Lusoris
 # 33-gpu-nvidia-legacy.sh — NVIDIA Legacy (Pascal & Volta) driver and container runtime
-# Pinned NVIDIA 535 headless driver and NVIDIA Container Toolkit with legacy CDI hooks.
+# Headless driver of the legacy branch (drivers.nvidia.legacy_driver in versions.json) and
+# the NVIDIA Container Toolkit with CDI hooks.
 set -euo pipefail
 
-DRIVER_BRANCH="${NVIDIA_LEGACY_DRIVER:-535}"
+DRIVER_BRANCH="${NVIDIA_LEGACY_DRIVER:?NVIDIA_LEGACY_DRIVER must come from versions.json}"
 
 setup_nvidia_repositories() {
   echo "==> Configuring NVIDIA Container Toolkit apt repository..."

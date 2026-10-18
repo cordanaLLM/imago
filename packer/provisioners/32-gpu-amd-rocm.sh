@@ -1,25 +1,38 @@
 #!/usr/bin/env bash
 # Copyright 2026 Lusoris
 # 32-gpu-amd-rocm.sh — AMD ROCm compute runtime for AI/ML and GPU acceleration
-# Configures ROCm repository (ROCm 7.0 / 10.0), HIP runtime, and /dev/kfd CDI specs.
+# Configures the AMD ROCm apt repository, HIP runtime, and /dev/kfd CDI specs.
+# Version, repository root and apt suite come from versions.json (drivers.amd).
 # Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked returns.
 set -euo pipefail
 
-ROCM_VERSION="${ROCM_VERSION:-10.0}"
+: "${ROCM_VERSION:?ROCM_VERSION must come from versions.json}"
+: "${ROCM_REPO:?ROCM_REPO must come from versions.json}"
+: "${ROCM_APT_SUITE:?ROCM_APT_SUITE must come from versions.json}"
 DISTRO_RELEASE="${DISTRO_RELEASE:-resolute}"
 
 setup_rocm_repository() {
-  echo "==> Configuring AMD ROCm apt repository (v${ROCM_VERSION}) on Ubuntu ${DISTRO_RELEASE}..."
+  echo "==> Configuring AMD ROCm apt repository (v${ROCM_VERSION}, suite ${ROCM_APT_SUITE})..."
+  # AMD publishes ROCm for jammy and noble only. On another release the image uses the
+  # suite from versions.json and says so, instead of a suite AMD does not publish.
+  if [ "${ROCM_APT_SUITE}" != "${DISTRO_RELEASE}" ]; then
+    echo "    Note: Ubuntu ${DISTRO_RELEASE} uses the ROCm ${ROCM_APT_SUITE} packages."
+  fi
   sudo mkdir -p -m 755 /etc/apt/keyrings
-  curl -fsSL --max-time 30 https://repo.radeon.com/rocm/rocm.gpg |
+  curl -fsSL --max-time 30 "${ROCM_REPO}/rocm.gpg.key" |
     sudo gpg --dearmor --yes -o /etc/apt/keyrings/rocm.gpg
 
   local arch
   arch="$(dpkg --print-architecture)"
-  echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/${ROCM_VERSION} ${DISTRO_RELEASE} main" |
+  echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/rocm.gpg] ${ROCM_REPO}/apt/${ROCM_VERSION} ${ROCM_APT_SUITE} main" |
     sudo tee /etc/apt/sources.list.d/rocm.list
 
-  sudo apt-get update || echo "    Warning: repository index update returned non-zero, continuing..."
+  # The Ubuntu archive carries an older ROCm of its own; without this pin apt mixes the
+  # two and cannot satisfy rocm-hip-runtime's exact version dependencies.
+  printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600\n' |
+    sudo tee /etc/apt/preferences.d/rocm-pin-600
+
+  sudo apt-get update
 }
 
 install_rocm_packages() {

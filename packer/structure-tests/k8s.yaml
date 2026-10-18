@@ -1,0 +1,37 @@
+# Copyright 2026 Lusoris
+# SPDX-FileCopyrightText: 2026 Lusoris
+# SPDX-License-Identifier: EUPL-1.2
+schemaVersion: 2.0.0
+
+# Kubernetes and container runtime contract verification for stargz-snapshotter.
+# Run on builds that execute 51-stargz-snapshotter.sh.
+
+commandTests:
+  # Checks 51-stargz-snapshotter.sh:92 (systemctl enable stargz-snapshotter)
+  - name: "stargz-snapshotter service enabled"
+    command: "systemctl"
+    args: ["is-enabled", "stargz-snapshotter.service"]
+    expectedOutput: ["(?m)^enabled$"]
+
+fileContentTests:
+  # Checks 51-stargz-snapshotter.sh:105-108 (/etc/containerd/config.toml)
+  - name: "containerd stargz proxy plugin configuration"
+    path: "/etc/containerd/config.toml"
+    expectedContents:
+      - "\\[proxy_plugins\\.stargz\\]"
+      - "type = \"snapshot\""
+      - "address = \"/run/containerd-stargz-grpc/containerd-stargz-grpc\\.sock\""
+
+fileExistenceTests:
+  # Checks 51-stargz-snapshotter.sh:57-61 (stargz binaries installed in /usr/local/bin)
+  - name: "containerd-stargz-grpc binary exists"
+    path: "/usr/local/bin/containerd-stargz-grpc"
+    shouldExist: true
+
+  - name: "ctr-remote binary exists"
+    path: "/usr/local/bin/ctr-remote"
+    shouldExist: true
+
+  - name: "stargz-fuse-manager binary exists"
+    path: "/usr/local/bin/stargz-fuse-manager"
+    shouldExist: true

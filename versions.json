@@ -16,7 +16,7 @@
       "cilium": "quay.io/cilium/cilium:v1.20.1",
       "cilium_operator": "quay.io/cilium/operator-generic:v1.20.1",
       "kube_vip": "ghcr.io/kube-vip/kube-vip:v1.2.3",
-      "node_exporter": "prom/node-exporter:v1.12.1",
+      "node_exporter": "docker.io/prom/node-exporter:v1.12.1",
       "calico_cni": "docker.io/calico/cni:v3.32.2",
       "calico_node": "docker.io/calico/node:v3.32.2",
       "calico_controllers": "docker.io/calico/kube-controllers:v3.32.2",
@@ -26,22 +26,24 @@
   },
   "drivers": {
     "intel": {
-      "k8s_plugin": "intel/intel-gpu-plugin:0.36.0"
+      "k8s_plugin": "docker.io/intel/intel-gpu-plugin:0.36.0"
     },
     "amd": {
-      "rocm_legacy_version": "7.14",
-      "rocm_bleeding_version": "10.0",
-      "k8s_plugin": "rocm/k8s-device-plugin:1.31.0.11"
+      "rocm_legacy_version": "6.4.4",
+      "rocm_bleeding_version": "7.2.4",
+      "rocm_repo": "https://repo.radeon.com/rocm",
+      "rocm_apt_suite": "noble",
+      "k8s_plugin": "docker.io/rocm/k8s-device-plugin:1.31.0.11"
     },
     "nvidia": {
-      "legacy_driver": "535",
-      "mainstream_driver": "565",
-      "modern_driver": "610",
+      "legacy_driver": "580",
+      "mainstream_driver": "595",
+      "modern_driver": "615",
       "bleeding_driver": "615",
-      "datacenter_driver": "615-open",
-      "cuda_legacy": "12.2",
-      "cuda_mainstream": "12.8",
-      "cuda_modern": "13.3",
+      "datacenter_driver": "615",
+      "cuda_legacy": "13.0",
+      "cuda_mainstream": "13.2",
+      "cuda_modern": "13.4",
       "cuda_bleeding": "13.4",
       "container_toolkit": "1.20.0",
       "k8s_plugin": "nvcr.io/nvidia/k8s-device-plugin:v0.20.0"
@@ -58,6 +60,7 @@
   },
   "tools": {
     "cdebug": "0.0.19",
+    "container_structure_test": "1.22.1",
     "enroot": "3.4.1"
   },
   "build": {

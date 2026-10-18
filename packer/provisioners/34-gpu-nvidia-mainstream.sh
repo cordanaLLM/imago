@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Copyright 2026 Lusoris
 # 34-gpu-nvidia-mainstream.sh — NVIDIA Mainstream (Ampere, Ada, Turing) driver stack
-# Pinned NVIDIA 565+ headless driver and NVIDIA Container Toolkit with modern CDI v0.6+.
+# Headless driver of the mainstream branch (drivers.nvidia.mainstream_driver in versions.json)
+# and the NVIDIA Container Toolkit with CDI v0.6+.
 set -euo pipefail
 
-DRIVER_BRANCH="${NVIDIA_MAINSTREAM_DRIVER:-565}"
+DRIVER_BRANCH="${NVIDIA_MAINSTREAM_DRIVER:?NVIDIA_MAINSTREAM_DRIVER must come from versions.json}"
 
 setup_nvidia_repositories() {
   echo "==> Configuring NVIDIA Container Toolkit apt repository..."

@@ -30,9 +30,9 @@ Pre-baked with official Docker CE 29.8, `containerd.io` 2.3.5, and Docker Compos
 
 - **`docker-generic`**: Standard CPU container host for Docker Compose stacks.
 - **`docker-intel`**: Pre-configured Intel QuickSync, Level Zero access, and CDI specification (`/etc/cdi/intel.yaml`) for Jellyfin, Plex, and Intel OpenVINO containers.
-- **`docker-amd`**: Pre-configured AMD ROCm 10 compute runtime, `/dev/kfd` access, and CDI specification (`/etc/cdi/amd.yaml`) for PyTorch and ROCm containers.
-- **`docker-nvidia`**: Pre-configured NVIDIA 565 driver, NVIDIA Container Toolkit, and CDI specification (`/etc/cdi/nvidia.yaml`) for Turing/Ampere GPUs.
-- **`docker-nvidia-modern`**: Pre-configured NVIDIA 610 driver, NVIDIA Container Toolkit, and CDI specification for Ada Lovelace / Hopper GPUs (RTX 4080/4090, L40S, H100).
+- **`docker-amd`**: Pre-configured AMD ROCm 7.2 compute runtime, `/dev/kfd` access, and CDI specification (`/etc/cdi/amd.yaml`) for PyTorch and ROCm containers.
+- **`docker-nvidia`**: Pre-configured NVIDIA 595 driver, NVIDIA Container Toolkit, and CDI specification (`/etc/cdi/nvidia.yaml`) for Turing/Ampere GPUs.
+- **`docker-nvidia-modern`**: Pre-configured NVIDIA 615 driver, NVIDIA Container Toolkit, and CDI specification for Ada Lovelace / Hopper GPUs (RTX 4080/4090, L40S, H100).
 - **`docker-nvidia-bleeding`**: Pre-configured NVIDIA 615 driver, NVIDIA Container Toolkit, and CDI specification for Blackwell GPUs (RTX 5090, B200).
 
 ---

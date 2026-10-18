@@ -56,6 +56,8 @@ type IntelDrivers struct {
 type AMDDrivers struct {
 	ROCmLegacyVersion   string `json:"rocm_legacy_version"`
 	ROCmBleedingVersion string `json:"rocm_bleeding_version"`
+	ROCmRepo            string `json:"rocm_repo"`
+	ROCmAptSuite        string `json:"rocm_apt_suite"`
 	K8sPlugin           string `json:"k8s_plugin"`
 }
 
@@ -96,8 +98,9 @@ type Runtimes struct {
 
 // Tools defines diagnostic and sandboxing tooling coordinates.
 type Tools struct {
-	Cdebug string `json:"cdebug,omitempty"`
-	Enroot string `json:"enroot,omitempty"`
+	Cdebug                 string `json:"cdebug,omitempty"`
+	ContainerStructureTest string `json:"container_structure_test,omitempty"`
+	Enroot                 string `json:"enroot,omitempty"`
 }
 
 // Time defines resilient Anycast and Stratum-1 NTS endpoints.

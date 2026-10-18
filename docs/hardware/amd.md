@@ -17,14 +17,30 @@ Supported hardware: AMD Radeon RX 6000/7000/8000 series, Ryzen APUs, Radeon Pro,
 
 `lusoris-cloud-images` segments AMD compute into **ROCm Legacy** and **ROCm Bleeding-Edge**:
 
-### ROCm Legacy (`rocm_legacy_version: 7.14.0`)
+### Version pins and apt source
 
-- **Use Case**: Older AMD architectures (RDNA 2, Vega, early CDNA) supported under the stable ROCm 7.x line.
-- **Packages**: `rocm-hip-runtime`, `rocminfo`, `hip-runtime-amd`.
+`versions.json` (`drivers.amd`) holds every coordinate [`32-gpu-amd-rocm.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/32-gpu-amd-rocm.sh) fetches:
 
-### ROCm Bleeding-Edge (`rocm_bleeding_version: 10.0.0` / TheRock)
+| Field | Value | Use |
+| :--- | :--- | :--- |
+| `rocm_bleeding_version` | `7.2.4` | the ROCm release the image installs (`ROCM_VERSION`) |
+| `rocm_legacy_version` | `6.4.4` | the last 6.x release; pinned, not yet installed by any flavor |
+| `rocm_repo` | `https://repo.radeon.com/rocm` | key `rocm.gpg.key` and `apt/<version>` live below it |
+| `rocm_apt_suite` | `noble` | the apt suite of the ROCm repository |
 
-- **Use Case**: Cutting-edge RDNA 3, RDNA 4 (RX 8000 series), and Instinct MI300/MI325 accelerators with unified ROCm 10 kernel drivers and modern PyTorch 2.6+ wheels.
+AMD publishes ROCm for Ubuntu 22.04 (`jammy`) and 24.04 (`noble`) only. The image is Ubuntu 26.04 (`resolute`), so it installs the `noble` packages, and the provisioner prints that substitution in the build log. The Ubuntu 26.04 archive also ships an older ROCm (7.1); an apt pin (`/etc/apt/preferences.d/rocm-pin-600`, priority 600 for `o=repo.radeon.com`, as in AMD's install guide) keeps apt from mixing the two.
+
+`tools/ci/upstream_sources.py check` requests the key and the `Release` file of every pinned version before the Packer build in `release-matrix.yml`; a pin AMD does not publish fails that step in seconds. The same check covers the other flavors' pins (see [NVIDIA](nvidia.md#pinned-packages-and-their-check)):
+
+```bash
+python3 -I tools/ci/upstream_sources.py urls    # list the URLs
+python3 -I tools/ci/upstream_sources.py check   # exit 1 names each URL that did not answer 200
+```
+
+### Installed packages
+
+- **Packages**: `rocm-hip-runtime`, `rocminfo`, `hwinfo`.
+- **Use Case**: RDNA 2/3/4 Radeon and Instinct accelerators covered by the ROCm 7.2 support matrix.
 - **Kernel & Memory**: Configured with 48-bit GPU virtual addressing, IOMMU page tables, and HugeTLB support.
 - **Permissions**: Udev rule pre-configured at `/etc/udev/rules.d/70-kfd.rules` granting the `render` group full read/write access to `/dev/kfd`.
 - **CDI Specification**: Generates `/etc/cdi/amd.yaml` with explicit `/dev/kfd` and `/dev/dri` device bindings for rootless container execution.

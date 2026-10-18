@@ -111,7 +111,7 @@
         "/^versions\\.json$/"
       ],
       "matchStrings": [
-        "\"(?<depName>(?:registry\\.k8s\\.io|docker\\.io|quay\\.io|ghcr\\.io|prom|nvcr\\.io|intel|rocm)[^:\"]+):(?<currentValue>[^\"]+)\""
+        "\"(?<depName>(?:registry\\.k8s\\.io|docker\\.io|quay\\.io|ghcr\\.io|nvcr\\.io)[^:\"]+):(?<currentValue>[^\"]+)\""
       ],
       "datasourceTemplate": "docker"
     },
@@ -201,6 +201,17 @@
         "\"cdebug\":\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "depNameTemplate": "zerok-ai/cdebug",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^versions\\.json$/"
+      ],
+      "matchStrings": [
+        "\"container_structure_test\":\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "GoogleContainerTools/container-structure-test",
       "datasourceTemplate": "github-releases"
     },
     {

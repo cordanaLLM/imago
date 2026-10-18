@@ -70,6 +70,17 @@ EXPECTED_FLAVORS = [
 ]
 
 
+def build_scripts(content: str) -> list[tuple[str, str]]:
+    """(name, scripts list text) per top-level build block; blocks start at a `build {` line."""
+    found = []
+    for block in re.split(r"(?m)^build\s*\{", content)[1:]:
+        name = re.search(r'^\s*name\s*=\s*"([^"]+)"', block, re.MULTILINE)
+        scripts = re.search(r"scripts\s*=\s*\[(.*?)\]", block, re.DOTALL)
+        if name and scripts:
+            found.append((name.group(1), scripts.group(1)))
+    return found
+
+
 class TestFlavorsIntegrity:
     def test_expected_flavors_count(self) -> None:
         """Verify the exact count of active production flavors."""
@@ -112,9 +123,7 @@ class TestFlavorsIntegrity:
     def test_pipeline_chain_invariants(self) -> None:
         """Verify all build blocks start with 00-base-strip and terminate with 99-cleanup."""
         content = BUILDS_PKR.read_text(encoding="utf-8")
-        build_blocks = re.findall(
-            r'build\s*\{[^}]*name\s*=\s*"([^"]+)"[^}]*scripts\s*=\s*\[(.*?)\]', content, re.DOTALL
-        )
+        build_blocks = build_scripts(content)
         assert len(build_blocks) >= 44, "Failed to parse build blocks from builds.pkr.hcl"
 
         for name, scripts_raw in build_blocks:
@@ -122,16 +131,17 @@ class TestFlavorsIntegrity:
             assert len(scripts) >= 4, f"Build {name} has fewer than 4 provisioner steps"
             assert "00-base-strip.sh" in scripts[0], f"Build {name} must start with 00-base-strip.sh"
             assert "99-cleanup.sh" in scripts[-1], f"Build {name} must end with 99-cleanup.sh"
-            assert "80-netboot-initrd.sh" in scripts[-2], (
-                f"Build {name} must have 80-netboot-initrd.sh immediately before 99-cleanup.sh"
+            assert "98-structure-test.sh" in scripts[-2], (
+                f"Build {name} must run 98-structure-test.sh immediately before 99-cleanup.sh"
+            )
+            assert "80-netboot-initrd.sh" in scripts[-3], (
+                f"Build {name} must run 80-netboot-initrd.sh immediately before 98-structure-test.sh"
             )
 
     def test_every_build_lists_netboot_initrd_provisioner(self) -> None:
         """Verify all 44 build definitions list 80-netboot-initrd.sh."""
         content = BUILDS_PKR.read_text(encoding="utf-8")
-        build_blocks = re.findall(
-            r'build\s*\{[^}]*name\s*=\s*"([^"]+)"[^}]*scripts\s*=\s*\[(.*?)\]', content, re.DOTALL
-        )
+        build_blocks = build_scripts(content)
         assert len(build_blocks) >= 44, "Failed to parse build blocks from builds.pkr.hcl"
         for name, scripts_raw in build_blocks:
             assert "80-netboot-initrd.sh" in scripts_raw, (

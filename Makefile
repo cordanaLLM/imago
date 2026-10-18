@@ -115,13 +115,13 @@ build-base-intel: init ## Build base-intel image (Xe/Arc Media/Compute)
 build-base-amd: init ## Build base-amd image (Mesa/RADV Vulkan)
 	@$(MAKE) build FLAVOR=base-amd
 
-build-base-nvidia-legacy: init ## Build base-nvidia-legacy image (NVIDIA 535 / CUDA 12.2)
+build-base-nvidia-legacy: init ## Build base-nvidia-legacy image (NVIDIA 580 / CUDA 13.0)
 	@cd packer && $(PACKER) build -only="base-nvidia-legacy.qemu.image" .
 
-build-base-nvidia-mainstream: init ## Build base-nvidia-mainstream image (NVIDIA 565 / CUDA 12.8)
+build-base-nvidia-mainstream: init ## Build base-nvidia-mainstream image (NVIDIA 595 / CUDA 13.2)
 	@cd packer && $(PACKER) build -only="base-nvidia-mainstream.qemu.image" .
 
-build-base-nvidia-modern: init ## Build base-nvidia-modern image (NVIDIA 610 / CUDA 13.3)
+build-base-nvidia-modern: init ## Build base-nvidia-modern image (NVIDIA 615 / CUDA 13.4)
 	@cd packer && $(PACKER) build -only="base-nvidia-modern.qemu.image" .
 
 build-base-nvidia-bleeding: init ## Build base-nvidia-bleeding image (NVIDIA 615 / CUDA 13.4)
@@ -140,10 +140,10 @@ build-docker-intel: init ## Build docker-intel appliance (QuickSync / CDI)
 build-docker-amd: init ## Build docker-amd appliance (ROCm 10 / CDI)
 	@cd packer && $(PACKER) build -only="docker-amd.qemu.image" .
 
-build-docker-nvidia: init ## Build docker-nvidia appliance (NVIDIA 565 / CDI)
+build-docker-nvidia: init ## Build docker-nvidia appliance (NVIDIA 595 / CDI)
 	@cd packer && $(PACKER) build -only="docker-nvidia.qemu.image" .
 
-build-docker-nvidia-modern: init ## Build docker-nvidia-modern appliance (NVIDIA 610 / CDI)
+build-docker-nvidia-modern: init ## Build docker-nvidia-modern appliance (NVIDIA 615 / CDI)
 	@cd packer && $(PACKER) build -only="docker-nvidia-modern.qemu.image" .
 
 build-docker-nvidia-bleeding: init ## Build docker-nvidia-bleeding appliance (NVIDIA 615 / CDI)
@@ -171,10 +171,10 @@ build-k8s-intel: init ## Build k8s-node-intel image (Intel K8s Plugin)
 build-k8s-amd: init ## Build k8s-node-amd image (AMD ROCm K8s Plugin)
 	@cd packer && $(PACKER) build -only="k8s-node-amd.qemu.image" .
 
-build-k8s-nvidia: init ## Build k8s-node-nvidia image (NVIDIA 565 K8s Plugin)
+build-k8s-nvidia: init ## Build k8s-node-nvidia image (NVIDIA 595 K8s Plugin)
 	@cd packer && $(PACKER) build -only="k8s-node-nvidia.qemu.image" .
 
-build-k8s-nvidia-modern: init ## Build k8s-node-nvidia-modern image (NVIDIA 610 K8s Plugin)
+build-k8s-nvidia-modern: init ## Build k8s-node-nvidia-modern image (NVIDIA 615 K8s Plugin)
 	@cd packer && $(PACKER) build -only="k8s-node-nvidia-modern.qemu.image" .
 
 build-k8s-nvidia-bleeding: init ## Build k8s-node-nvidia-bleeding image (NVIDIA 615 K8s Plugin)
@@ -190,10 +190,10 @@ build-ai-infer-intel: init ## Build ai-infer-intel host (Intel Arc/Xe2 / OpenVIN
 build-ai-infer-amd: init ## Build ai-infer-amd host (AMD ROCm 10 / RDNA 3/4 & Instinct)
 	@cd packer && $(PACKER) build -only="ai-infer-amd.qemu.image" .
 
-build-ai-infer-nvidia: init ## Build ai-infer-nvidia host (NVIDIA 565 / Hugepages / vLLM)
+build-ai-infer-nvidia: init ## Build ai-infer-nvidia host (NVIDIA 595 / Hugepages / vLLM)
 	@cd packer && $(PACKER) build -only="ai-infer-nvidia.qemu.image" .
 
-build-ai-infer-nvidia-modern: init ## Build ai-infer-nvidia-modern host (NVIDIA 610 / Hugepages / vLLM)
+build-ai-infer-nvidia-modern: init ## Build ai-infer-nvidia-modern host (NVIDIA 615 / Hugepages / vLLM)
 	@cd packer && $(PACKER) build -only="ai-infer-nvidia-modern.qemu.image" .
 
 build-ai-infer-nvidia-bleeding: init ## Build ai-infer-nvidia-bleeding host (NVIDIA 615 / Blackwell / vLLM)
@@ -209,7 +209,7 @@ build-k3s-agent-intel: init ## Build k3s-agent-intel image (K3s worker + QuickSy
 build-k3s-agent-amd: init ## Build k3s-agent-amd image (K3s worker + AMD ROCm 10)
 	@cd packer && $(PACKER) build -only="k3s-agent-amd.qemu.image" .
 
-build-k3s-agent-nvidia: init ## Build k3s-agent-nvidia image (K3s worker + NVIDIA 565 / CDI)
+build-k3s-agent-nvidia: init ## Build k3s-agent-nvidia image (K3s worker + NVIDIA 595 / CDI)
 	@cd packer && $(PACKER) build -only="k3s-agent-nvidia.qemu.image" .
 
 build-k3s-server-generic: init ## Build k3s-server-generic image (K3s control plane + SQLite)

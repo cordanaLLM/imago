@@ -62,8 +62,12 @@ permissions:
   contents: read
 
 # A release run is never cancelled: the sign job must see every flavor of its release.
+# A group holds one running and one pending run, and a new pending run cancels the
+# older one. A manual run therefore gets a group per flavor: with one group per ref,
+# five flavors dispatched on main cancelled each other, and the weekly schedule
+# cancelled the last one. Schedule and release runs keep the shared group.
 concurrency:
-  group: release-matrix-${{ github.ref }}
+  group: release-matrix-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'generic' }}
   cancel-in-progress: false
 
 env:
@@ -78,14 +82,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor:
-          - base-generic
-          - docker-generic
-          - k8s-node-generic
+        flavor: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.flavor) || '["base-generic","docker-generic","k8s-node-generic"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Refuse an Unknown Flavor
+        # Second barrier behind the choice list: a flavor that packer/builds.pkr.hcl does
+        # not build fails here, before any package is installed.
+        env:
+          FLAVOR: ${{ matrix.flavor }}
+        run: |
+          set -euo pipefail
+          if ! grep -F -q "name    = \"${FLAVOR}\"" packer/builds.pkr.hcl; then
+            echo "::error::Unknown flavor: ${FLAVOR}"
+            exit 1
+          fi
+      - name: Check Upstream Package Sources
+        # A pinned key, release or apt suite the vendor does not publish fails here in
+        # seconds, not in a provisioner about 20 minutes into the Packer build.
+        run: python3 -I tools/ci/upstream_sources.py check
       - name: Resolve Packer version pin
         id: packer-pin
         run: echo "version=$(jq -r .build.packer.version versions.json)" >> "$GITHUB_OUTPUT"

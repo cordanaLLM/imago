@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Copyright 2026 Lusoris
-# 37-gpu-nvidia-modern.sh — NVIDIA Modern (Ada Lovelace, Hopper) R610 + CUDA 13.3
-# Modern 600-series driver stack with native Container Device Interface (CDI).
+# 37-gpu-nvidia-modern.sh — NVIDIA Modern (Ada Lovelace, Hopper) driver stack
+# Open kernel modules of drivers.nvidia.modern_driver (versions.json); 600-series stack with native Container Device Interface (CDI).
 # Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked returns.
 set -euo pipefail
 
-DRIVER_BRANCH="${NVIDIA_MODERN_DRIVER:-610}"
-CUDA_VER="${CUDA_MODERN:-13.3}"
+DRIVER_BRANCH="${NVIDIA_MODERN_DRIVER:?NVIDIA_MODERN_DRIVER must come from versions.json}"
+CUDA_VER="${CUDA_MODERN:?CUDA_MODERN must come from versions.json}"
 
 setup_nvidia_repositories() {
   echo "==> Configuring NVIDIA Container Toolkit and CUDA ${CUDA_VER} repositories..."
@@ -21,16 +21,12 @@ setup_nvidia_repositories() {
 }
 
 install_modern_driver() {
-  echo "==> Installing NVIDIA modern 600-series branch ${DRIVER_BRANCH} (CUDA ${CUDA_VER}) and toolkit..."
+  echo "==> Installing NVIDIA modern branch ${DRIVER_BRANCH} (CUDA ${CUDA_VER}) and toolkit..."
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    nvidia-headless-"${DRIVER_BRANCH}" \
+    nvidia-headless-"${DRIVER_BRANCH}"-open \
     nvidia-utils-"${DRIVER_BRANCH}" \
     nvidia-container-toolkit \
-    hwinfo || {
-    echo "    Warning: branch ${DRIVER_BRANCH} not found directly, falling back to metapackage..."
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      nvidia-headless-610 nvidia-utils-610 nvidia-container-toolkit hwinfo
-  }
+    hwinfo
 }
 
 configure_nvidia_cdi() {

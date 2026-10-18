@@ -78,7 +78,7 @@ var allFlavors = []Flavor{
 		Name:          "Base NVIDIA Legacy",
 		HardwareStack: "NVIDIA Pascal / Volta",
 		KernelProfile: "generic",
-		Description:   "NVIDIA 535 driver, CUDA 12.2 (GTX 1080, P4, P40, V100)",
+		Description:   "NVIDIA 580 driver, CUDA 13.0 (GTX 1080, P4, P40, V100)",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "33-gpu-nvidia-legacy.sh", "99-cleanup.sh"},
 	},
 	{
@@ -88,7 +88,7 @@ var allFlavors = []Flavor{
 		Name:          "Base NVIDIA Mainstream",
 		HardwareStack: "NVIDIA Turing / Ampere",
 		KernelProfile: "generic",
-		Description:   "NVIDIA 565 driver, CUDA 12.8 (RTX 20/30/40, A100, L4)",
+		Description:   "NVIDIA 595 driver, CUDA 13.2 (RTX 20/30/40, A100, L4)",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "34-gpu-nvidia-mainstream.sh", "99-cleanup.sh"},
 	},
 	{
@@ -98,7 +98,7 @@ var allFlavors = []Flavor{
 		Name:          "Base NVIDIA Modern",
 		HardwareStack: "NVIDIA Ada / Hopper",
 		KernelProfile: "generic",
-		Description:   "NVIDIA 610 driver, CUDA 13.3 (RTX 4080/4090, L40S, H100)",
+		Description:   "NVIDIA 615 driver, CUDA 13.4 (RTX 4080/4090, L40S, H100)",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "37-gpu-nvidia-modern.sh", "99-cleanup.sh"},
 	},
 	{
@@ -160,7 +160,7 @@ var allFlavors = []Flavor{
 		Name:          "Docker NVIDIA Mainstream",
 		HardwareStack: "NVIDIA Mainstream",
 		KernelProfile: "generic",
-		Description:   "Docker CE + NVIDIA 565 + Container Toolkit CDI",
+		Description:   "Docker CE + NVIDIA 595 + Container Toolkit CDI",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "34-gpu-nvidia-mainstream.sh", "40-docker-runtime.sh", "99-cleanup.sh"},
 	},
 	{
@@ -170,7 +170,7 @@ var allFlavors = []Flavor{
 		Name:          "Docker NVIDIA Modern",
 		HardwareStack: "NVIDIA Modern",
 		KernelProfile: "generic",
-		Description:   "Docker CE + NVIDIA 610 + Container Toolkit CDI",
+		Description:   "Docker CE + NVIDIA 615 + Container Toolkit CDI",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "37-gpu-nvidia-modern.sh", "40-docker-runtime.sh", "99-cleanup.sh"},
 	},
 	{
@@ -269,7 +269,7 @@ var allFlavors = []Flavor{
 		HardwareStack:  "NVIDIA Mainstream",
 		KernelProfile:  "k8s",
 		PreheatProfile: "cilium",
-		Description:    "containerd 2.3.5 + NVIDIA 565 + NVIDIA K8s Plugin",
+		Description:    "containerd 2.3.5 + NVIDIA 595 + NVIDIA K8s Plugin",
 		Provisioners:   []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "34-gpu-nvidia-mainstream.sh", "50-k8s-runtime.sh", "55-k8s-precache.sh", "99-cleanup.sh"},
 	},
 	{
@@ -280,7 +280,7 @@ var allFlavors = []Flavor{
 		HardwareStack:  "NVIDIA Modern",
 		KernelProfile:  "k8s",
 		PreheatProfile: "cilium",
-		Description:    "containerd 2.3.5 + NVIDIA 610 + NVIDIA K8s Plugin",
+		Description:    "containerd 2.3.5 + NVIDIA 615 + NVIDIA K8s Plugin",
 		Provisioners:   []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "37-gpu-nvidia-modern.sh", "50-k8s-runtime.sh", "55-k8s-precache.sh", "99-cleanup.sh"},
 	},
 	{
@@ -333,7 +333,7 @@ var allFlavors = []Flavor{
 		Name:          "K3s Agent NVIDIA",
 		HardwareStack: "NVIDIA Mainstream",
 		KernelProfile: "generic",
-		Description:   "K3s agent + NVIDIA 565 + Container Toolkit CDI",
+		Description:   "K3s agent + NVIDIA 595 + Container Toolkit CDI",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "34-gpu-nvidia-mainstream.sh", "52-k3s-runtime.sh", "99-cleanup.sh"},
 	},
 	{
@@ -427,7 +427,7 @@ var allFlavors = []Flavor{
 		Name:          "AI Infer NVIDIA Mainstream",
 		HardwareStack: "NVIDIA Mainstream",
 		KernelProfile: "ai-infer",
-		Description:   "Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 565)",
+		Description:   "Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 595)",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "34-gpu-nvidia-mainstream.sh", "40-docker-runtime.sh", "60-ai-infer-runtime.sh", "99-cleanup.sh"},
 	},
 	{
@@ -437,7 +437,7 @@ var allFlavors = []Flavor{
 		Name:          "AI Infer NVIDIA Modern",
 		HardwareStack: "NVIDIA Modern",
 		KernelProfile: "ai-infer",
-		Description:   "Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 610)",
+		Description:   "Transparent hugepages, numactl, vLLM/Ollama (NVIDIA 615)",
 		Provisioners:  []string{"00-base-strip.sh", "05-hypervisor-agents.sh", "10-network-time.sh", "20-kernel-sysctl.sh", "25-baremetal-tuning.sh", "37-gpu-nvidia-modern.sh", "40-docker-runtime.sh", "60-ai-infer-runtime.sh", "99-cleanup.sh"},
 	},
 	{

@@ -326,6 +326,42 @@ jobs:
           pip install --require-hashes -r .github/requirements/test.txt
           # tests/test_python_lint_gate.py runs ruff on the files ruff.toml exempts.
           pip install --require-hashes -r .github/requirements/lint.txt
+      - name: Measure the Docker daemon answer time
+        # tests/test_container_integration.py bases its probe bounds on this value.
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
+        run: |
+          set -euo pipefail
+          answered=0
+          for attempt in 1 2 3 4 5; do
+            start="$(date +%s.%N)"
+            if timeout 60 docker info --format '{{.ServerVersion}}' > /dev/null; then
+              code=0
+            else
+              code=$?
+            fi
+            seconds="$(awk -v s="${start}" -v e="$(date +%s.%N)" 'BEGIN { printf "%.3f", e - s }')"
+            echo "attempt=${attempt} seconds=${seconds} exit=${code}" | tee -a "${GITHUB_STEP_SUMMARY}"
+            if [ "${code}" -eq 0 ]; then
+              answered=$((answered + 1))
+            fi
+          done
+          if [ "${answered}" -eq 0 ]; then
+            echo "::error::docker info failed in all 5 attempts"
+            exit 1
+          fi
+      - name: Install container-structure-test
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
+        run: |
+          set -euo pipefail
+          cst_version="$(jq -r .tools.container_structure_test versions.json)"
+          base_url="https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${cst_version}"
+          asset="container-structure-test-linux-amd64"
+          tmp_dir="$(mktemp -d)"
+          curl -sSfL --max-time 30 -o "${tmp_dir}/${asset}" "${base_url}/${asset}"
+          curl -sSfL --max-time 30 -o "${tmp_dir}/checksums.txt" "${base_url}/checksums.txt"
+          (cd "${tmp_dir}" && grep -E "[[:space:]]${asset}\$" checksums.txt | sha256sum -c -)
+          sudo install -m 0755 "${tmp_dir}/${asset}" /usr/local/bin/container-structure-test
+          rm -rf "${tmp_dir}"
       - name: Run Pytest Suite
         if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         env:

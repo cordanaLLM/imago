@@ -7,7 +7,7 @@ set -euo pipefail
 
 K8S_MAJOR_MINOR="${K8S_MAJOR_MINOR:-1.37}"
 IMG_PAUSE="${IMG_PAUSE:-registry.k8s.io/pause:3.10}"
-CDEBUG_VERSION="${CDEBUG_VERSION:-0.5.1}"
+CDEBUG_VERSION="${CDEBUG_VERSION:?CDEBUG_VERSION must come from versions.json}"
 
 setup_containerd() {
   echo "==> Installing and configuring containerd 2.3+ with CRI and crun..."
@@ -79,7 +79,7 @@ setup_kubernetes_packages() {
 }
 
 install_cdebug() {
-  local version="${CDEBUG_VERSION:-0.0.19}"
+  local version="${CDEBUG_VERSION}"
   local arch
   arch=$(uname -m)
   case "${arch}" in

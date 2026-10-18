@@ -29,7 +29,7 @@ Includes Mesa Gallium `radeonsi` VA-API, RADV Vulkan drivers, AMDGPU DRM runtime
 
 Segregated into four hardware generations and datacenter:
 
-- `base-nvidia-legacy`: NVIDIA 535 LTS driver branch for Pascal and Volta (`sm_60`, `sm_70`).
-- `base-nvidia-mainstream`: NVIDIA 565 driver branch for Turing and Ampere (`sm_75`, `sm_80`, `sm_86`).
+- `base-nvidia-legacy`: NVIDIA 580 driver branch for Pascal and Volta (`sm_60`, `sm_70`).
+- `base-nvidia-mainstream`: NVIDIA 595 driver branch for Turing and Ampere (`sm_75`, `sm_80`, `sm_86`).
 - `base-nvidia-bleeding`: NVIDIA 615 driver branch for Blackwell (`sm_100`, `sm_120`, RTX 5090, B200).
-- `base-nvidia-datacenter`: NVIDIA Open Kernel Modules and Fabric Manager for Hopper and Blackwell multi-GPU NVLink meshes. Uses `KERNEL_PROFILE=baremetal`.
+- `base-nvidia-datacenter`: NVIDIA Open Kernel Modules, Fabric Manager, and NVIDIA Enroot for Hopper and Blackwell multi-GPU NVLink meshes. Uses `KERNEL_PROFILE=baremetal`.
