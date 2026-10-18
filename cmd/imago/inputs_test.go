@@ -37,7 +37,7 @@ func TestCloudInitGenerateBoundaryFlags(t *testing.T) {
 	out, err := executeCommand("cloud-init", "generate", "--hostname="+strings.Repeat("a", 63),
 		"--user=u"+strings.Repeat("x", 31), "--platform=HyperV")
 	require.NoError(t, err)
-	assert.Contains(t, out, `hostname: "`+strings.Repeat("a", 63)+`"`)
+	assert.Contains(t, out, "hostname: "+strings.Repeat("a", 63))
 	assert.Contains(t, out, "hv_vmbus")
 }
 

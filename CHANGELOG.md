@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Manifest validation in Go (`pkg/manifest`): `manifest.Load` embeds `versions.schema.json` via root package `schema.go` and validates `versions.json` against the Draft 2020-12 schema using `github.com/google/jsonschema-go` before evaluating semantic invariants.
+- Cloud-init generator: `pkg/cloudinit` serializes user-data and meta-data from typed structs with the `go.yaml.in/yaml/v3` encoder instead of concatenated strings, a second barrier behind the allow-lists; keys and values are unchanged, scalars are quoted only where YAML 1.1 would read them as another type (`docs/tools/cli-mcp.md`).
+
 ### Fixed
 - Aegis build workflow: a failed run keeps `serial.log` and the new `boot-failure.json` (`imago.aegis.boot-failure.v1`, written by `tools/aegis/boot_once.py` when the boot fails) as a three-day run artifact, because run 39075280378 timed out in the boot step and its serial log was lost with the runner (`docs/operations/aegis-build.md`).
 - Aegis build workflow: mkosi now builds with `--tools-tree=yes --tools-tree-distribution=arch`, because the first dispatch (run 39067484406) failed on the hosted runner without `systemd-repart`; the Arch tools tree carries repart, ukify and the erofs, btrfs and vfat tools and follows the image snapshot (`docs/adr/0033-aegis-build-workflow.md`).
