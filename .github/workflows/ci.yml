@@ -326,6 +326,19 @@ jobs:
           pip install --require-hashes -r .github/requirements/test.txt
           # tests/test_python_lint_gate.py runs ruff on the files ruff.toml exempts.
           pip install --require-hashes -r .github/requirements/lint.txt
+      - name: Install container-structure-test
+        if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
+        run: |
+          set -euo pipefail
+          cst_version="$(jq -r .tools.container_structure_test versions.json)"
+          base_url="https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${cst_version}"
+          asset="container-structure-test-linux-amd64"
+          tmp_dir="$(mktemp -d)"
+          curl -sSfL --max-time 30 -o "${tmp_dir}/${asset}" "${base_url}/${asset}"
+          curl -sSfL --max-time 30 -o "${tmp_dir}/checksums.txt" "${base_url}/checksums.txt"
+          (cd "${tmp_dir}" && grep -E "[[:space:]]${asset}\$" checksums.txt | sha256sum -c -)
+          sudo install -m 0755 "${tmp_dir}/${asset}" /usr/local/bin/container-structure-test
+          rm -rf "${tmp_dir}"
       - name: Run Pytest Suite
         if: github.event_name != 'pull_request' || steps.filter.outputs.test-python == 'true'
         env:

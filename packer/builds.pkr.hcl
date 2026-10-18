@@ -36,6 +36,7 @@ locals {
   crun_version             = try(local.manifest.runtimes.crun, "1.20")
   stargz_version           = try(local.manifest.runtimes.stargz_snapshotter, "0.18.2")
   cdebug_version           = try(local.manifest.tools.cdebug, "0.5.1")
+  cst_version              = local.manifest.tools.container_structure_test
   enroot_version           = try(local.manifest.tools.enroot, "3.4.1")
 
   common_env = [
@@ -46,6 +47,7 @@ locals {
     "CRUN_VERSION=${local.crun_version}",
     "STARGZ_VERSION=${local.stargz_version}",
     "CDEBUG_VERSION=${local.cdebug_version}",
+    "CST_VERSION=${local.cst_version}",
     "ENROOT_VERSION=${local.enroot_version}",
     "IMG_PAUSE=${local.img_pause}",
     "IMG_COREDNS=${local.img_coredns}",
@@ -80,6 +82,11 @@ build {
   name    = "base-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
 
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
+
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-generic", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
     scripts = [
@@ -89,6 +96,7 @@ build {
       "${path.root}/provisioners/20-kernel-sysctl.sh",
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -98,6 +106,11 @@ build {
 build {
   name    = "base-intel"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-intel", "BM_GEN=intel", "KERNEL_PROFILE=generic"], local.common_env)
@@ -109,6 +122,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/30-gpu-intel.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -118,6 +132,11 @@ build {
 build {
   name    = "base-amd"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-amd", "BM_GEN=amd", "KERNEL_PROFILE=generic"], local.common_env)
@@ -129,6 +148,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/31-gpu-amd-mesa.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -138,6 +158,11 @@ build {
 build {
   name    = "base-nvidia-legacy"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-nvidia-legacy", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -149,6 +174,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/33-gpu-nvidia-legacy.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -158,6 +184,11 @@ build {
 build {
   name    = "base-nvidia-mainstream"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-nvidia-mainstream", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -169,6 +200,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -178,6 +210,11 @@ build {
 build {
   name    = "base-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-nvidia-modern", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -189,6 +226,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/37-gpu-nvidia-modern.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -198,6 +236,11 @@ build {
 build {
   name    = "base-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-nvidia-bleeding", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -209,6 +252,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/36-gpu-nvidia-bleeding.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -218,6 +262,11 @@ build {
 build {
   name    = "base-nvidia-datacenter"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=base-nvidia-datacenter", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -230,6 +279,7 @@ build {
       "${path.root}/provisioners/35-gpu-nvidia-datacenter.sh",
       "${path.root}/provisioners/62-hpc-enroot.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -239,6 +289,11 @@ build {
 build {
   name    = "docker-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=docker-generic", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -250,6 +305,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -259,6 +315,11 @@ build {
 build {
   name    = "docker-intel"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=docker-intel", "BM_GEN=intel", "KERNEL_PROFILE=generic"], local.common_env)
@@ -271,6 +332,7 @@ build {
       "${path.root}/provisioners/30-gpu-intel.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -280,6 +342,11 @@ build {
 build {
   name    = "docker-amd"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=docker-amd", "BM_GEN=amd", "KERNEL_PROFILE=generic"], local.common_env)
@@ -292,6 +359,7 @@ build {
       "${path.root}/provisioners/32-gpu-amd-rocm.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -301,6 +369,11 @@ build {
 build {
   name    = "docker-nvidia"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=docker-nvidia", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -313,6 +386,7 @@ build {
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -322,6 +396,11 @@ build {
 build {
   name    = "docker-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=docker-nvidia-modern", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -334,6 +413,7 @@ build {
       "${path.root}/provisioners/37-gpu-nvidia-modern.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -343,6 +423,11 @@ build {
 build {
   name    = "docker-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=docker-nvidia-bleeding", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -355,6 +440,7 @@ build {
       "${path.root}/provisioners/36-gpu-nvidia-bleeding.sh",
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -364,6 +450,11 @@ build {
 build {
   name    = "podman-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=podman-generic", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -375,6 +466,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/41-podman-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -384,6 +476,11 @@ build {
 build {
   name    = "k8s-node-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-generic", "PREHEAT_PROFILE=lean", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -397,6 +494,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -406,6 +504,11 @@ build {
 build {
   name    = "k8s-node-cilium"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-cilium", "PREHEAT_PROFILE=cilium", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -419,6 +522,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -428,6 +532,11 @@ build {
 build {
   name    = "k8s-node-calico"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-calico", "PREHEAT_PROFILE=calico", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -441,6 +550,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -450,6 +560,11 @@ build {
 build {
   name    = "k8s-node-flannel"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-flannel", "PREHEAT_PROFILE=flannel", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -463,6 +578,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -472,6 +588,11 @@ build {
 build {
   name    = "k8s-node-intel"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-intel", "BM_GEN=intel", "PREHEAT_PROFILE=lean", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -486,6 +607,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -495,6 +617,11 @@ build {
 build {
   name    = "k8s-node-amd"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-amd", "BM_GEN=amd", "PREHEAT_PROFILE=lean", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -509,6 +636,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -518,6 +646,11 @@ build {
 build {
   name    = "k8s-node-nvidia"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-nvidia", "BM_GEN=generic", "PREHEAT_PROFILE=lean", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -532,6 +665,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -541,6 +675,11 @@ build {
 build {
   name    = "k8s-node-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-nvidia-modern", "BM_GEN=generic", "PREHEAT_PROFILE=lean", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -555,6 +694,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -564,6 +704,11 @@ build {
 build {
   name    = "k8s-node-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k8s-node-nvidia-bleeding", "BM_GEN=generic", "PREHEAT_PROFILE=lean", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -578,6 +723,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -587,6 +733,11 @@ build {
 build {
   name    = "ai-infer-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=ai-infer-generic", "BM_GEN=generic", "KERNEL_PROFILE=ai-infer"], local.common_env)
@@ -600,6 +751,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -609,6 +761,11 @@ build {
 build {
   name    = "ai-infer-intel"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=ai-infer-intel", "BM_GEN=intel", "KERNEL_PROFILE=ai-infer"], local.common_env)
@@ -623,6 +780,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -632,6 +790,11 @@ build {
 build {
   name    = "ai-infer-amd"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=ai-infer-amd", "BM_GEN=amd", "KERNEL_PROFILE=ai-infer"], local.common_env)
@@ -646,6 +809,7 @@ build {
       "${path.root}/provisioners/51-stargz-snapshotter.sh",
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -655,6 +819,11 @@ build {
 build {
   name    = "ai-infer-nvidia"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=ai-infer-nvidia", "BM_GEN=generic", "KERNEL_PROFILE=ai-infer"], local.common_env)
@@ -670,6 +839,7 @@ build {
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
       "${path.root}/provisioners/62-hpc-enroot.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -679,6 +849,11 @@ build {
 build {
   name    = "ai-infer-nvidia-modern"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=ai-infer-nvidia-modern", "BM_GEN=generic", "KERNEL_PROFILE=ai-infer"], local.common_env)
@@ -694,6 +869,7 @@ build {
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
       "${path.root}/provisioners/62-hpc-enroot.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -703,6 +879,11 @@ build {
 build {
   name    = "ai-infer-nvidia-bleeding"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=ai-infer-nvidia-bleeding", "BM_GEN=generic", "KERNEL_PROFILE=ai-infer"], local.common_env)
@@ -718,6 +899,7 @@ build {
       "${path.root}/provisioners/60-ai-infer-runtime.sh",
       "${path.root}/provisioners/62-hpc-enroot.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -727,6 +909,11 @@ build {
 build {
   name    = "k3s-agent-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k3s-agent-generic", "BM_GEN=generic", "K3S_ROLE=agent", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -738,6 +925,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -747,6 +935,11 @@ build {
 build {
   name    = "k3s-agent-intel"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k3s-agent-intel", "BM_GEN=intel", "K3S_ROLE=agent", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -759,6 +952,7 @@ build {
       "${path.root}/provisioners/30-gpu-intel.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -768,6 +962,11 @@ build {
 build {
   name    = "k3s-agent-amd"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k3s-agent-amd", "BM_GEN=amd", "K3S_ROLE=agent", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -780,6 +979,7 @@ build {
       "${path.root}/provisioners/32-gpu-amd-rocm.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -789,6 +989,11 @@ build {
 build {
   name    = "k3s-agent-nvidia"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k3s-agent-nvidia", "BM_GEN=nvidia", "K3S_ROLE=agent", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -801,6 +1006,7 @@ build {
       "${path.root}/provisioners/34-gpu-nvidia-mainstream.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -810,6 +1016,11 @@ build {
 build {
   name    = "k3s-server-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=k3s-server-generic", "BM_GEN=generic", "K3S_ROLE=server", "KERNEL_PROFILE=k8s"], local.common_env)
@@ -821,6 +1032,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/52-k3s-runtime.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -830,6 +1042,11 @@ build {
 build {
   name    = "cloudnative-generic"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=cloudnative-generic", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -842,6 +1059,7 @@ build {
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/61-cloudnative-immutable.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -851,6 +1069,11 @@ build {
 build {
   name    = "cloudnative-k8s"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=cloudnative-k8s", "BM_GEN=generic", "KERNEL_PROFILE=k8s", "PREHEAT_PROFILE=lean"], local.common_env)
@@ -865,6 +1088,7 @@ build {
       "${path.root}/provisioners/55-k8s-precache.sh",
       "${path.root}/provisioners/61-cloudnative-immutable.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -874,6 +1098,11 @@ build {
 build {
   name    = "cloudnative-storage"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=cloudnative-storage", "BM_GEN=generic", "KERNEL_PROFILE=baremetal"], local.common_env)
@@ -885,6 +1114,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/65-storage-cncf.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -894,6 +1124,11 @@ build {
 build {
   name    = "cloudnative-pg"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=cloudnative-pg", "BM_GEN=generic", "KERNEL_PROFILE=ai-infer"], local.common_env)
@@ -906,6 +1141,7 @@ build {
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/70-cloudnative-pg.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -920,6 +1156,11 @@ build {
   name    = "appliance-vision-nvr"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
 
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
+
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=appliance-vision-nvr", "BM_GEN=intel", "KERNEL_PROFILE=generic"], local.common_env)
     scripts = [
@@ -931,6 +1172,7 @@ build {
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/75-appliance-vision.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -940,6 +1182,11 @@ build {
 build {
   name    = "appliance-gateway-dns"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=appliance-gateway-dns", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -951,6 +1198,7 @@ build {
       "${path.root}/provisioners/25-baremetal-tuning.sh",
       "${path.root}/provisioners/76-appliance-gateway.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -960,6 +1208,11 @@ build {
 build {
   name    = "appliance-media-server"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=appliance-media-server", "BM_GEN=generic", "KERNEL_PROFILE=baremetal"], local.common_env)
@@ -972,6 +1225,7 @@ build {
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/77-appliance-media.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -981,6 +1235,11 @@ build {
 build {
   name    = "appliance-ci-runner"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=appliance-ci-runner", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -993,6 +1252,7 @@ build {
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/78-appliance-runner.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
@@ -1002,6 +1262,11 @@ build {
 build {
   name    = "appliance-game-server"
   sources = ["source.qemu.image", "source.proxmox-clone.template"]
+
+  provisioner "file" {
+    source      = "${path.root}/structure-tests"
+    destination = "/tmp"
+  }
 
   provisioner "shell" {
     environment_vars = concat(["FLAVOR=appliance-game-server", "BM_GEN=generic", "KERNEL_PROFILE=generic"], local.common_env)
@@ -1014,6 +1279,7 @@ build {
       "${path.root}/provisioners/40-docker-runtime.sh",
       "${path.root}/provisioners/79-appliance-game.sh",
       "${path.root}/provisioners/80-netboot-initrd.sh",
+      "${path.root}/provisioners/98-structure-test.sh",
       "${path.root}/provisioners/99-cleanup.sh"
     ]
   }
