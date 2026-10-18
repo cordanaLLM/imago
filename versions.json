@@ -88,20 +88,20 @@
     "dispatch_event": "kernel_release_published",
     "streams": {
       "bleeding": {
-        "version": "7.3-rc7-lusoris3",
-        "artifact_digest": "sha256:ec8365545917e7451f66b77bb40635c78d4ee85739e6c542716493a6920577c6",
+        "version": "7.3-rc7-lusoris4",
+        "artifact_digest": "sha256:3258afdb0bad108c949284522ce4f0613e734b53eaf57995df8be2f16f375835",
         "provenance": {
-          "tag": "v7.3-rc7-bleeding-lusoris3",
-          "revision": "0949e1dddd7f959b4bee3c87cf87cbaa7a16634d",
+          "tag": "v7.3-rc7-bleeding-lusoris4",
+          "revision": "d7250d2bf59c8f40c711c67be421f1c5cfaf8268",
           "bundle": "SHA256SUMS.bundle"
         }
       },
       "lts": {
-        "version": "6.18.56-lusoris3",
-        "artifact_digest": "sha256:5768d0dffcd12d63c18a0fe703d95fc0ca62c73f119b16c41e3eda8dc8a30fe8",
+        "version": "6.18.56-lusoris4",
+        "artifact_digest": "sha256:5c61837e6a6b17317aaa85498199de1245e6ea310a2191331bd42a0dcf630729",
         "provenance": {
-          "tag": "v6.18.56-lts-lusoris3",
-          "revision": "0949e1dddd7f959b4bee3c87cf87cbaa7a16634d",
+          "tag": "v6.18.56-lts-lusoris4",
+          "revision": "d7250d2bf59c8f40c711c67be421f1c5cfaf8268",
           "bundle": "SHA256SUMS.bundle"
         }
       },

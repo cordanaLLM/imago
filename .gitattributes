@@ -1,3 +1,11 @@
+# Fixtures a Go test pins by checksum or golden bytes keep their checked-in bytes on every platform (HISS-21).
+pkg/aegis/testdata/product-input.json -text
+pkg/builder/testdata/qemu-plugin -text
+pkg/imageless/testdata/apply-scripts.golden.txt -text
+pkg/kernel/testdata/aegis/conformance.json -text
+pkg/kernel/testdata/aegis/kernel-requirement.json -text
+pkg/standards/testdata/standards.golden.json -text
+
 # BEGIN praetor managed attributes (praetorctl adopt)
 # praetorctl audit hashes these files; keep their checkout bytes the same on every platform.
 .devcontainer/Dockerfile.praetor text eol=lf
