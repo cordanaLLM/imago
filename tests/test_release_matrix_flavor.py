@@ -100,3 +100,29 @@ def test_refuse_step_execution(flavor: str, expect_success: bool) -> None:
         assert proc.returncode != 0, f"Expected non-zero for {flavor!r}, got 0"
         combined = proc.stdout + proc.stderr
         assert "::error::" in combined, f"Expected '::error::' in output for {flavor!r}, got: {combined}"
+
+
+def group_isolates_dispatch_flavor(group: str) -> bool:
+    """A manual run's group must carry its flavor, and schedule and release runs must not."""
+    gated = "github.event_name == 'workflow_dispatch' && inputs.flavor"
+    return group.startswith("release-matrix-${{ github.ref }}-") and gated in group
+
+
+def test_concurrency_group_per_dispatched_flavor() -> None:
+    """Manual runs of different flavors must not share the group that lets one cancel another."""
+    concurrency = load_workflow()["concurrency"]
+    assert concurrency["cancel-in-progress"] is False, "a release run must never be cancelled"
+    assert group_isolates_dispatch_flavor(concurrency["group"]), concurrency["group"]
+
+
+@pytest.mark.parametrize(
+    "group",
+    [
+        "release-matrix-${{ github.ref }}",
+        "release-matrix-${{ github.ref }}-${{ inputs.flavor }}",
+        "release-matrix-${{ github.run_id }}-${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'generic' }}",
+    ],
+)
+def test_concurrency_check_refuses_shared_or_unscoped_groups(group: str) -> None:
+    """One group per ref, a flavor without the event gate, and a per-run group are all refused."""
+    assert not group_isolates_dispatch_flavor(group)
