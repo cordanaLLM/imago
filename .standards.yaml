@@ -59,6 +59,8 @@ overrides:
         # restore independent review once a second maintainer or bot can approve.
         review_mode: single_maintainer
         dismiss_stale_reviews: true
+        # Declared at its live value; the forge default is the stricter one.
+        require_extra_approval_for_unattributed_changes: true
     supply_chain:
         slsa_level: 3
         enforce_cosign: true
@@ -92,6 +94,18 @@ exceptions:
           actions/attest-build-provenance into a reusable workflow as docs/guides/releasing.md in
           Praetor describes, then remove this entry
       expires: "2027-01-09"
+    - rule: codespell
+      path: tools/figures/player/player.js
+      category: C
+      reason: minified third-party interfig bundle
+      entered: "2026-10-18"
+      expires: "2026-10-28"
+    - rule: codespell
+      path: tools/figures/player/loader.js
+      category: C
+      reason: minified third-party interfig bundle
+      entered: "2026-10-18"
+      expires: "2026-10-28"
 register:
     sources:
         expected: 13

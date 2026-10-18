@@ -126,3 +126,18 @@ def test_concurrency_group_per_dispatched_flavor() -> None:
 def test_concurrency_check_refuses_shared_or_unscoped_groups(group: str) -> None:
     """One group per ref, a flavor without the event gate, and a per-run group are all refused."""
     assert not group_isolates_dispatch_flavor(group)
+
+
+JOB_TIMEOUT_CEILING_MINUTES = 360  # GitHub's own per-job default; a bound must be tighter
+
+
+def test_every_job_has_a_timeout_below_the_platform_default() -> None:
+    """Every job names timeout-minutes, so a lost runner fails the run instead of waiting 6 h."""
+    jobs = load_workflow()["jobs"]
+    assert jobs, "release-matrix.yml defines no jobs"
+    for name, job in jobs.items():
+        bound = job.get("timeout-minutes")
+        assert isinstance(bound, int), f"job {name} has no integer timeout-minutes"
+        assert 0 < bound < JOB_TIMEOUT_CEILING_MINUTES, (
+            f"job {name} timeout-minutes {bound} not below {JOB_TIMEOUT_CEILING_MINUTES}"
+        )

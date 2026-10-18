@@ -20,7 +20,7 @@ import subprocess
 import sys
 
 # Pathspecs of the lockfiles the scan must cover; `*` also matches a slash.
-LOCKFILES = ["go.mod", "*/go.mod", "*package-lock.json", ".github/requirements/*.txt"]
+LOCKFILES = ["go.mod", "*/go.mod", "*package-lock.json", ".github/requirements/*.txt", ".config/reuse/requirements.txt"]
 LANGUAGE_CLASS = "lang-pkgs"
 MAX_TARGETS = 256
 GIT_TIMEOUT_S = 60

@@ -88,6 +88,14 @@ def test_planted_report_without_pip_lockfiles_fails(tmp_path):
         assert name in res.stderr
 
 
+def test_reuse_requirements_are_a_tracked_lockfile(tmp_path):
+    # Trivy reads any file named requirements.txt, so the hash-pinned REUSE lock is in every report.
+    assert ".config/reuse/requirements.txt" in tracked()
+    res = run_script(tmp_path, report(tracked() - {".config/reuse/requirements.txt"}))
+    assert res.returncode == 1
+    assert ".config/reuse/requirements.txt" in res.stderr
+
+
 def test_planted_report_with_an_unexpected_target_fails(tmp_path):
     res = run_script(tmp_path, report(tracked() | {"vendor/requirements.txt"}))
     assert res.returncode == 1

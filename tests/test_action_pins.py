@@ -361,8 +361,6 @@ def test_committed_exceptions_are_valid_and_point_at_real_files():
     today = datetime.datetime.now(datetime.UTC).date()
     excepted = pins.load_exceptions(EXCEPTIONS, today)
     assert set(excepted) == {
-        ("artipacked", ".github/workflows/praetor-docs.yml"),
-        ("concurrency-limits", ".github/workflows/praetor-docs.yml"),
         ("superfluous-actions", ".github/workflows/sync-kernel-manifest.yml"),
     }
     for (_rule, path), item in excepted.items():
