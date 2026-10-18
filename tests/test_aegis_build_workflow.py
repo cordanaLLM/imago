@@ -456,3 +456,111 @@ def test_failed_run_keeps_boot_evidence() -> None:
     boot_run = steps[names.index("Boot the Image Once")]["run"]
     assert '--failure-evidence "${out_dir}/boot-failure.json"' in boot_run
     assert '--serial-log "${out_dir}/serial.log"' in boot_run
+
+
+# -----------------------------------------------------------------------------
+# Consumer Contract Tests (Aegis-OS verification guarantees)
+# -----------------------------------------------------------------------------
+
+
+def check_boot_evidence_contract(evidence: dict[str, object], expected_id: str | None = None) -> None:
+    """Verify that boot evidence carries the exact correlation-id contract."""
+    assert "correlation-id" in evidence, "Evidence missing exact contract key 'correlation-id'"
+    val = evidence["correlation-id"]
+    assert isinstance(val, str), f"'correlation-id' must be a string, got {type(val).__name__}"
+    assert len(val) > 0, "'correlation-id' must be a non-empty string"
+    if expected_id is not None:
+        assert val == expected_id, f"'correlation-id' mismatch: expected {expected_id!r}, got {val!r}"
+
+
+def check_workflow_sha256sums_contract(workflow_data: dict) -> None:
+    """Verify that the workflow sums boot-evidence.json into SHA256SUMS before cosign signs it."""
+    steps = workflow_data["jobs"]["build"]["steps"]
+    boot_run = next(s["run"] for s in steps if s.get("name") == "Boot the Image Once")
+    assert """cid=$(jq -r '."correlation-id"' aegis/build/product-input.json)""" in boot_run
+    assert '--correlation-id "${cid}"' in boot_run, "boot step must pass the request correlation-id"
+    assert '--evidence "${out_dir}/boot-evidence.json"' in boot_run
+    checksum_idx = next(
+        idx for idx, s in enumerate(steps) if "sha256sum" in s.get("run", "") and "> SHA256SUMS" in s.get("run", "")
+    )
+    checksum_step = steps[checksum_idx]
+    checksum_run = checksum_step.get("run", "")
+
+    sha_match = re.search(r"sha256sum\s+(.*?)\s*>\s*SHA256SUMS", checksum_run, re.DOTALL)
+    assert sha_match is not None, "Workflow missing sha256sum command redirecting to SHA256SUMS"
+    summed_files = sha_match.group(1).replace("\\", "").split()
+    assert "boot-evidence.json" in summed_files, "boot-evidence.json must be listed among files summed into SHA256SUMS"
+
+    sign_idx = next(
+        idx
+        for idx, s in enumerate(steps)
+        if "cosign sign-blob" in s.get("run", "") and "SHA256SUMS" in s.get("run", "")
+    )
+    assert sign_idx > checksum_idx, (
+        f"cosign sign-blob step (index {sign_idx}) must execute after sha256sum step (index {checksum_idx})"
+    )
+    sign_run = steps[sign_idx].get("run", "")
+    assert "SHA256SUMS" in sign_run, "cosign sign-blob must sign the SHA256SUMS file"
+
+
+@pytest.mark.parametrize(
+    "cid",
+    [
+        "aegis-m18-product-input-0001",  # standard positive
+        "x",  # shortest non-empty id
+        "k" * 64,  # long id
+    ],
+)
+def test_assemble_evidence_correlation_id_contract(tmp_path: pathlib.Path, cid: str) -> None:
+    """assemble_evidence writes the request id under the exact key correlation-id."""
+    log = tmp_path / "serial.log"
+    log.write_text("marker log", encoding="utf-8")
+    evidence = boot_once.assemble_evidence(
+        cid,
+        "a" * 64,
+        qemu_ver="QEMU emulator version 9.2.0",
+        ovmf_ver="/usr/share/OVMF/OVMF_CODE_4M.fd",
+        swtpm_ver="TPM emulator version 0.10.0",
+        marker_line="Reached target multi-user.target",
+        serial_log=log,
+        serial_sha="b" * 64,
+        elapsed=3.14,
+    )
+    check_boot_evidence_contract(evidence, expected_id=cid)
+
+
+def test_workflow_sha256sums_and_signing_contract() -> None:
+    """Workflow step writing SHA256SUMS includes boot-evidence.json and cosign signs it after."""
+    workflow_data = load_workflow()
+    check_workflow_sha256sums_contract(workflow_data)
+
+
+def test_negative_planted_workflow_text_fails_contract() -> None:
+    """A planted workflow text with boot-evidence.json removed from sha256sum fails the check."""
+    raw_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+    assert "boot-evidence.json" in raw_text
+    planted_text = raw_text.replace("boot-evidence.json \\\n", "")
+    planted_data = yaml.safe_load(planted_text)
+    with pytest.raises(AssertionError, match="boot-evidence.json"):
+        check_workflow_sha256sums_contract(planted_data)
+
+
+def test_negative_planted_evidence_renamed_key_fails_contract(tmp_path: pathlib.Path) -> None:
+    """A planted evidence dict with correlation-id renamed to correlation_id fails the check."""
+    log = tmp_path / "serial.log"
+    log.write_text("marker log", encoding="utf-8")
+    evidence = boot_once.assemble_evidence(
+        "cid-001",
+        "a" * 64,
+        qemu_ver="QEMU emulator version 9.2.0",
+        ovmf_ver="/usr/share/OVMF/OVMF_CODE_4M.fd",
+        swtpm_ver="TPM emulator version 0.10.0",
+        marker_line="Reached target multi-user.target",
+        serial_log=log,
+        serial_sha="b" * 64,
+        elapsed=3.14,
+    )
+    assert "correlation-id" in evidence
+    evidence["correlation_id"] = evidence.pop("correlation-id")
+    with pytest.raises(AssertionError, match="correlation-id"):
+        check_boot_evidence_contract(evidence)

@@ -107,3 +107,14 @@ imago aegis result validate result.json --json
 IMAGE_DIGEST=$(jq -r '."image-digest"' result.json | sed 's/^sha256://')
 grep -F "${IMAGE_DIGEST}" SHA256SUMS
 ```
+
+---
+
+## 6. Consumer Contract
+
+Aegis-OS reads two things from every pre-release this workflow publishes, so changing either one breaks Aegis-OS:
+
+1. `boot-evidence.json` carries the top-level field `correlation-id`, set from `correlation-id` in `aegis/build/product-input.json` and passed to `tools/aegis/boot_once.py --correlation-id`.
+2. `SHA256SUMS` lists `boot-evidence.json`, and `cosign sign-blob` signs `SHA256SUMS` after the sums are written, so the evidence file is covered by the signature.
+
+Aegis-OS verifies both. `pytest tests/test_aegis_build_workflow.py -k contract` fails when the field is renamed or the file drops out of the signed sums.
