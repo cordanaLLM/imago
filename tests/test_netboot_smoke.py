@@ -189,3 +189,19 @@ def test_script_runs_isolated_from_a_foreign_directory(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert "--expect-mismatch" in result.stdout
+
+
+def test_cleanup_reports_a_qemu_that_is_not_reaped(capsys):
+    process = MagicMock()
+    process.pid = 0  # refused by the guard, so no signal is sent
+    process.wait.side_effect = smoke.subprocess.TimeoutExpired("qemu", 1)
+    smoke.kill_process_group(process)
+    assert "QEMU pid 0 not reaped" in capsys.readouterr().err
+
+
+def test_cleanup_is_quiet_for_a_qemu_that_already_exited(capsys):
+    process = MagicMock()
+    process.pid = 0
+    process.kill.side_effect = ProcessLookupError()
+    smoke.kill_process_group(process)
+    assert capsys.readouterr().err == ""

@@ -163,15 +163,20 @@ def kill_process_group(process: subprocess.Popen) -> None:
     to the guard directly. `os.getpgid()` is never asked: a pid that was already reused would
     name another process's group, and a mock pid would name group 1.
     """
+    # Cleanup runs on every exit, so a failure here is reported, never raised over the result.
     try:
         signal_group(process.pid, signal.SIGKILL)
-    except (ProcessLookupError, OSError):
-        pass
+    except ProcessLookupError:
+        pass  # The group already exited; nothing is left to signal.
+    except OSError as error:
+        print(f"::warning::could not signal QEMU group {process.pid}: {error}", file=sys.stderr)
     try:
         process.kill()
         process.wait(timeout=TOOL_TIMEOUT_S)
-    except (subprocess.TimeoutExpired, ProcessLookupError, OSError):
-        pass
+    except ProcessLookupError:
+        pass  # QEMU already exited and was reaped.
+    except (subprocess.TimeoutExpired, OSError) as error:
+        print(f"::warning::QEMU pid {process.pid} not reaped: {error}", file=sys.stderr)
 
 
 def watch_mismatch(process: subprocess.Popen, serial: pathlib.Path, nonce: str, timeout_s: float) -> str:
