@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- The HISS-11 exception for `.github/workflows/release-matrix.yml` names its category (A, the 90-day interval stated in the entry) and its entry date 2026-10-11 in `.standards.yaml`; the expiry 2027-01-09 is unchanged, and the engine refuses a category whose interval does not give that expiry (`docs/community/security.md`).
 - Manifest validation in Go (`pkg/manifest`): `manifest.Load` embeds `versions.schema.json` via root package `schema.go` and validates `versions.json` against the Draft 2020-12 schema using `github.com/google/jsonschema-go` before evaluating semantic invariants.
 - Cloud-init generator: `pkg/cloudinit` serializes user-data and meta-data from typed structs with the `go.yaml.in/yaml/v3` encoder instead of concatenated strings, a second barrier behind the allow-lists; keys and values are unchanged, scalars are quoted only where YAML 1.1 would read them as another type (`docs/tools/cli-mcp.md`).
 
