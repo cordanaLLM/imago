@@ -52,6 +52,9 @@ try:
         watch,
     )
 except ImportError:
+    # The workflow runs this file with python3 -I, which leaves the script's own directory
+    # off sys.path; add only that directory of the checkout, so boot_smoke is the sibling file.
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     from boot_smoke import (  # type: ignore[no-redef]
         ACCELERATORS,
         LOG_TAIL_LINES,

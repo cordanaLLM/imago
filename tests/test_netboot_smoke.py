@@ -13,15 +13,17 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "tools" / "ci" / "netboot_smoke.py"
+TOOL = ROOT / "tools" / "ci" / "netboot_smoke.py"
 
-_spec = importlib.util.spec_from_file_location("netboot_smoke", SCRIPT)
+_spec = importlib.util.spec_from_file_location("netboot_smoke", TOOL)
 smoke = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(smoke)
 
@@ -173,3 +175,17 @@ def test_stage_refuses_a_missing_asset(tmp_path):
     staging.mkdir()
     with pytest.raises(smoke.BootError, match="f-netboot.vmlinuz"):
         smoke.stage(tmp_path, staging, "f")
+
+
+def test_script_runs_isolated_from_a_foreign_directory(tmp_path):
+    """The workflow calls python3 -I tools/ci/netboot_smoke.py; the sibling import must hold there."""
+    result = subprocess.run(
+        [sys.executable, "-I", str(TOOL), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--expect-mismatch" in result.stdout

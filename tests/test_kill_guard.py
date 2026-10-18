@@ -80,7 +80,10 @@ def test_real_child_group_is_killed():
         start_new_session=True,
     )
     try:
-        assert boot_smoke.signal_group(child.pid) is True
+        pgid = os.getpgid(child.pid)
+        assert isinstance(child.pid, int) and pgid == child.pid
+        assert pgid > 1 and pgid != os.getpgrp()
+        assert boot_smoke.signal_group(pgid) is True
         assert child.wait(timeout=10) == -signal.SIGKILL
     finally:
         if child.poll() is None:
