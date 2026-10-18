@@ -101,6 +101,7 @@ func newFlavorsCmd() *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all production flavors",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var list []flavors.Flavor
 			if tier != "" {
@@ -153,16 +154,13 @@ func newManifestCmd() *cobra.Command {
 	valCmd := &cobra.Command{
 		Use:   "validate",
 		Short: "Validate versions.json Single Source of Truth",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			p := path
-			if p == "" {
-				p = "versions.json"
-			}
-			m, err := manifest.Load(p)
+			m, err := manifest.Load(path)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "✓ Manifest %s is valid.\n", p)
+			fmt.Fprintf(cmd.OutOrStdout(), "✓ Manifest %s is valid.\n", path)
 			fmt.Fprintf(cmd.OutOrStdout(), "  Distro: %s (%s %s)\n", m.Distro.Name, m.Distro.Release, m.Distro.Version)
 			fmt.Fprintf(cmd.OutOrStdout(), "  Kubernetes: %s (K3s: %s)\n", m.Kubernetes.Version, m.K3s.Version)
 			fmt.Fprintf(cmd.OutOrStdout(), "  Runtimes: Containerd %s, Docker CE %s\n", m.Runtimes.Containerd, m.Runtimes.DockerCE)
@@ -172,6 +170,7 @@ func newManifestCmd() *cobra.Command {
 	}
 	valCmd.Flags().StringVarP(&path, "file", "f", "versions.json", "Path to versions.json")
 	valCmd.Flags().StringVar(&path, "path", "versions.json", "Path to versions.json (alias)")
+	valCmd.MarkFlagsMutuallyExclusive("file", "path")
 
 	cmd.AddCommand(valCmd)
 	return cmd
@@ -188,6 +187,7 @@ func newCloudInitCmd() *cobra.Command {
 	genCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate user-data YAML",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg := cloudinit.DefaultConfig(flavor)
 			if hostname != "" {
@@ -215,6 +215,7 @@ func newCloudInitCmd() *cobra.Command {
 	metaCmd := &cobra.Command{
 		Use:   "metadata",
 		Short: "Generate meta-data YAML",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			md, err := cloudinit.GenerateMetaData(cloudinit.Config{Hostname: hostname})
 			if err != nil {
@@ -249,6 +250,7 @@ func newBuildCmd() *cobra.Command {
 			return printBuildResult(cmd.OutOrStdout(), res)
 		}),
 	)
+	cmd.Args = cobra.NoArgs
 	cmd.Flags().StringVarP(&flavor, "flavor", "f", "base-generic", "Flavor to build")
 	cmd.Flags().StringVarP(&backend, "backend", "b", "local", "Build backend (local, gitea, proxmox, gitlab, woodpecker, harbor, minio, jenkins, github)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Validate a build plan without execution")
@@ -308,6 +310,7 @@ func newApplyCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
 		Short: "In-place live host / SSH provisioning (imageless execution)",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			script, err := imageless.GenerateApplyScript(imageless.ApplyOptions{
 				FlavorID:    flavor,
@@ -333,6 +336,7 @@ func newBootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "boot",
 		Short: "Generate microVM direct kernel boot command",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			bootCmd, err := imageless.GenerateBootCommand(imageless.MicroVMBootConfig{
 				FlavorID:   flavor,
@@ -363,6 +367,7 @@ func newStandardsCmd() *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List standards across all 44 flavors",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stds := standards.All()
 			fmt.Fprintf(cmd.OutOrStdout(), "%-28s %-12s %-40s %s\n", "FLAVOR ID", "TIER", "SECURITY BASELINE", "CDI")
@@ -407,12 +412,9 @@ func newEpicsCmd() *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all active epics",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			p := file
-			if p == "" {
-				p = filepath.Join(".github", "epics.json")
-			}
-			epics, err := tracker.LoadEpics(p)
+			epics, err := tracker.LoadEpics(file)
 			if err != nil {
 				return err
 			}
@@ -424,8 +426,10 @@ func newEpicsCmd() *cobra.Command {
 			return nil
 		},
 	}
-	listCmd.Flags().StringVarP(&file, "file", "f", "", "Path to epics.json")
-	listCmd.Flags().StringVar(&file, "path", "", "Path to epics.json (alias)")
+	defaultEpics := filepath.Join(".github", "epics.json")
+	listCmd.Flags().StringVarP(&file, "file", "f", defaultEpics, "Path to epics.json")
+	listCmd.Flags().StringVar(&file, "path", defaultEpics, "Path to epics.json (alias)")
+	listCmd.MarkFlagsMutuallyExclusive("file", "path")
 
 	cmd.AddCommand(listCmd)
 	return cmd
@@ -441,12 +445,9 @@ func newMilestonesCmd() *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List release milestones with state and due date",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			p := file
-			if p == "" {
-				p = filepath.Join(".github", "milestones.json")
-			}
-			ms, err := tracker.LoadMilestones(p)
+			ms, err := tracker.LoadMilestones(file)
 			if err != nil {
 				return err
 			}
@@ -458,8 +459,10 @@ func newMilestonesCmd() *cobra.Command {
 			return nil
 		},
 	}
-	listCmd.Flags().StringVarP(&file, "file", "f", "", "Path to milestones.json")
-	listCmd.Flags().StringVar(&file, "path", "", "Path to milestones.json (alias)")
+	defaultMilestones := filepath.Join(".github", "milestones.json")
+	listCmd.Flags().StringVarP(&file, "file", "f", defaultMilestones, "Path to milestones.json")
+	listCmd.Flags().StringVar(&file, "path", defaultMilestones, "Path to milestones.json (alias)")
+	listCmd.MarkFlagsMutuallyExclusive("file", "path")
 
 	cmd.AddCommand(listCmd)
 	return cmd
@@ -469,6 +472,7 @@ func newLintCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "lint",
 		Short: "Run specialized static analyzers and linters",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
 			fmt.Fprintln(out, "==> Running imago static analyzers...")
@@ -506,6 +510,7 @@ func newAuditCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "audit",
 		Short: "Execute repository health audit script",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scriptPath := filepath.Join("scripts", "audit-repository-health.sh")
 			if _, err := os.Stat(scriptPath); err != nil {
@@ -544,6 +549,7 @@ func newMCPCmd() *cobra.Command {
 			}),
 		),
 	)
+	cmd.Args = cobra.NoArgs
 	cmd.Flags().StringVar(&transport, "transport", string(coremcp.TransportStdio), "MCP transport (stdio, http)")
 	cmd.Flags().StringVar(&addr, "addr", ":8899", "Listen address for the http transport")
 	return cmd
@@ -573,6 +579,7 @@ func newPlanCmd() *cobra.Command {
 	validateCmd := &cobra.Command{
 		Use:   "validate",
 		Short: "Validate the planning graph and its routing overlay",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			plan, err := planning.Load(planPath)
 			if err != nil {
@@ -589,6 +596,7 @@ func newPlanCmd() *cobra.Command {
 	routeCmd := &cobra.Command{
 		Use:   "route",
 		Short: "Rank steps: ready local work first, by (1 + transitive unblocks) / cost",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPlanRoute(cmd.OutOrStdout(), planPath, routingPath, jsonOutput, readyOnly)
 		},
@@ -842,6 +850,7 @@ func newKernelArtifactCmd() *cobra.Command {
 	verifyCmd := &cobra.Command{
 		Use:   "verify",
 		Short: "Verify a kernel artifact manifest against downloaded release assets before pinning it",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runKernelArtifactVerify(cmd.OutOrStdout(), opts)
 		},
@@ -854,6 +863,15 @@ func newKernelArtifactCmd() *cobra.Command {
 	f.StringVar(&opts.Version, "expect-version", "", "Version named by the dispatch payload; must match the manifest")
 	f.StringVar(&opts.Tag, "expect-tag", "", "Release tag named by the dispatch payload; must match the manifest provenance")
 	f.BoolVar(&opts.JSON, "json", false, "Output the verification result as JSON")
+
+	var errs []error
+	for _, name := range []string{"manifest", "dir"} {
+		errs = append(errs, verifyCmd.MarkFlagRequired(name))
+	}
+	if err := errors.Join(errs...); err != nil {
+		verifyCmd.RunE = func(*cobra.Command, []string) error { return err }
+	}
+
 	cmd.AddCommand(verifyCmd)
 	return cmd
 }
@@ -862,8 +880,10 @@ func newKernelArtifactCmd() *cobra.Command {
 // and the dispatch payload, then recomputes every digest. Cosign signature
 // verification of SHA256SUMS.bundle happens in the workflow before this step.
 func runKernelArtifactVerify(w io.Writer, o kernelVerifyOptions) error {
+	// Cobra enforces that --manifest and --dir are given; an empty value,
+	// such as an unset workflow variable, still has to be refused here.
 	if o.Manifest == "" || o.Dir == "" {
-		return errors.New("kernel artifact verify: --manifest and --dir are required")
+		return errors.New("kernel artifact verify: --manifest and --dir must not be empty")
 	}
 	v, err := manifest.Load(o.Versions)
 	if err != nil {

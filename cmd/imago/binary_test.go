@@ -138,6 +138,12 @@ func TestBinaryUnknownCommandFails(t *testing.T) {
 	assert.Empty(t, res.stdout)
 }
 
+func TestBinaryUnknownFlagFails(t *testing.T) {
+	res := runImago(t, "flavors", "list", "--invalid-flag")
+	assert.Equal(t, 1, res.code)
+	assert.Contains(t, res.stderr, "unknown flag: --invalid-flag")
+}
+
 func TestBinaryMCPRefusesUnknownTransport(t *testing.T) {
 	res := runImago(t, "mcp", "--transport", "carrier-pigeon")
 	assert.NotEqual(t, 0, res.code)
