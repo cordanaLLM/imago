@@ -2,6 +2,7 @@
 package manifest_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/cordanaLLM/imago"
 	"github.com/cordanaLLM/imago/pkg/manifest"
+	"github.com/google/jsonschema-go/jsonschema"
 )
 
 func validTestManifest() *manifest.Manifest {
@@ -225,4 +228,221 @@ func TestValidateKernelPinNegative(t *testing.T) {
 			assert.Contains(t, err.Error(), tc.expectErr)
 		})
 	}
+}
+
+func TestVersionsSchemaResolves(t *testing.T) {
+	require.NotEmpty(t, imago.VersionsSchema)
+
+	rs, err := manifest.ResolvedSchema()
+	require.NoError(t, err)
+	require.NotNil(t, rs)
+
+	var s jsonschema.Schema
+	require.NoError(t, json.Unmarshal(imago.VersionsSchema, &s))
+	resolved, err := s.Resolve(&jsonschema.ResolveOptions{})
+	require.NoError(t, err)
+	require.NotNil(t, resolved)
+}
+
+func loadBaseVersionsMap(t *testing.T) map[string]any {
+	t.Helper()
+	rootPath, err := filepath.Abs("../../versions.json")
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(rootPath)
+	require.NoError(t, err)
+
+	var doc map[string]any
+	require.NoError(t, json.Unmarshal(data, &doc))
+	return doc
+}
+
+func writeTempJSON(t *testing.T, doc any) string {
+	t.Helper()
+	data, err := json.Marshal(doc)
+	require.NoError(t, err)
+
+	tmpFile := filepath.Join(t.TempDir(), "manifest-test.json")
+	require.NoError(t, os.WriteFile(tmpFile, data, 0o600))
+	return tmpFile
+}
+
+func TestLoadPlantedSchemaErrors(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(doc map[string]any)
+		expectErr string
+	}{
+		{
+			name: "missing_required_build",
+			mutate: func(doc map[string]any) {
+				delete(doc, "build")
+			},
+			expectErr: "manifest: schema",
+		},
+		{
+			name: "wrong_pattern_distro_version",
+			mutate: func(doc map[string]any) {
+				distro := doc["distro"].(map[string]any)
+				distro["version"] = "v26.04"
+			},
+			expectErr: "manifest: schema",
+		},
+		{
+			name: "unknown_type_stratum1_nts",
+			mutate: func(doc map[string]any) {
+				timeMap := doc["time"].(map[string]any)
+				timeMap["stratum1_nts"] = "ptbtime1.ptb.de"
+			},
+			expectErr: "manifest: schema",
+		},
+		{
+			name: "empty_stratum1_nts",
+			mutate: func(doc map[string]any) {
+				timeMap := doc["time"].(map[string]any)
+				timeMap["stratum1_nts"] = []any{}
+			},
+			expectErr: "manifest: schema",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			doc := loadBaseVersionsMap(t)
+			tc.mutate(doc)
+			path := writeTempJSON(t, doc)
+
+			m, err := manifest.Load(path)
+			require.Error(t, err)
+			assert.Nil(t, m)
+			assert.Contains(t, err.Error(), tc.expectErr)
+		})
+	}
+}
+
+func minimalKubernetesDoc() map[string]any {
+	return map[string]any{
+		"version":     "1.37.0",
+		"major_minor": "1.37",
+		"images": map[string]any{
+			"pause":              "pause:3.10",
+			"coredns":            "coredns:1.12.0",
+			"cilium":             "cilium:1.20.1",
+			"cilium_operator":    "operator:1.20.1",
+			"kube_vip":           "kube-vip:1.2.3",
+			"node_exporter":      "node-exporter:1.12.1",
+			"calico_cni":         "calico-cni:3.32.2",
+			"calico_node":        "calico-node:3.32.2",
+			"calico_controllers": "calico-controllers:3.32.2",
+			"flannel":            "flannel:0.28.9",
+			"flannel_cni":        "flannel-cni:1.6.2",
+		},
+	}
+}
+
+func minimalDriversDoc() map[string]any {
+	return map[string]any{
+		"intel": map[string]any{
+			"k8s_plugin": "intel-plugin:1.0",
+		},
+		"amd": map[string]any{
+			"rocm_legacy_version":   "6.0",
+			"rocm_bleeding_version": "10.0",
+			"k8s_plugin":            "amd-plugin:1.0",
+		},
+		"nvidia": map[string]any{
+			"legacy_driver":     "535",
+			"mainstream_driver": "565",
+			"modern_driver":     "610",
+			"bleeding_driver":   "615",
+			"datacenter_driver": "565-open",
+			"cuda_legacy":       "12.2",
+			"cuda_mainstream":   "12.8",
+			"cuda_modern":       "13.3",
+			"cuda_bleeding":     "13.4",
+			"container_toolkit": "1.17",
+			"k8s_plugin":        "nvidia-plugin:1.0",
+		},
+	}
+}
+
+func minimalBuildDoc() map[string]any {
+	return map[string]any{
+		"packer": map[string]any{
+			"version":                "1.11.2",
+			"sha256_linux_amd64":     strings.Repeat("b", 64),
+			"zip_sha256_linux_amd64": strings.Repeat("c", 64),
+		},
+		"packer_plugins": map[string]any{
+			"qemu": map[string]any{
+				"source":             "github.com/hashicorp/qemu",
+				"version":            "1.1.1",
+				"sha256_linux_amd64": strings.Repeat("d", 64),
+			},
+			"proxmox": map[string]any{
+				"source":             "github.com/hashicorp/proxmox",
+				"version":            "1.2.1",
+				"sha256_linux_amd64": strings.Repeat("e", 64),
+			},
+		},
+	}
+}
+
+func minimalValidDoc() map[string]any {
+	return map[string]any{
+		"distro": map[string]any{
+			"name":         "ubuntu",
+			"release":      "resolute",
+			"version":      "26.04",
+			"iso_url":      "https://example.com/iso.iso",
+			"iso_checksum": strings.Repeat("a", 64),
+		},
+		"kubernetes": minimalKubernetesDoc(),
+		"drivers":    minimalDriversDoc(),
+		"k3s":        map[string]any{"version": "v1.31.5+k3s1"},
+		"runtimes": map[string]any{
+			"containerd": "2.3.5",
+			"docker_ce":  "29.8.0",
+			"crun":       "1.20",
+		},
+		"tools": map[string]any{"cdebug": "0.5.1"},
+		"build": minimalBuildDoc(),
+		"time": map[string]any{
+			"anycast_nts":   "time.cloudflare.com",
+			"stratum1_nts":  []any{"ptbtime1.ptb.de"},
+			"fallback_pool": "pool.ntp.org",
+		},
+	}
+}
+
+func TestLoadMinimalValidDoc(t *testing.T) {
+	doc := minimalValidDoc()
+	path := writeTempJSON(t, doc)
+
+	m, err := manifest.Load(path)
+	require.NoError(t, err)
+	require.NotNil(t, m)
+	assert.Equal(t, "ubuntu", m.Distro.Name)
+	assert.Equal(t, "1.37.0", m.Kubernetes.Version)
+}
+
+func TestLoadRefusesDocValidForStructChecksButInvalidForSchema(t *testing.T) {
+	doc := loadBaseVersionsMap(t)
+	// Delete top-level "build", which the schema requires but Manifest struct does not model.
+	delete(doc, "build")
+	path := writeTempJSON(t, doc)
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	var structManifest manifest.Manifest
+	require.NoError(t, json.Unmarshal(data, &structManifest))
+	// Proves Go struct checks alone consider this document valid:
+	require.NoError(t, structManifest.Validate())
+
+	// Proves Load enforces the JSON Schema and refuses the document:
+	m, err := manifest.Load(path)
+	require.Error(t, err)
+	assert.Nil(t, m)
+	assert.Contains(t, err.Error(), "manifest: schema")
 }

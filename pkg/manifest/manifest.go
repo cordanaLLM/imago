@@ -4,11 +4,16 @@ package manifest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
+
+	"github.com/cordanaLLM/imago"
+	"github.com/google/jsonschema-go/jsonschema"
 )
 
 // Distro defines upstream base distribution coordinates.
@@ -149,11 +154,40 @@ var (
 	gitRevisionRegex   = regexp.MustCompile(`^[a-f0-9]{40}$`)
 )
 
-// Load reads and parses a versions.json file.
+// getResolvedSchema resolves the embedded versions.schema.json once per process.
+var getResolvedSchema = sync.OnceValues(func() (*jsonschema.Resolved, error) {
+	if len(imago.VersionsSchema) == 0 {
+		return nil, errors.New("embedded versions schema is empty")
+	}
+	var s jsonschema.Schema
+	if err := json.Unmarshal(imago.VersionsSchema, &s); err != nil {
+		return nil, fmt.Errorf("unmarshal versions schema: %w", err)
+	}
+	rs, err := s.Resolve(&jsonschema.ResolveOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("resolve versions schema: %w", err)
+	}
+	return rs, nil
+})
+
+// Load reads, parses, and validates a versions.json file.
 func Load(path string) (*Manifest, error) {
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("manifest: read %s: %w", path, err)
+	}
+
+	var raw any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("manifest: parse %s: %w", path, err)
+	}
+
+	rs, err := getResolvedSchema()
+	if err != nil {
+		return nil, fmt.Errorf("manifest: schema %s: %w", path, err)
+	}
+	if err := rs.Validate(raw); err != nil {
+		return nil, fmt.Errorf("manifest: schema %s: %w", path, err)
 	}
 
 	var m Manifest
