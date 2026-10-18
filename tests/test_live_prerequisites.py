@@ -13,7 +13,7 @@ import pytest
 
 from tests.harness.live import REQUIRE_LIVE_ENV, live_tests_required, skip_or_fail
 from tests.harness.mock_runner import GIT_BASH
-from tests.test_container_integration import check_docker, run_preparation
+from tests.test_container_integration import DockerProbe, check_docker, run_preparation
 from tests.test_provisioners_execution import check_bash
 
 SKIPPED = pytest.skip.Exception
@@ -52,13 +52,13 @@ def test_skip_or_fail_fails_in_ci():
 @pytest.mark.parametrize(("value", "outcome"), [("1", FAILED), (None, SKIPPED)], ids=["ci", "workstation"])
 def test_missing_docker(monkeypatch, value, outcome):
     set_mode(monkeypatch, value)
-    with pytest.raises(outcome, match="Docker daemon is required"):
-        check_docker(False)
+    with pytest.raises(outcome, match="Docker daemon is required.*docker CLI not installed"):
+        check_docker(DockerProbe(False, 0.0, "docker CLI not installed"))
 
 
 def test_available_docker_neither_skips_nor_fails(monkeypatch):
     set_mode(monkeypatch, "1")
-    assert check_docker(True) is None
+    assert check_docker(DockerProbe(True, 0.05, "")) is None
 
 
 @pytest.mark.parametrize("bash", [None, Path("/nonexistent/imago/bash")], ids=["none", "absent-path"])

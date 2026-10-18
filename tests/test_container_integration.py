@@ -84,32 +84,83 @@ echo "SSHD_SYNTAX_VALID"
 """
 
 
-def is_docker_available() -> bool:
-    if not shutil.which("docker"):
-        return False
+# The old probe ran `docker info` once with a 5 s timeout and missed on CI run 39096311247
+# (main ce2ac0e: 5.05 s from the last test to the setup errors); 38 other runs passed with a
+# probe-plus-fixture gap of 2.75-8.58 s, and a workstation answers in 0.05-0.11 s. The CI step
+# "Measure the Docker daemon answer time" records the runner value on every pytest job.
+ATTEMPT_TIMEOUT_S = 20.0
+PROBE_ATTEMPTS = 3
+PROBE_DEADLINE_S = 60.0
+DAEMON_DOWN = "Cannot connect to the Docker daemon"
+
+
+class DockerProbe(NamedTuple):
+    available: bool
+    seconds: float
+    reason: str
+
+
+def docker_info_once(timeout_s: float) -> tuple[bool | None, str]:
+    """One `docker info` call: (True, "") answered, (False, cause) final, (None, cause) retry."""
     try:
         res = subprocess.run(
-            ["docker", "info"],
+            ["docker", "info", "--format", "{{.ServerVersion}}"],
             capture_output=True,
             text=True,
-            timeout=5,
+            timeout=timeout_s,
             check=False,
         )
-        return res.returncode == 0
-    except Exception:
-        return False
+    except subprocess.TimeoutExpired:
+        return None, f"no answer within {timeout_s:g} s"
+    except OSError as err:
+        return False, f"docker info could not start: {err}"
+    if res.returncode == 0:
+        return True, ""
+    lines = [line.strip() for line in f"{res.stderr}\n{res.stdout}".splitlines() if line.strip()]
+    cause = lines[0] if lines else f"docker info exited {res.returncode}"
+    down = [line for line in lines if DAEMON_DOWN in line]
+    if down:
+        return False, down[0]
+    return None, cause
 
 
-def check_docker(available: bool) -> None:
-    """Skip, or in CI fail, when no Docker daemon answers."""
-    if not available:
-        skip_or_fail("Docker daemon is required for live container integration tests", os.environ)
+def probe_docker(
+    attempt_timeout_s: float = ATTEMPT_TIMEOUT_S,
+    attempts: int = PROBE_ATTEMPTS,
+    deadline_s: float = PROBE_DEADLINE_S,
+) -> DockerProbe:
+    """Ask the Docker daemon for its version in bounded attempts; name the cause when it does not answer."""
+    if not shutil.which("docker"):
+        return DockerProbe(False, 0.0, "docker CLI not installed")
+    start = time.monotonic()
+    cause = "no attempt fit the deadline"
+    tried = 0
+    for _ in range(attempts):
+        remaining = deadline_s - (time.monotonic() - start)
+        if remaining <= 0:
+            break
+        tried += 1
+        answered, cause = docker_info_once(min(attempt_timeout_s, remaining))
+        if answered is not None:
+            return DockerProbe(answered, time.monotonic() - start, cause)
+    seconds = time.monotonic() - start
+    reason = (
+        f"docker info gave no answer within {tried} attempt(s) of {attempt_timeout_s:g} s "
+        f"(deadline {deadline_s:g} s, {seconds:.1f} s measured); last cause: {cause}"
+    )
+    return DockerProbe(False, seconds, reason)
+
+
+def check_docker(probe: DockerProbe) -> None:
+    """Skip, or in CI fail, when no Docker daemon answers; the message carries the probe's cause."""
+    if not probe.available:
+        skip_or_fail(f"Docker daemon is required for live container integration tests: {probe.reason}", os.environ)
 
 
 @pytest.fixture(scope="session")
 def require_docker() -> None:
     """Session scope, so it runs before the class-scoped container fixtures."""
-    check_docker(is_docker_available())
+    check_docker(probe_docker())
 
 
 docker_required = pytest.mark.usefixtures("require_docker")
