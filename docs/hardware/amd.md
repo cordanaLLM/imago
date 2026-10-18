@@ -30,7 +30,7 @@ Supported hardware: AMD Radeon RX 6000/7000/8000 series, Ryzen APUs, Radeon Pro,
 
 AMD publishes ROCm for Ubuntu 22.04 (`jammy`) and 24.04 (`noble`) only. The image is Ubuntu 26.04 (`resolute`), so it installs the `noble` packages, and the provisioner prints that substitution in the build log. The Ubuntu 26.04 archive also ships an older ROCm (7.1); an apt pin (`/etc/apt/preferences.d/rocm-pin-600`, priority 600 for `o=repo.radeon.com`, as in AMD's install guide) keeps apt from mixing the two.
 
-`tools/ci/upstream_sources.py check` requests the key and the `Release` file of every pinned version before the Packer build in `release-matrix.yml`; a pin AMD does not publish fails that step in seconds:
+`tools/ci/upstream_sources.py check` requests the key and the `Release` file of every pinned version before the Packer build in `release-matrix.yml`; a pin AMD does not publish fails that step in seconds. The same check covers the other flavors' pins (see [NVIDIA](nvidia.md#pinned-packages-and-their-check)):
 
 ```bash
 python3 -I tools/ci/upstream_sources.py urls    # list the URLs

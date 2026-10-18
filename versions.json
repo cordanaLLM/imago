@@ -36,14 +36,14 @@
       "k8s_plugin": "docker.io/rocm/k8s-device-plugin:1.31.0.11"
     },
     "nvidia": {
-      "legacy_driver": "535",
-      "mainstream_driver": "565",
-      "modern_driver": "610",
+      "legacy_driver": "580",
+      "mainstream_driver": "595",
+      "modern_driver": "615",
       "bleeding_driver": "615",
-      "datacenter_driver": "615-open",
-      "cuda_legacy": "12.2",
-      "cuda_mainstream": "12.8",
-      "cuda_modern": "13.3",
+      "datacenter_driver": "615",
+      "cuda_legacy": "13.0",
+      "cuda_mainstream": "13.2",
+      "cuda_modern": "13.4",
       "cuda_bleeding": "13.4",
       "container_toolkit": "1.20.0",
       "k8s_plugin": "nvcr.io/nvidia/k8s-device-plugin:v0.20.0"

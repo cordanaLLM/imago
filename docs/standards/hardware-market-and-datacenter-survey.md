@@ -71,7 +71,7 @@ Modern cloud infrastructure and sovereign AI datacenters present divergent requi
 | Primary Hardware: NVIDIA Ampere / Hopper    | Primary Hardware: NVIDIA Hopper / Blackwell|
 | GPUs: A100 (40/80GB), L40S, H100 SXM5       | GPUs: H200 (141GB HBM3e), B200 (192GB HBM3e)|
 | Host CPUs: AMD EPYC 7003/9004, Intel Xeon 4th| Host CPUs: Grace CPU, Emerald/Granite Rapids|
-| Driver Baseline: NVIDIA 565 Branch (LTSB)   | Driver Baseline: NVIDIA 615 Open + Fabric |
+| Driver Baseline: NVIDIA 595 Branch (LTSB)   | Driver Baseline: NVIDIA 615 server open + Fabric |
 | Networking: Mellanox HDR (200Gb/s) InfiniBand| Networking: Mellanox NDR (400G) / XDR (800G)|
 | Topologies: Standalone PCIe, Standard CNI   | Topologies: NVLink 5 (1.8TB/s), Rail-Optim|
 +---------------------------------------------+-------------------------------------------+
@@ -81,8 +81,8 @@ Modern cloud infrastructure and sovereign AI datacenters present divergent requi
 
 - **Design Objective**: Rock-solid stability for multi-tenant Kubernetes clusters, private cloud infrastructure, and enterprise inference.
 - **Software Stack**:
-  - NVIDIA 565 Mainstream driver branch.
-  - CUDA 12.8 runtime libraries.
+  - NVIDIA 595 Mainstream driver branch.
+  - CUDA 13.2 runtime libraries.
   - Standard Container Device Interface (CDI) device mapping.
   - In-tree InfiniBand / RoCE drivers (`rdma-core`, `mlx5_core`).
 - **Primary Flavors**: `base-nvidia-mainstream`, `docker-nvidia`, `k8s-node-nvidia`, `ai-infer-nvidia`.

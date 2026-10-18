@@ -200,7 +200,7 @@ flowchart TD
    - Storage client utilities pre-installed (`nfs-common`, `cifs-utils`).
    - Disk readahead tuned to 4096KB via udev rule for uninterrupted 4K Remux streaming.
 4. **`appliance-ci-runner`**:
-   - Multi-arch Docker build support via QEMU binfmt emulation (`qemu-user-static`).
+   - Multi-arch Docker build support via QEMU binfmt emulation (`qemu-user-binfmt`).
    - Pre-allocated 4GB tmpfs mounted at `/tmp` for ultra-fast ephemeral compilation.
 5. **`appliance-game-server`**:
    - 32-bit `i386` multi-architecture enabled with 32-bit glibc packages.

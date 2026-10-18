@@ -8,7 +8,7 @@ set -euo pipefail
 install_multiarch_emulation() {
   echo "==> Configuring QEMU multi-architecture user emulation (ARM64/ARMv7)..."
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    qemu-user-static \
+    qemu-user-binfmt \
     binfmt-support
 
   # Ensure binfmt_misc kernel module is loaded on boot

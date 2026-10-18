@@ -101,7 +101,7 @@ flowchart TD
 | Attribute | Specification |
 | :--- | :--- |
 | **Primary Workloads** | GitHub Actions Runner, GitLab Runner, Forgejo Runner, Gitea Actions |
-| **Multi-Arch Emulation** | QEMU `binfmt_misc` user-space emulation (`qemu-user-static`) for ARM64/ARMv7 |
+| **Multi-Arch Emulation** | QEMU `binfmt_misc` user-space emulation (`qemu-user-binfmt`) for ARM64/ARMv7 |
 | **Build Tooling** | Docker CE 29.8, Docker Buildx, `git-lfs`, `zstd`, `jq`, `rsync`, `build-essential` |
 | **Filesystem Tuning** | 4GB volatile `/tmp` in-memory tmpfs mount |
 

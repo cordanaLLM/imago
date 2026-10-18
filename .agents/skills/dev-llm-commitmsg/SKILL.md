@@ -33,7 +33,7 @@ All commits in `lusoris-cloud-images` must follow Conventional Commits specifica
 - `ai-infer`: AI inference appliances (vLLM, CDI, NUMA tuning).
 - `gpu-intel`: Intel Arc / Xe drivers and runtimes.
 - `gpu-amd`: AMD Mesa or ROCm 7.2 runtimes.
-- `gpu-nvidia`: NVIDIA generational drivers (535, 565, 615).
+- `gpu-nvidia`: NVIDIA generational drivers (580, 595, 615).
 - `deps`: Dependency bumps in `versions.json`.
 
 ## Rules

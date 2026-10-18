@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Copyright 2026 Lusoris
-# 36-gpu-nvidia-bleeding.sh — NVIDIA Bleeding (Blackwell RTX 5090/B200, Ada) R615/R610 + CUDA 13.4
-# Cutting-edge driver stack with native Container Device Interface (CDI) and MPS support.
+# 36-gpu-nvidia-bleeding.sh — NVIDIA Bleeding (Blackwell RTX 5090/B200, Ada) driver stack
+# Open kernel modules of drivers.nvidia.bleeding_driver (versions.json); cutting-edge stack with native Container Device Interface (CDI) and MPS support.
 # Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked returns.
 set -euo pipefail
 
-DRIVER_BRANCH="${NVIDIA_BLEEDING_DRIVER:-615}"
-CUDA_VER="${CUDA_BLEEDING:-13.4}"
+DRIVER_BRANCH="${NVIDIA_BLEEDING_DRIVER:?NVIDIA_BLEEDING_DRIVER must come from versions.json}"
+CUDA_VER="${CUDA_BLEEDING:?CUDA_BLEEDING must come from versions.json}"
 
 setup_nvidia_repositories() {
   echo "==> Configuring NVIDIA Container Toolkit and CUDA ${CUDA_VER} repositories..."
@@ -23,14 +23,10 @@ setup_nvidia_repositories() {
 install_bleeding_driver() {
   echo "==> Installing NVIDIA bleeding branch ${DRIVER_BRANCH} (CUDA ${CUDA_VER}) and toolkit..."
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    nvidia-headless-"${DRIVER_BRANCH}" \
+    nvidia-headless-"${DRIVER_BRANCH}"-open \
     nvidia-utils-"${DRIVER_BRANCH}" \
     nvidia-container-toolkit \
-    hwinfo || {
-    echo "    Warning: branch ${DRIVER_BRANCH} not found, falling back to 610..."
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      nvidia-headless-610 nvidia-utils-610 nvidia-container-toolkit hwinfo
-  }
+    hwinfo
 }
 
 configure_nvidia_cdi() {

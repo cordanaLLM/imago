@@ -54,8 +54,8 @@ Hardware acceleration drivers and runtimes must remain strictly isolated by gene
 - **Intel Arc / Xe**: Dedicated Battlemage Xe2, Alchemist, Level Zero, and Media Driver stack ([`30-gpu-intel.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/30-gpu-intel.sh)).
 - **AMD Radeon / ROCm**: Segregated into user-space Mesa VA-API/RADV ([`31-gpu-amd-mesa.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/31-gpu-amd-mesa.sh)) and ROCm 10 compute ([`32-gpu-amd-rocm.sh`](https://github.com/cordanaLLM/imago/blob/main/packer/provisioners/32-gpu-amd-rocm.sh)).
 - **NVIDIA Segmentation**:
-  - `legacy`: Driver 535 + CUDA 12.2 (Pascal / Volta).
-  - `mainstream`: Driver 565 + CUDA 12.8 (Turing / Ampere / Ada).
+  - `legacy`: Driver 580 + CUDA 13.0 (Pascal / Volta).
+  - `mainstream`: Driver 595 + CUDA 13.2 (Turing / Ampere / Ada).
   - `bleeding`: Driver 615 + CUDA 13.4 (Blackwell RTX 5090 / B200).
   - `datacenter`: NVIDIA Open Kernel Modules + Fabric Manager (Hopper / Blackwell).
 

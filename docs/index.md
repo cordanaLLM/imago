@@ -13,7 +13,7 @@
 Instead of deploying generic stock distributions that spend minutes pulling gigabytes of packages and container layers on first boot, `imago` provides:
 
 - **Zero Base Bloat**: Complete purge of `snapd`, `lxd`, Ubuntu Pro telemetry, and unneeded documentation.
-- **Hardware Acceleration Tiers**: Tailored GPU driver stacks for Intel Arc/Xe, AMD Mesa & ROCm, and NVIDIA generational CUDA (Pascal 535, Ampere/Ada 565, Hopper/Blackwell Open Modules + Fabric Manager).
+- **Hardware Acceleration Tiers**: Tailored GPU driver stacks for Intel Arc/Xe, AMD Mesa & ROCm, and NVIDIA generational CUDA (Pascal 580, Ampere/Ada 595, Hopper/Blackwell Open Modules + Fabric Manager).
 - **Multi-Hypervisor Portability**: Coexisting `qemu-guest-agent` and `open-vm-tools` plus Unraid `virtiofs` and `9p` host sharing out of the box.
 - **Bare-Metal Performance Engine**: NVMe low-latency I/O scheduling, BBR congestion control, auto-growroot on first boot, and streaming direct flash (`lusoris-install-to-disk`).
 - **Resilient Global Time**: Cryptographically authenticated Network Time Security (NTS) using Cloudflare Anycast and European national metrology institutes (PTB, Netnod, SIDN, 3eck).
@@ -49,7 +49,7 @@ flowchart TD
 
     subgraph Tiers["3. The 4D Production Matrix (44 Flavors across 7 Tiers)"]
         direction TB
-        T1["Tier 1: Minimal Base OS<br/><small>Generic · Intel · AMD · NVIDIA 535/565/610/615/Open (8)</small>"]:::tiers
+        T1["Tier 1: Minimal Base OS<br/><small>Generic · Intel · AMD · NVIDIA 580/595/615/Open (8)</small>"]:::tiers
         T2["Tier 2: Container Hosts<br/><small>Docker CE · Podman Quadlet · GPU Passthrough (7)</small>"]:::tiers
         T3["Tier 3: Enterprise K8s Nodes<br/><small>containerd 2.3.5 · Cilium / Calico / Flannel · kube-vip (9)</small>"]:::tiers
         T4["Tier 4: K3s Edge Fleet<br/><small>Agent Flavors · Server Master · GPU Passthrough (5)</small>"]:::tiers
