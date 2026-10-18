@@ -77,8 +77,8 @@ jobs:
   build-matrix:
     name: Build Image (${{ matrix.flavor }})
     runs-on: ubuntu-26.04
-    # The slowest successful build took 115 min (base-nvidia-datacenter, 2026-10-18); without a
-    # bound a run whose runner was lost waited for the 6 h platform default.
+    # The slowest measured build job took 152 min (base-nvidia-legacy, 2026-10-18), the slowest
+    # successful one 115 min; without a bound a hung job runs until the 6 h platform default.
     timeout-minutes: 240
     permissions:
       contents: write # upload the image assets to the published release
