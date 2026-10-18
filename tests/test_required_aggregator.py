@@ -164,7 +164,56 @@ def test_aggregator_accepts_no_skip():
     inputs = waits[0]["with"]
     assert inputs["allowed-conclusions"] == "success"
     assert inputs["running-workflow-name"] == "required-checks"
-    assert "ignore-checks" not in inputs and "check-regexp" not in inputs and "check-name" not in inputs
+    assert "ignore-checks" not in inputs and "check-name" not in inputs
+
+
+GATE_EVENTS = {"push", "pull_request", "merge_group"}
+MATRIX_SAMPLE = "sample-flavor"
+
+
+def aggregator_filter() -> re.Pattern[str]:
+    """The `check-regexp` of the wait step; the action keeps a check whose name it matches."""
+    (wait,) = [
+        s for s in load(AGGREGATOR)["jobs"]["required-checks"]["steps"] if s.get("uses", "").startswith(WAIT_ACTION)
+    ]
+    return re.compile(wait["with"]["check-regexp"])
+
+
+def job_names(gate: bool) -> list[str]:
+    """Job names of the workflows a push or pull request starts (gate) or never starts."""
+    names = []
+    for path in sorted(WORKFLOWS.glob("*.yml")):
+        document = load(path)
+        if bool(GATE_EVENTS & set(triggers(document))) != gate:
+            continue
+        for job_id, job in (document.get("jobs") or {}).items():
+            names.append(re.sub(r"\$\{\{[^}]*\}\}", MATRIX_SAMPLE, job.get("name", job_id)))
+    return names
+
+
+def test_aggregator_waits_for_every_gate_check():
+    """No job a push or pull request starts and no required context may fall out of the wait (ADR-0035)."""
+    keep = aggregator_filter()
+    names = job_names(gate=True) + required_contexts()
+    assert len(names) > 19
+    assert [name for name in names if not keep.search(name)] == []
+
+
+def test_aggregator_skips_only_jobs_no_gate_event_starts():
+    """A manual release-matrix build on main's head must not hold required-checks past its bound."""
+    keep = aggregator_filter()
+    names = job_names(gate=False)
+    assert f"Build Image ({MATRIX_SAMPLE})" in names
+    assert [name for name in names if keep.search(name)] == []
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["Build Image", "Sign the Release Checksums v2", "Run Build Image (x)", "Go Build & Unit Tests", "required-checks"],
+)
+def test_planted_gate_names_are_waited_for(name):
+    """Names that only resemble an excluded job stay in the wait."""
+    assert aggregator_filter().search(name)
 
 
 def required_contexts() -> list[str]:

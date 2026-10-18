@@ -49,5 +49,10 @@ jobs:
           running-workflow-name: required-checks
           allowed-conclusions: success
           wait-interval: 20
+          # Waits for every check except the jobs of workflows no push or pull request
+          # starts (ADR-0035). A manual release-matrix run on main reports its build
+          # jobs on main's head, takes up to 240 min and outlasted this job's bound.
+          # tests/test_required_aggregator.py derives the excluded names from the workflows.
+          check-regexp: '^(?!Build Image \(|Sign the Release Checksums$|Build, Boot, and Release Aegis OS Image$|Verify and Pin Kernel Release from nucleus$)'
       - name: All required checks passed
         run: echo "ok"
