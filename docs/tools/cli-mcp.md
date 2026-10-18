@@ -75,6 +75,8 @@ imago flavors get appliance-vision-nvr
 
 ### 2.2 Version Manifest Verification (`manifest`)
 
+The Go manifest loader validates `versions.json` directly against `versions.schema.json` via `github.com/google/jsonschema-go` before applying semantic invariant checks.
+
 ```bash
 # Validate versions.json semantic invariants
 imago manifest validate
