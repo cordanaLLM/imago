@@ -58,6 +58,7 @@
   },
   "tools": {
     "cdebug": "0.0.19",
+    "container_structure_test": "1.22.1",
     "enroot": "3.4.1"
   },
   "build": {

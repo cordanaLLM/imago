@@ -1,0 +1,12 @@
+# Copyright 2026 Lusoris
+# SPDX-FileCopyrightText: 2026 Lusoris
+# SPDX-License-Identifier: EUPL-1.2
+schemaVersion: 2.0.0
+
+# Planted test fixture that intentionally fails on purpose.
+# Verifies container-structure-test host driver fail-closed enforcement.
+
+fileExistenceTests:
+  - name: "planted-failure-nonexistent-path"
+    path: "/path/to/imago/planted/nonexistent/file/that/cannot/exist"
+    shouldExist: true

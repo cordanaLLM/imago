@@ -1,0 +1,14 @@
+# Copyright 2026 Lusoris
+# SPDX-FileCopyrightText: 2026 Lusoris
+# SPDX-License-Identifier: EUPL-1.2
+schemaVersion: 2.0.0
+
+# NVIDIA Enroot unprivileged container runtime contract verification.
+# Run on builds that execute 62-hpc-enroot.sh.
+
+commandTests:
+  # Checks 62-hpc-enroot.sh:57 (enroot version exit 0)
+  - name: "enroot version exit 0"
+    command: "enroot"
+    args: ["version"]
+    exitCode: 0

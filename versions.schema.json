@@ -114,6 +114,7 @@
       "type": "object",
       "properties": {
         "cdebug": { "type": "string" },
+        "container_structure_test": { "type": "string" },
         "enroot": { "type": "string" }
       }
     },

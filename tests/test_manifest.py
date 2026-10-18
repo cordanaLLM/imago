@@ -52,6 +52,7 @@ class TestManifestIntegrity:
         assert re.match(r"^\d+\.\d+", runtimes["crun"])
         assert re.match(r"^\d+\.\d+", runtimes["stargz_snapshotter"])
         assert "tools" in data and "cdebug" in data["tools"]
+        assert "tools" in data and "container_structure_test" in data["tools"]
         assert "tools" in data and "enroot" in data["tools"]
         assert "k3s" in data and len(data["k3s"]) > 0
 

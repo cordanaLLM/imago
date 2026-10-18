@@ -1,0 +1,82 @@
+# Copyright 2026 Lusoris
+# SPDX-FileCopyrightText: 2026 Lusoris
+# SPDX-License-Identifier: EUPL-1.2
+schemaVersion: 2.0.0
+
+# Base filesystem and system contract verification common to every flavor.
+# Tests only permanent state established by provisioners that is untouched by 99-cleanup.sh.
+
+fileExistenceTests:
+  # Checks 00-base-strip.sh:34-45 (purge snapd, remove /var/cache/snapd, apt-mark hold)
+  - name: "snapd purged and binary absent"
+    path: "/usr/bin/snap"
+    shouldExist: false
+
+commandTests:
+  # Checks 00-base-strip.sh:98 and 05-hypervisor-agents.sh:48-50 (enable qemu-guest-agent.service)
+  - name: "qemu-guest-agent unit installed and not disabled"
+    command: "systemctl"
+    args: ["is-enabled", "qemu-guest-agent.service"]
+    # The Ubuntu unit has no [Install] section, so `systemctl enable` leaves it static (udev starts it).
+    exitCode: 0
+    expectedOutput: ["(?m)^(enabled|static)$"]
+
+fileContentTests:
+  # Checks 05-hypervisor-agents.sh:27-33 (/etc/modules-load.d/unraid-virtfs.conf)
+  - name: "unraid-virtfs modules-load configuration"
+    path: "/etc/modules-load.d/unraid-virtfs.conf"
+    expectedContents:
+      - "(?m)^virtiofs$"
+      - "(?m)^9p$"
+
+  # Checks 00-base-strip.sh:118-143 (/etc/ssh/sshd_config.d/00-hardened-sshd.conf)
+  - name: "openssh hardening baseline"
+    path: "/etc/ssh/sshd_config.d/00-hardened-sshd.conf"
+    expectedContents:
+      - "(?m)^AddressFamily any$"
+      - "(?m)^PermitRootLogin no$"
+      - "chacha20-poly1305@openssh\\.com"
+
+  # Checks 10-network-time.sh:23-36 (/etc/chrony/sources.d/global-nts.sources)
+  - name: "chrony global nts sources"
+    path: "/etc/chrony/sources.d/global-nts.sources"
+    expectedContents:
+      - "server time\\.cloudflare\\.com iburst nts"
+      - "server ptbtime1\\.ptb\\.de iburst nts"
+
+  # Checks 10-network-time.sh:38-44 (/etc/chrony/conf.d/global-policy.conf)
+  - name: "chrony stepping and nts policy"
+    path: "/etc/chrony/conf.d/global-policy.conf"
+    expectedContents:
+      - "makestep 1\\.0 3"
+      - "rtconutc"
+      - "minsources 3"
+
+  # Checks 20-kernel-sysctl.sh:12-62 (/etc/sysctl.d/99-lusoris.conf)
+  - name: "bbr congestion control sysctl parameters"
+    path: "/etc/sysctl.d/99-lusoris.conf"
+    expectedContents:
+      - "net\\.ipv4\\.tcp_congestion_control = bbr"
+      - "net\\.core\\.default_qdisc = fq"
+      - "net\\.ipv4\\.tcp_syncookies = 1"
+
+  # Checks 20-kernel-sysctl.sh:68 (/etc/modules-load.d/container-runtime.conf)
+  - name: "container runtime modules"
+    path: "/etc/modules-load.d/container-runtime.conf"
+    expectedContents:
+      - "(?m)^overlay$"
+      - "(?m)^br_netfilter$"
+      - "(?m)^tcp_bbr$"
+
+  # Checks 20-kernel-sysctl.sh:69 (/etc/modprobe.d/overlay.conf)
+  - name: "overlayfs metacopy options"
+    path: "/etc/modprobe.d/overlay.conf"
+    expectedContents:
+      - "options overlay metacopy=on redirect_dir=on"
+
+  # Checks 20-kernel-sysctl.sh:108-118 (/etc/modprobe.d/blacklist-uncommon.conf)
+  - name: "uncommon protocols blacklist"
+    path: "/etc/modprobe.d/blacklist-uncommon.conf"
+    expectedContents:
+      - "install dccp /bin/true"
+      - "install sctp /bin/true"

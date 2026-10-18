@@ -122,3 +122,17 @@ Following insights from the container ecosystem and [`pditommaso/awesome-contain
 3. **Lazy-Pulling Snapshotter & HPC Sandboxing (`stargz-snapshotter` & `enroot`)**:
    - `stargz-snapshotter` is registered as an opt-in proxy plugin in containerd (`[proxy_plugins.stargz]`) across Kubernetes and AI inference images, enabling on-demand block streaming for eStargz images while overlayfs remains the default.
    - NVIDIA `enroot` is installed on `base-nvidia-datacenter` and `ai-infer-nvidia-*` for rootless, unprivileged user-space container sandboxing with native GPU driver integration.
+
+---
+
+## 7. In-Guest Verification via Container Structure Tests
+
+Every Packer build runs Google `container-structure-test` inside the guest just before `99-cleanup.sh` (`packer/provisioners/98-structure-test.sh`), so an image whose provisioners did not leave the expected files and units fails the build instead of publishing.
+
+1. **What runs**: a `file` provisioner uploads `packer/structure-tests` to `/tmp/structure-tests` (no trailing slash on the source, so Packer creates the directory in the existing `/tmp`). The script downloads the release pinned as `tools.container_structure_test` in `versions.json`, checks it against the release's `checksums.txt` (a missing line or a mismatch stops the build) and runs `container-structure-test test --driver host --force --metadata /dev/null` with the selected configurations. The host driver tests the running guest itself; `--metadata` is required by the driver and carries no image configuration here. The binary and the uploaded files are removed on exit.
+2. **Configurations** in `packer/structure-tests/`:
+   - `common.yaml`, every build: snapd absent, the qemu-guest-agent unit installed and not disabled (the Ubuntu unit has no `[Install]` section, so it reports `static`), the hardened sshd drop-in, chrony NTS sources and policy, the BBR sysctl file, container kernel modules and the protocol blacklist.
+   - `k8s.yaml`, when `/etc/systemd/system/stargz-snapshotter.service` exists (written by `51-stargz-snapshotter.sh`): the unit enabled, the containerd proxy plugin and the three binaries.
+   - `enroot.yaml`, when `enroot` is on the path (installed by `62-hpc-enroot.sh`): `enroot version` succeeds.
+3. **Adding a test**: add it to the configuration of the provisioner that creates the contract, with a comment naming that script and line, in `schemaVersion: 2.0.0`. Content and output patterns are Go regular expressions matched against the whole text: write `(?m)^line$` to anchor one line, since `^` and `$` alone anchor the whole file.
+4. **Checks without a VM**: `tests/test_structure_tests.py` runs the base provisioners in the mock sandbox and the real binary against the file tests of `common.yaml` with their paths moved into the sandbox; the same tree with one line removed from a provisioned file must fail, and so must the planted `tests/fixtures/structure-tests/planted-fail.yaml`. CI installs the pinned binary before the pytest job; locally set `IMAGO_CST_BIN` or put `container-structure-test` on the path.

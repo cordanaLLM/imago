@@ -47,6 +47,56 @@ mock_status() {
 }
 export -f mock_status
 
+[() {
+  local arg clean
+  local args=()
+  for arg in "$@"; do
+    case "$arg" in
+      -*) args+=("$arg") ;;
+      /*)
+        if [[ -n "${SANDBOX_ROOT:-}" && "$arg" != "$SANDBOX_ROOT"* ]]; then
+          clean="${arg#/}"
+          if [[ -e "$SANDBOX_ROOT/$clean" ]]; then
+            args+=("$SANDBOX_ROOT/$clean")
+          else
+            args+=("$arg")
+          fi
+        else
+          args+=("$arg")
+        fi
+        ;;
+      *) args+=("$arg") ;;
+    esac
+  done
+  builtin [ "${args[@]}"
+}
+export -f [
+
+test() {
+  local arg clean
+  local args=()
+  for arg in "$@"; do
+    case "$arg" in
+      -*) args+=("$arg") ;;
+      /*)
+        if [[ -n "${SANDBOX_ROOT:-}" && "$arg" != "$SANDBOX_ROOT"* ]]; then
+          clean="${arg#/}"
+          if [[ -e "$SANDBOX_ROOT/$clean" ]]; then
+            args+=("$SANDBOX_ROOT/$clean")
+          else
+            args+=("$arg")
+          fi
+        else
+          args+=("$arg")
+        fi
+        ;;
+      *) args+=("$arg") ;;
+    esac
+  done
+  builtin test "${args[@]}"
+}
+export -f test
+
 sudo() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -282,6 +332,18 @@ curl() {
         hash=$(sha256sum "$base" | awk '{print $1}')
         printf "%s  %s\n" "$hash" "$fname" > "$output"
       fi
+    elif [[ "$output" == *container-structure-test-linux-* ]]; then
+      printf "mock-binary\n" > "$output"
+    elif [[ "$output" == *checksums.txt ]]; then
+      if [ -n "${MOCK_MISMATCH_SHA:-}" ]; then
+        printf "0000000000000000000000000000000000000000000000000000000000000000  container-structure-test-linux-amd64\n0000000000000000000000000000000000000000000000000000000000000000  container-structure-test-linux-arm64\n" > "$output"
+      elif [ -n "${MOCK_CST_MISSING_LINE:-}" ]; then
+        printf "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  unrelated-file\n" > "$output"
+      else
+        local hash
+        hash=$(printf "mock-binary\n" | sha256sum | awk '{print $1}')
+        printf "%s  container-structure-test-linux-amd64\n%s  container-structure-test-linux-arm64\n" "$hash" "$hash" > "$output"
+      fi
     else
       touch "$output" 2>/dev/null || true
     fi
@@ -290,19 +352,31 @@ curl() {
 }
 export -f curl
 
-enroot() {
-  echo "enroot $*" >> "$SANDBOX_ROOT/journal_cmds.log"
-  if [ "$1" = "version" ]; then
-    if [ -n "${MOCK_ENROOT_VERSION:-}" ]; then
-      echo "${MOCK_ENROOT_VERSION}"
-    else
-      echo "${ENROOT_VERSION:-3.4.1}"
+if [ -n "${MOCK_HAS_ENROOT:-}" ] || [ -n "${ENROOT_VERSION:-}" ]; then
+  enroot() {
+    echo "enroot $*" >> "$SANDBOX_ROOT/journal_cmds.log"
+    if [ "$1" = "version" ]; then
+      if [ -n "${MOCK_ENROOT_VERSION:-}" ]; then
+        echo "${MOCK_ENROOT_VERSION}"
+      else
+        echo "${ENROOT_VERSION:-3.4.1}"
+      fi
+      return 0
     fi
-    return 0
+    mock_status enroot
+  }
+  export -f enroot
+fi
+
+container-structure-test() {
+  echo "container-structure-test $*" >> "$SANDBOX_ROOT/journal_cmds.log"
+  if [ -n "${MOCK_CST_FAIL:-}" ]; then
+    echo "mock cst failure: ${MOCK_CST_FAIL}" >&2
+    return 1
   fi
-  mock_status enroot
+  mock_status container-structure-test
 }
-export -f enroot
+export -f container-structure-test
 
 udevadm() {
   echo "udevadm $*" >> "$SANDBOX_ROOT/journal_cmds.log"

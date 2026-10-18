@@ -210,6 +210,17 @@
         "/^versions\\.json$/"
       ],
       "matchStrings": [
+        "\"container_structure_test\":\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "GoogleContainerTools/container-structure-test",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^versions\\.json$/"
+      ],
+      "matchStrings": [
         "\"enroot\":\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "depNameTemplate": "NVIDIA/enroot",
