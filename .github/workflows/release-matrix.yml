@@ -98,6 +98,10 @@ jobs:
             echo "::error::Unknown flavor: ${FLAVOR}"
             exit 1
           fi
+      - name: Check Upstream Package Sources
+        # A pinned key, release or apt suite the vendor does not publish fails here in
+        # seconds, not in a provisioner about 20 minutes into the Packer build.
+        run: python3 -I tools/ci/upstream_sources.py check
       - name: Resolve Packer version pin
         id: packer-pin
         run: echo "version=$(jq -r .build.packer.version versions.json)" >> "$GITHUB_OUTPUT"

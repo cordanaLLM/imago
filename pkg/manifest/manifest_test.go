@@ -356,7 +356,9 @@ func minimalDriversDoc() map[string]any {
 		},
 		"amd": map[string]any{
 			"rocm_legacy_version":   "6.0",
-			"rocm_bleeding_version": "10.0",
+			"rocm_bleeding_version": "7.2.4",
+			"rocm_repo":             "https://repo.example.com/rocm",
+			"rocm_apt_suite":        "noble",
 			"k8s_plugin":            "registry.example.com/amd-plugin:1.0",
 		},
 		"nvidia": map[string]any{

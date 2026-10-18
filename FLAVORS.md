@@ -47,7 +47,7 @@ This catalog segments all **44 production-ready flavors** into 7 clear workload 
 | :--- | :--- | :--- | :--- | :--- |
 | **`docker-generic`** | VirtIO / Generic CPU | `generic` | Docker CE 29.8, Docker Compose v2, systemd cgroup | `make build-docker-generic` |
 | **`docker-intel`** | Intel Xe / Arc / Xe2 | `generic` | Docker CE + Intel QuickSync passthrough + CDI spec | `make build-docker-intel` |
-| **`docker-amd`** | AMD Radeon / Instinct | `generic` | Docker CE + AMD ROCm 10 compute runtime + CDI spec | `make build-docker-amd` |
+| **`docker-amd`** | AMD Radeon / Instinct | `generic` | Docker CE + AMD ROCm 7.2 compute runtime + CDI spec | `make build-docker-amd` |
 | **`docker-nvidia`** | NVIDIA Mainstream | `generic` | Docker CE + NVIDIA 565 + Container Toolkit CDI | `make build-docker-nvidia` |
 | **`docker-nvidia-modern`** | NVIDIA Modern | `generic` | Docker CE + NVIDIA 610 + Container Toolkit CDI | `make build-docker-nvidia-modern` |
 | **`docker-nvidia-bleeding`** | NVIDIA Bleeding | `generic` | Docker CE + NVIDIA 615 + Container Toolkit CDI | `make build-docker-nvidia-bleeding` |
@@ -68,7 +68,7 @@ This catalog segments all **44 production-ready flavors** into 7 clear workload 
 | **`k8s-node-calico`** | VirtIO / CPU | `k8s` | `calico` | containerd 2.3.5, preheated Calico 3.32.2 & kube-vip 1.2.3 | `make build-k8s-calico` |
 | **`k8s-node-flannel`** | VirtIO / CPU | `k8s` | `flannel` | containerd 2.3.5, preheated Flannel 0.28.9 & kube-vip 1.2.3 | `make build-k8s-flannel` |
 | **`k8s-node-intel`** | Intel Arc / Xe2 | `k8s` | `cilium` | containerd 2.3.5 + Intel drivers + Intel K8s Plugin v0.36.0 | `make build-k8s-intel` |
-| **`k8s-node-amd`** | AMD ROCm 10 | `k8s` | `cilium` | containerd 2.3.5 + AMD ROCm 10 + AMD K8s Plugin v1.37.0 | `make build-k8s-amd` |
+| **`k8s-node-amd`** | AMD ROCm 7.2 | `k8s` | `cilium` | containerd 2.3.5 + AMD ROCm 7.2 + AMD K8s Plugin v1.37.0 | `make build-k8s-amd` |
 | **`k8s-node-nvidia`** | NVIDIA Mainstream | `k8s` | `cilium` | containerd 2.3.5 + NVIDIA 565 + NVIDIA K8s Plugin v0.20.0 | `make build-k8s-nvidia` |
 | **`k8s-node-nvidia-modern`** | NVIDIA Modern | `k8s` | `cilium` | containerd 2.3.5 + NVIDIA 610 + NVIDIA K8s Plugin v0.20.0 | `make build-k8s-nvidia-modern` |
 | **`k8s-node-nvidia-bleeding`** | NVIDIA Bleeding | `k8s` | `cilium` | containerd 2.3.5 + NVIDIA 615 + NVIDIA K8s Plugin v0.20.0 | `make build-k8s-nvidia-bleeding` |
@@ -85,7 +85,7 @@ This catalog segments all **44 production-ready flavors** into 7 clear workload 
 | :--- | :--- | :--- | :--- | :--- |
 | **`k3s-agent-generic`** | Worker | VirtIO / CPU | Lightweight K3s agent, containerd, Flannel (< 300MB RAM) | `make build-k3s-agent-generic` |
 | **`k3s-agent-intel`** | Worker | Intel GPU | K3s agent + Intel QuickSync (`iHD`) + Level Zero | `make build-k3s-agent-intel` |
-| **`k3s-agent-amd`** | Worker | AMD GPU | K3s agent + AMD ROCm 10 compute runtime + RADV Vulkan | `make build-k3s-agent-amd` |
+| **`k3s-agent-amd`** | Worker | AMD GPU | K3s agent + AMD ROCm 7.2 compute runtime + RADV Vulkan | `make build-k3s-agent-amd` |
 | **`k3s-agent-nvidia`** | Worker | NVIDIA Mainstream | K3s agent + NVIDIA 565 + Container Toolkit CDI | `make build-k3s-agent-nvidia` |
 | **`k3s-server-generic`** | Control Plane | VirtIO / CPU | K3s standalone master, embedded SQLite, local-path storage | `make build-k3s-server-generic` |
 
@@ -116,7 +116,7 @@ This catalog segments all **44 production-ready flavors** into 7 clear workload 
 | :--- | :--- | :--- | :--- | :--- |
 | **`ai-infer-generic`** | CPU High-Throughput | `ai-infer` | Intel AMX, AVX-512, NUMA tuning, Docker CE | `make build-ai-infer-generic` |
 | **`ai-infer-intel`** | Intel Xe / Arc / Xe2 | `ai-infer` | Intel Level Zero, OpenVINO, IPEX-LLM, CDI, Docker CE | `make build-ai-infer-intel` |
-| **`ai-infer-amd`** | AMD ROCm 10 | `ai-infer` | AMD ROCm 10, `/dev/kfd` permissions, RDNA 3/4 & Instinct | `make build-ai-infer-amd` |
+| **`ai-infer-amd`** | AMD ROCm 7.2 | `ai-infer` | AMD ROCm 7.2, `/dev/kfd` permissions, RDNA 3/4 & Instinct | `make build-ai-infer-amd` |
 | **`ai-infer-nvidia`** | NVIDIA Mainstream | `ai-infer` | NVIDIA 565, Transparent Hugepages, NUMA, vLLM, Docker CE | `make build-ai-infer-nvidia` |
 | **`ai-infer-nvidia-modern`** | NVIDIA Modern | `ai-infer` | NVIDIA 610, Transparent Hugepages, NUMA, vLLM, Docker CE | `make build-ai-infer-nvidia-modern` |
 | **`ai-infer-nvidia-bleeding`** | NVIDIA Bleeding | `ai-infer` | NVIDIA 615, Blackwell RTX 5090 / B200, vLLM, Docker CE | `make build-ai-infer-nvidia-bleeding` |
