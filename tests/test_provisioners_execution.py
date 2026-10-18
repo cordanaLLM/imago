@@ -229,6 +229,29 @@ class TestProvisionersExecution:
         res = sandbox.run_script(script, env_vars={"ENROOT_VERSION": ""})
         assert res.returncode != 0
 
+    @pytest.mark.parametrize(("role", "unit"), [("server", "k3s.service"), ("agent", "k3s-agent.service")])
+    def test_52_k3s_installs_the_unit_disabled(self, tmp_path: Path, require_bash, role: str, unit: str) -> None:
+        """The installer never enables the unit; a disabled unit passes the check (systemctl is-enabled fails)."""
+        sandbox = MockSandbox(tmp_path)
+        res = sandbox.run_script(
+            PROVISIONERS_DIR / "52-k3s-runtime.sh",
+            env_vars={"K3S_ROLE": role, "MOCK_FAIL": "systemctl"},
+        )
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+        installs = res.find_commands("sh")
+        assert len(installs) == 1, installs
+        assert "SKIP_ENABLE=true" in installs[0]
+        assert "SKIP_START=true" in installs[0]
+        assert f"systemctl is-enabled --quiet {unit}" in res.commands_log
+
+    @pytest.mark.parametrize(("role", "unit"), [("server", "k3s.service"), ("agent", "k3s-agent.service")])
+    def test_52_k3s_refuses_an_enabled_unit(self, tmp_path: Path, require_bash, role: str, unit: str) -> None:
+        """Negative: the mocked systemctl reports the unit enabled, so the build stops (run 39140519699)."""
+        sandbox = MockSandbox(tmp_path)
+        res = sandbox.run_script(PROVISIONERS_DIR / "52-k3s-runtime.sh", env_vars={"K3S_ROLE": role})
+        assert res.returncode != 0, "an enabled k3s unit passed the provisioner"
+        assert f"{unit} is enabled" in res.stderr
+
     def test_75_appliance_vision_cdi_version(self, tmp_path: Path, require_bash) -> None:
         """Verify 75-appliance-vision.sh writes CDI specification with version '0.6.0'."""
         sandbox = MockSandbox(tmp_path)
