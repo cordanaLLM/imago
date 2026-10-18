@@ -268,6 +268,13 @@ systemctl() {
 }
 export -f systemctl
 
+# sh records the installer switches a provisioner passes to a fetched install script.
+sh() {
+  echo "sh $* SKIP_ENABLE=${INSTALL_K3S_SKIP_ENABLE:-} SKIP_START=${INSTALL_K3S_SKIP_START:-} EXEC=${INSTALL_K3S_EXEC:-}" >> "$SANDBOX_ROOT/journal_cmds.log"
+  mock_status sh
+}
+export -f sh
+
 modprobe() {
   echo "modprobe $*" >> "$SANDBOX_ROOT/journal_cmds.log"
   mock_status modprobe
