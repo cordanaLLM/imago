@@ -1,0 +1,18 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/cordanaLLM/imago/blob/main/security/vex/go.openvex.json",
+  "author": "imago maintainers",
+  "timestamp": "2026-10-18T02:18:21Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "GO-2026-5932"
+      },
+      "last_updated": "2026-10-18T02:18:21Z",
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The advisory covers golang.org/x/crypto/openpgp, which no imago build contains: go list -deps -test ./... names only golang.org/x/crypto/sha3 from golang.org/x/crypto, required through golusoris core validate and go-playground/validator. govulncheck reports the module as required but not called."
+    }
+  ]
+}
