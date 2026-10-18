@@ -298,6 +298,8 @@ imago mcp --transport=http --addr=:8899
 | **`discard_staged_action`** | `action_id` (string) | Discard and abort a pending staged mutation |
 | **`route_plan`** | `plan_path`, `routing_path` (optional, repository-relative), `ready_only` (bool) | Validate the planning graph and return steps ranked by (1 + transitive unblocks) / cost |
 
+The input schema of each tool is inferred from its argument struct in `pkg/mcp` and checked by the MCP Go SDK before the tool runs: a missing required argument, a value of the wrong type or an argument the tool does not know is refused with `validating "arguments"` and never reaches the handler. `pkg/mcp/schema_contract_test.go` pins the required and known arguments listed above.
+
 ---
 
 ### 3.4 Two-Phase Staged Operations & Human-in-the-Loop Guardrails

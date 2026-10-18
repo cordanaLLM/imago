@@ -1,13 +1,13 @@
 version: 1
 repository: github.com/cordanaLLM/imago
 language: go
-go_version: 1.27.1
+go_version: 1.27.2
 framework: github.com/golusoris/golusoris
 capabilities:
   required: []
 dependencies:
   - package: github.com/golusoris/golusoris/core
-    version: v0.9.1
+    version: v0.11.0
     capability: fleet.golusoris
     status: native
     notes: First-party fleet module; not a framework gap

@@ -32,33 +32,33 @@ func repoRelativePath(raw, fallback string) (string, error) {
 	return filepath.FromSlash(clean), nil
 }
 
+// RoutePlanArgs holds the input arguments for the route_plan tool.
+type RoutePlanArgs struct {
+	PlanPath    string `json:"plan_path,omitempty" jsonschema:"Repository-relative plan.json (default planning/plan.json)"`
+	RoutingPath string `json:"routing_path,omitempty" jsonschema:"Repository-relative routing overlay (default planning/routing.json)"`
+	ReadyOnly   bool   `json:"ready_only,omitempty" jsonschema:"Set to true to receive only the ready set"`
+}
+
 func registerPlanningTools(s *coremcp.Server) {
-	s.AddTool(
-		&coremcp.Tool{
-			Name:        "route_plan",
-			Description: "Validate the tracked planning graph (praetor schema v1) and return its steps ranked for execution: ready local work first, scored by (1 + transitive unblocks) / cost. Set ready_only=true to receive only the ready set.",
-			InputSchema: json.RawMessage(`{"type":"object","properties":{"plan_path":{"type":"string","description":"Repository-relative plan.json (default planning/plan.json)"},"routing_path":{"type":"string","description":"Repository-relative routing overlay (default planning/routing.json)"},"ready_only":{"type":"boolean"}}}`),
-		},
-		func(ctx context.Context, req *coremcp.CallToolRequest) (*coremcp.CallToolResult, error) {
-			var args struct {
-				PlanPath    string `json:"plan_path"`
-				RoutingPath string `json:"routing_path"`
-				ReadyOnly   bool   `json:"ready_only"`
-			}
-			if err := json.Unmarshal(req.Params.Arguments, &args); err != nil {
-				return nil, err
-			}
-			routed, err := routePlanFiles(args.PlanPath, args.RoutingPath)
-			if err != nil {
-				return &coremcp.CallToolResult{IsError: true, Content: []coremcp.Content{&coremcp.TextContent{Text: err.Error()}}}, nil
-			}
-			if args.ReadyOnly {
-				routed = planning.Ready(routed)
-			}
-			out, _ := json.MarshalIndent(routed, "", "  ")
-			return &coremcp.CallToolResult{Content: []coremcp.Content{&coremcp.TextContent{Text: string(out)}}}, nil
-		},
-	)
+	coremcp.AddTool(s, &coremcp.Tool{
+		Name:        "route_plan",
+		Description: "Validate the tracked planning graph (praetor schema v1) and return its steps ranked for execution: ready local work first, scored by (1 + transitive unblocks) / cost. Set ready_only=true to receive only the ready set.",
+	}, routePlanHandler)
+}
+
+func routePlanHandler(_ context.Context, _ *coremcp.CallToolRequest, args RoutePlanArgs) (*coremcp.CallToolResult, any, error) {
+	routed, err := routePlanFiles(args.PlanPath, args.RoutingPath)
+	if err != nil {
+		return &coremcp.CallToolResult{IsError: true, Content: []coremcp.Content{&coremcp.TextContent{Text: err.Error()}}}, nil, nil
+	}
+	if args.ReadyOnly {
+		routed = planning.Ready(routed)
+	}
+	out, err := json.MarshalIndent(routed, "", "  ")
+	if err != nil {
+		return nil, nil, fmt.Errorf("mcp: encode result: %w", err)
+	}
+	return &coremcp.CallToolResult{Content: []coremcp.Content{&coremcp.TextContent{Text: string(out)}}}, nil, nil
 }
 
 // routePlanFiles loads both planning files from repository-relative paths and routes them.
