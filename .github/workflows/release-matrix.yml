@@ -62,8 +62,12 @@ permissions:
   contents: read
 
 # A release run is never cancelled: the sign job must see every flavor of its release.
+# A group holds one running and one pending run, and a new pending run cancels the
+# older one. A manual run therefore gets a group per flavor: with one group per ref,
+# five flavors dispatched on main cancelled each other, and the weekly schedule
+# cancelled the last one. Schedule and release runs keep the shared group.
 concurrency:
-  group: release-matrix-${{ github.ref }}
+  group: release-matrix-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'generic' }}
   cancel-in-progress: false
 
 env:
