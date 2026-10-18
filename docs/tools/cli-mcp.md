@@ -110,7 +110,7 @@ Every value written into the YAML passes an allow-list first, and the generator 
 | `--flavor` | a flavor of the catalog |
 | timezone, SSH keys, packages (library and MCP callers) | an IANA zone name; a single-line OpenSSH public key; a Debian package name |
 
-Accepted values are written as double-quoted YAML scalars, so a value can never open a new key. `cloud-init metadata` applies the same hostname rule.
+Accepted values are then serialized by the `go.yaml.in/yaml/v3` encoder from typed Go structs, never by string concatenation, so a value can never open a new key even if an allow-list were too wide. The encoder quotes every string a YAML 1.1 reader such as cloud-init's PyYAML would read as another type (`yes`, `off`, `08`, `1_000`). `cloud-init metadata` applies the same hostname rule.
 
 ### 2.4 Local Builds and Plan Validation (`build`)
 
