@@ -1,5 +1,7 @@
 # The 4D Flavor Matrix (44 Flavors)
 
+A published release and the weekly schedule build `base-generic`, `docker-generic` and `k8s-node-generic`; every other flavor builds on a manual run of `release-matrix.yml` with its `flavor` input (or locally, see the [Quickstart](https://github.com/cordanaLLM/imago#quickstart)).
+
 `lusoris-cloud-images` structures operating system images across four orthogonal dimensions: **Platform**, **Workload Tier**, **Hardware Acceleration**, and **Security Hardening**.
 
 All 44 flavors originate from a single base configuration and are customized via declarative Packer pipelines.

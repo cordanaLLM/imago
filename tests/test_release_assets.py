@@ -503,7 +503,10 @@ def test_baremetal_guide_downloads_a_raw_image_the_release_ships():
     guide = BAREMETAL.read_text(encoding="utf-8")
     hcl = (ROOT / "packer" / "variables.pkr.hcl").read_text(encoding="utf-8")
     image_name = re.search(r'variable "image_name" \{[^}]*default\s*=\s*"([^"]+)"', hcl)
-    flavors = load(RELEASE)["jobs"]["build-matrix"]["strategy"]["matrix"]["flavor"]
+    expression = load(RELEASE)["jobs"]["build-matrix"]["strategy"]["matrix"]["flavor"]
+    released = re.search(r"\|\|\s*'(\[[^']+\])'", expression)
+    assert released, "the matrix expression lists no release flavors"
+    flavors = json.loads(released[1])
     shipped = {f"{image_name[1]}-{flavor}.raw.zst" for flavor in flavors}
     loop = re.search(r"for asset in ([^;]+); do\n\s*curl -fsSLO \"" + re.escape(RELEASE_URL + "${asset}") + '"', guide)
     assert loop, "no download loop over release assets"
