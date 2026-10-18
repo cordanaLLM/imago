@@ -357,6 +357,110 @@ def runs(step: dict, pattern: str) -> bool:
     return re.search(pattern, step.get("run", "")) is not None
 
 
+@pytest.fixture
+def small_parts(monkeypatch):
+    """Scale the limit and part size down so a split runs on a few kilobytes."""
+    monkeypatch.setattr(assets, "ASSET_LIMIT_BYTES", 4096)
+    monkeypatch.setattr(assets, "PART_BYTES", 1500)
+    monkeypatch.setattr(assets, "COPY_CHUNK", 512)
+
+
+def random_file(path: Path, size: int) -> Path:
+    path.write_bytes(bytes((i * 131 + 7) % 251 for i in range(size)))
+    return path
+
+
+def split_one(tmp_path: Path, size: int) -> tuple[Path, Path, Path]:
+    image = random_file(tmp_path / "imago-k8s.qcow2.zst", size)
+    sums, listing = tmp_path / "checksums-k8s.sha256", tmp_path / "upload-k8s.txt"
+    assert assets.main(["split", "--sums", str(sums), "--list", str(listing), str(image)]) == 0
+    return image, sums, listing
+
+
+def test_split_keeps_an_asset_one_byte_under_the_limit_whole(tmp_path, small_parts):
+    image, sums, listing = split_one(tmp_path, 4095)
+    assert listing.read_text(encoding="utf-8") == "imago-k8s.qcow2.zst\n"
+    digest = hashlib.sha256(image.read_bytes()).hexdigest()
+    assert sums.read_text(encoding="utf-8") == f"{digest}  imago-k8s.qcow2.zst\n"
+    assert not list(tmp_path.glob("*.part*"))
+
+
+def test_split_cuts_an_asset_of_the_limit_and_join_rebuilds_it(tmp_path, small_parts, capsys):
+    image, sums, listing = split_one(tmp_path, 4096)
+    names = [f"imago-k8s.qcow2.zst.part{i:02d}" for i in range(3)]
+    assert listing.read_text(encoding="utf-8").splitlines() == names
+    assert [(tmp_path / n).stat().st_size for n in names] == [1500, 1500, 1096]
+    lines = sums.read_text(encoding="utf-8").splitlines()
+    assert [line.split("  ")[1] for line in lines] == ["imago-k8s.qcow2.zst", *names]
+    assert assets.main(["sizes", *(str(tmp_path / n) for n in names)]) == 0
+    original = image.read_bytes()
+    image.unlink()
+    parts = [str(tmp_path / n) for n in reversed(names)]
+    assert assets.main(["join", "--sums", str(sums), "--out", str(image), *parts]) == 0
+    assert image.read_bytes() == original
+    assert "joined 3 parts" in capsys.readouterr().out
+
+
+def test_split_lists_whole_assets_and_parts_in_one_merged_file(tmp_path, small_parts):
+    sbom = random_file(tmp_path / "sbom-k8s.cdx.json", 10)
+    image = random_file(tmp_path / "imago-k8s.qcow2.zst", 5000)
+    sums, listing = tmp_path / "checksums-k8s.sha256", tmp_path / "upload-k8s.txt"
+    assert assets.main(["split", "--sums", str(sums), "--list", str(listing), str(image), str(sbom)]) == 0
+    assert assets.main(["merge", "--out", str(tmp_path / "SHA256SUMS"), str(sums)]) == 0
+    assert listing.read_text(encoding="utf-8").splitlines()[-1] == "sbom-k8s.cdx.json"
+
+
+def test_join_refuses_a_planted_corrupt_part_and_writes_nothing(tmp_path, small_parts, capsys):
+    image, sums, _ = split_one(tmp_path, 4096)
+    image.unlink()
+    bad = tmp_path / "imago-k8s.qcow2.zst.part01"
+    data = bytearray(bad.read_bytes())
+    data[7] ^= 0xFF
+    bad.write_bytes(bytes(data))
+    parts = [str(tmp_path / f"imago-k8s.qcow2.zst.part{i:02d}") for i in range(3)]
+    assert assets.main(["join", "--sums", str(sums), "--out", str(image), *parts]) == 1
+    assert "part01 does not match" in capsys.readouterr().err
+    assert not image.exists()
+
+
+def test_join_refuses_a_missing_or_foreign_part(tmp_path, small_parts, capsys):
+    image, sums, _ = split_one(tmp_path, 4096)
+    image.unlink()
+    part = [str(tmp_path / f"imago-k8s.qcow2.zst.part{i:02d}") for i in range(3)]
+    assert assets.main(["join", "--sums", str(sums), "--out", str(image), part[0], part[2]]) == 1
+    foreign = random_file(tmp_path / "other.part02", 10)
+    assert assets.main(["join", "--sums", str(sums), "--out", str(image), part[0], part[1], str(foreign)]) == 1
+    assert assets.main(["join", "--sums", str(sums), "--out", str(image)]) == 1
+    assert capsys.readouterr().err.count("each once, none left out") == 3
+    assert not image.exists()
+
+
+def test_join_removes_a_joined_file_whose_whole_digest_differs(tmp_path, small_parts, capsys):
+    image, sums, _ = split_one(tmp_path, 4096)
+    image.unlink()
+    lines = sums.read_text(encoding="utf-8").splitlines()
+    lines[0] = "0" * 64 + lines[0][64:]
+    sums.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    parts = [str(tmp_path / f"imago-k8s.qcow2.zst.part{i:02d}") for i in range(3)]
+    assert assets.main(["join", "--sums", str(sums), "--out", str(image), *parts]) == 1
+    assert "does not match" in capsys.readouterr().err
+    assert not image.exists()
+
+
+def test_split_refuses_an_asset_that_needs_more_parts_than_allowed(tmp_path, small_parts, monkeypatch, capsys):
+    monkeypatch.setattr(assets, "MAX_PARTS", 2)
+    image = random_file(tmp_path / "imago-k8s.qcow2.zst", 4096)
+    args = ["split", "--sums", str(tmp_path / "s"), "--list", str(tmp_path / "l"), str(image)]
+    assert assets.main(args) == 1
+    assert "3 parts, more than 2" in capsys.readouterr().err
+    assert assets.main(["split", "--sums", str(tmp_path / "s"), "--list", str(tmp_path / "l")]) == 1
+
+
+def test_part_size_stays_under_the_forge_limit():
+    assert assets.ASSET_LIMIT_BYTES - assets.PART_BYTES == 256 * 1024**2
+    assert assets.MAX_PARTS * assets.PART_BYTES > 16 * 1024**3
+
+
 def test_build_job_generates_and_checks_sboms_before_compressing():
     job = load(RELEASE)["jobs"]["build-matrix"]
     sbom = index(job, lambda s: runs(s, r"(?m)^\s*syft scan .*-o \"?cyclonedx-json=.*-o \"?spdx-json="))
@@ -376,11 +480,12 @@ def test_build_job_generates_and_checks_sboms_before_compressing():
     assert [found[0] for found in order] == sorted(found[0] for found in order)
     assert runs(
         steps(job)[compress],
-        r'sha256sum -- \*\.qcow2\.zst \*\.raw\.zst sbom-\*\.json "\$\{netboot\[@\]#\./\}" > "checksums-',
+        r'(?m)release_assets\.py" split --sums "checksums-\$\{FLAVOR\}\.sha256" \\\n'
+        + r'\s+--list "upload-\$\{FLAVOR\}\.txt" \./\*\.qcow2\.zst \./\*\.raw\.zst \./sbom-\*\.json "\$\{netboot\[@\]\}"$',
     )
 
 
-def test_compress_step_converts_to_raw_then_checks_sizes_before_the_checksums():
+def test_compress_step_converts_to_raw_splits_then_checks_the_upload_sizes():
     job = load(RELEASE)["jobs"]["build-matrix"]
     lines = steps(job)[index(job, lambda s: runs(s, r"zstd "))]["run"].splitlines()
     wanted = [
@@ -389,9 +494,10 @@ def test_compress_step_converts_to_raw_then_checks_sizes_before_the_checksums():
         r'qemu-img convert -O raw "\$\{qcow2\[0\]\}" "\$\{qcow2\[0\]%\.qcow2\}\.raw"$',
         r"zstd -T0 -19 --rm \./\*\.qcow2 \./\*\.raw$",
         r"netboot=\(\./\*-netboot\.vmlinuz \./\*-netboot\.initrd \./\*-root\.squashfs \./\*\.ipxe\)$",
+        r'python3 -I "\$\{GITHUB_WORKSPACE\}/tools/ci/release_assets\.py" split --sums ',
+        r'mapfile -t upload < "upload-\$\{FLAVOR\}\.txt"$',
         r'python3 -I "\$\{GITHUB_WORKSPACE\}/tools/ci/release_assets\.py" sizes --summary "\$\{GITHUB_STEP_SUMMARY\}"'
-        + r' \./\*\.qcow2\.zst \./\*\.raw\.zst "\$\{netboot\[@\]\}"$',
-        r"sha256sum -- ",
+        + r' "\$\{upload\[@\]\}"$',
     ]
     order = [[i for i, line in enumerate(lines) if re.match(w, line)] for w in wanted]
     assert all(len(found) == 1 for found in order), order
@@ -431,15 +537,10 @@ def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
     assert upload["env"]["TAG"] == "${{ github.event.release.tag_name }}"
     assert upload["env"]["FLAVOR"] == "${{ matrix.flavor }}"
     assert "SHA256SUMS" not in upload["run"]
-    files = upload["run"].replace("\\\n", " ").split()
-    assert files[files.index("--clobber") + 1 :] == [
-        '"packer/output-images/${FLAVOR}"/*.qcow2.zst',
-        '"packer/output-images/${FLAVOR}"/*.raw.zst',
-        '"packer/output-images/${FLAVOR}"/sbom-*.json',
-        '"packer/output-images/${FLAVOR}"/*-netboot.vmlinuz',
-        '"packer/output-images/${FLAVOR}"/*-netboot.initrd',
-        '"packer/output-images/${FLAVOR}"/*-root.squashfs',
-        '"packer/output-images/${FLAVOR}"/*.ipxe',
+    assert upload["run"].strip().splitlines() == [
+        'cd "packer/output-images/${FLAVOR}"',
+        'mapfile -t upload < "upload-${FLAVOR}.txt"',
+        'gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber "${upload[@]}"',
     ]
 
 

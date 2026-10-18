@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Release assets over the forge limit: the forge refuses a release asset of 2 GiB or more, and 14 of 44 flavors compressed to 2.08–2.62 GiB in the 2026-10-18 sweep. `tools/ci/release_assets.py split` now lists every asset whole in the flavor's checksum file and cuts each asset of 2 GiB or more into 1792 MiB parts with their own checksum lines; `release-matrix.yml` uploads the parts instead of the asset, and the sizes check measures what is uploaded. `release_assets.py join` rebuilds an asset from its parts and checks each part and the result against `SHA256SUMS` (`docs/security/supply-chain.md`); `tests/test_release_assets.py` covers the boundary, a corrupt part, a missing part and a wrong joined digest.
+
 ### Changed
 - Manifest validation in Go (`pkg/manifest`): `manifest.Load` embeds `versions.schema.json` via root package `schema.go` and validates `versions.json` against the Draft 2020-12 schema using `github.com/google/jsonschema-go` before evaluating semantic invariants.
 - Cloud-init generator: `pkg/cloudinit` serializes user-data and meta-data from typed structs with the `go.yaml.in/yaml/v3` encoder instead of concatenated strings, a second barrier behind the allow-lists; keys and values are unchanged, scalars are quoted only where YAML 1.1 would read them as another type (`docs/tools/cli-mcp.md`).
