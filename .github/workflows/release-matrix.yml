@@ -78,14 +78,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor:
-          - base-generic
-          - docker-generic
-          - k8s-node-generic
+        flavor: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.flavor) || '["base-generic","docker-generic","k8s-node-generic"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Refuse an Unknown Flavor
+        # Second barrier behind the choice list: a flavor that packer/builds.pkr.hcl does
+        # not build fails here, before any package is installed.
+        env:
+          FLAVOR: ${{ matrix.flavor }}
+        run: |
+          set -euo pipefail
+          if ! grep -F -q "name    = \"${FLAVOR}\"" packer/builds.pkr.hcl; then
+            echo "::error::Unknown flavor: ${FLAVOR}"
+            exit 1
+          fi
       - name: Resolve Packer version pin
         id: packer-pin
         run: echo "version=$(jq -r .build.packer.version versions.json)" >> "$GITHUB_OUTPUT"

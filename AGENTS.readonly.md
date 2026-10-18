@@ -149,6 +149,8 @@ Autonomous agents should utilize specialized project skills under `.agents/skill
 
 ## 3. The 4-Dimensional Flavor Matrix (44 Flavors)
 
+Release + weekly schedule build `base-generic`, `docker-generic`, `k8s-node-generic` only. Every other flavor: manual `release-matrix.yml` run with `flavor` input, or local build (#152).
+
 | Workload Tier | Hardware Stack | Flavor Target | Key Components |
 | :--- | :--- | :--- | :--- |
 | **Base** | Generic (VirtIO) | `base-generic` | Minimal hardened OS, Anycast NTS, QEMU+VMware agents |

@@ -136,6 +136,8 @@ flowchart TD
 
 To keep maintenance low and usability high, flavors are partitioned into 7 distinct tiers.
 
+A published release and the weekly schedule build `base-generic`, `docker-generic` and `k8s-node-generic`; every other flavor builds on a manual run of `release-matrix.yml` with its `flavor` input (or locally, see Quickstart).
+
 | Tier | Flavors | Hardware Acceleration | Key Runtime Components | Documentation |
 | :--- | :---: | :--- | :--- | :--- |
 | **1. Base Cloud** | 8 | Generic, Intel Xe, AMD Mesa, NVIDIA (535 to 615) | Hardened OS, Anycast NTS, QEMU/VMware agents | [📖 Base Guide](docs/flavors/base.md) |
