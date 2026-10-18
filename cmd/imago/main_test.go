@@ -478,5 +478,53 @@ func TestKernelArtifactVerifyRejectsTamperedArtifact(t *testing.T) {
 
 	_, err = executeCommand("kernel", "artifact", "verify", "--dir", dir, "--versions", versions)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "--manifest and --dir are required")
+	assert.Contains(t, err.Error(), `required flag(s) "manifest" not set`)
+}
+
+func TestKernelArtifactVerifyRequiredFlags(t *testing.T) {
+	_, err := executeCommand("kernel", "artifact", "verify")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `required flag(s) "dir", "manifest" not set`)
+
+	dir := t.TempDir()
+	_, err = executeCommand("kernel", "artifact", "verify", "--dir", dir)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `required flag(s) "manifest" not set`)
+
+	manifestPath := filepath.Join(dir, "kernel-test.manifest.json")
+	_, err = executeCommand("kernel", "artifact", "verify", "--manifest", manifestPath)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `required flag(s) "dir" not set`)
+
+	_, err = executeCommand("kernel", "artifact", "verify", "--manifest", "", "--dir", dir)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--manifest and --dir must not be empty")
+}
+
+func TestDefaultPathWhenOmitted(t *testing.T) {
+	t.Chdir(repoRoot(t))
+
+	out, err := executeCommand("manifest", "validate")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Manifest versions.json is valid")
+
+	out, err = executeCommand("epics", "list")
+	require.NoError(t, err)
+	assert.Contains(t, out, "EPIC")
+
+	out, err = executeCommand("milestones", "list")
+	require.NoError(t, err)
+	assert.Contains(t, out, "TITLE")
+}
+
+func TestMutuallyExclusiveFileAndPath(t *testing.T) {
+	for _, cmd := range [][]string{
+		{"manifest", "validate", "--file", "versions.json", "--path", "versions.json"},
+		{"epics", "list", "--file", ".github/epics.json", "--path", ".github/epics.json"},
+		{"milestones", "list", "--file", ".github/milestones.json", "--path", ".github/milestones.json"},
+	} {
+		_, err := executeCommand(cmd...)
+		require.Error(t, err, cmd)
+		assert.Contains(t, err.Error(), "if any flags in the group [file path] are set none of the others can be", cmd)
+	}
 }
