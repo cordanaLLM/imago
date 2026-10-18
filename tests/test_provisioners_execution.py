@@ -150,6 +150,44 @@ class TestProvisionersExecution:
         dpkg_cmds_arm64 = res_arm64.find_commands("dpkg")
         assert not any("--add-architecture i386" in cmd for cmd in dpkg_cmds_arm64)
 
+    def test_80_netboot_initrd_execution(self, tmp_path: Path, require_bash) -> None:
+        """Verify 80-netboot-initrd.sh installs imago-netroot module and runs dracut."""
+        sandbox = MockSandbox(tmp_path)
+        script = PROVISIONERS_DIR / "80-netboot-initrd.sh"
+        res = sandbox.run_script(script)
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+
+        setup_sh = res.read_file("usr/lib/dracut/modules.d/95imago-netroot/module-setup.sh")
+        assert setup_sh is not None, "module-setup.sh was not installed"
+        assert "dmsquash-live" in setup_sh
+
+        verify_sh = res.read_file("usr/lib/dracut/modules.d/95imago-netroot/imago-netroot-verify.sh")
+        assert verify_sh is not None, "imago-netroot-verify.sh was not installed"
+        assert "imago.root-sha256=" in verify_sh
+
+        dracut_cmds = res.find_commands("dracut")
+        assert len(dracut_cmds) >= 1
+        assert any("--no-hostonly" in cmd and "imago-netboot" in cmd for cmd in dracut_cmds)
+
+        assert any("lsinitrd /boot/imago-netboot.initrd" in cmd for cmd in res.find_commands("lsinitrd"))
+        links = [c for c in res.find_commands("ln") if c.endswith(" /boot/imago-netboot.vmlinuz")]
+        assert len(links) == 1 and links[0].startswith("ln -sfn vmlinuz-"), res.commands_log
+
+    @pytest.mark.parametrize(
+        "listing",
+        [
+            "dracut modules:\\nimago-netroot\\nusr/sbin/dmsquash-live-root",
+            "dracut modules:\\nlivenet\\nusr/sbin/dmsquash-live-root\\nusr/sbin/dmsquash-live-root.orig",
+        ],
+        ids=["original-not-renamed", "module-missing"],
+    )
+    def test_80_netboot_initrd_refuses_an_unwrapped_initrd(self, tmp_path: Path, require_bash, listing: str) -> None:
+        """dracut ignores a failing module install(); the read-back of the built initrd does not."""
+        sandbox = MockSandbox(tmp_path)
+        res = sandbox.run_script(PROVISIONERS_DIR / "80-netboot-initrd.sh", env_vars={"MOCK_LSINITRD_LISTING": listing})
+        assert res.returncode != 0
+        assert "/boot/imago-netboot.initrd lacks" in res.stderr
+
 
 class TestProvisionersFailClosed:
     """A provisioner step that fails must fail the build instead of being swallowed."""
@@ -162,6 +200,8 @@ class TestProvisionersFailClosed:
             ("40-docker-runtime.sh", "usermod"),
             ("75-appliance-vision.sh", "usermod"),
             ("79-appliance-game.sh", "debconf-set-selections"),
+            ("80-netboot-initrd.sh", "dracut"),
+            ("80-netboot-initrd.sh", "lsinitrd"),
         ],
     )
     def test_failed_step_fails_the_script(

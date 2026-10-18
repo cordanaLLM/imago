@@ -95,7 +95,7 @@ jobs:
       - name: Install QEMU, ISO Authoring and Zstd
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-utils xorriso zstd
+          sudo apt-get install -y qemu-system-x86 qemu-utils xorriso squashfs-tools zstd
       - name: Build Image with Packer
         # A GitHub-hosted runner has no nested virtualisation, so /dev/kvm does not
         # exist and QEMU refuses to start, reporting only "Qemu failed to start".
@@ -136,6 +136,7 @@ jobs:
           python3 -I tools/ci/release_assets.py attach --image "${out}"/*.qcow2 --at "${root}"
           status=0
           syft scan "dir:${root}" --base-path "${root}" --source-name "imago-${FLAVOR}" -o "cyclonedx-json=${out}/sbom-${FLAVOR}.cdx.json" -o "spdx-json=${out}/sbom-${FLAVOR}.spdx.json" || status=$?
+          python3 -I tools/ci/netboot_assets.py extract --flavor "${FLAVOR}" --root "${root}" --out "${out}" || status=$?
           python3 -I tools/ci/release_assets.py detach --at "${root}"
           test "${status}" -eq 0
           python3 -I tools/ci/release_assets.py check --cdx "${out}/sbom-${FLAVOR}.cdx.json" --spdx "${out}/sbom-${FLAVOR}.spdx.json"
@@ -156,8 +157,9 @@ jobs:
           test "${#qcow2[@]}" -eq 1
           qemu-img convert -O raw "${qcow2[0]}" "${qcow2[0]%.qcow2}.raw"
           zstd -T0 -19 --rm ./*.qcow2 ./*.raw
-          python3 -I "${GITHUB_WORKSPACE}/tools/ci/release_assets.py" sizes --summary "${GITHUB_STEP_SUMMARY}" ./*.qcow2.zst ./*.raw.zst
-          sha256sum -- *.qcow2.zst *.raw.zst sbom-*.json > "checksums-${FLAVOR}.sha256"
+          netboot=(./*-netboot.vmlinuz ./*-netboot.initrd ./*-root.squashfs ./*.ipxe)
+          python3 -I "${GITHUB_WORKSPACE}/tools/ci/release_assets.py" sizes --summary "${GITHUB_STEP_SUMMARY}" ./*.qcow2.zst ./*.raw.zst "${netboot[@]}"
+          sha256sum -- *.qcow2.zst *.raw.zst sbom-*.json "${netboot[@]#./}" > "checksums-${FLAVOR}.sha256"
       - name: Keep the Checksums and SBOMs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -165,6 +167,10 @@ jobs:
           path: |
             packer/output-images/${{ matrix.flavor }}/checksums-${{ matrix.flavor }}.sha256
             packer/output-images/${{ matrix.flavor }}/sbom-*.json
+            packer/output-images/${{ matrix.flavor }}/*-netboot.vmlinuz
+            packer/output-images/${{ matrix.flavor }}/*-netboot.initrd
+            packer/output-images/${{ matrix.flavor }}/*-root.squashfs
+            packer/output-images/${{ matrix.flavor }}/*.ipxe
           if-no-files-found: error
       - name: Keep the Raw Image of a Manual Run
         # A manual run publishes nothing. Its raw image stays one day, so it can be checked
@@ -177,6 +183,17 @@ jobs:
           retention-days: 1
           compression-level: 0
           if-no-files-found: error
+      - name: Netboot Smoke Test
+        # A manual run boots the extracted netboot assets over iPXE in diskless QEMU.
+        # The positive run verifies NoCloud seed fetching and reaching the multi-user marker.
+        # The negative run verifies that a corrupt digest halts with imago-netroot mismatch error.
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          FLAVOR: ${{ matrix.flavor }}
+        run: |
+          out="packer/output-images/${FLAVOR}"
+          python3 -I tools/ci/netboot_smoke.py --assets "${out}" --flavor "${FLAVOR}" --accel tcg --timeout 1500
+          python3 -I tools/ci/netboot_smoke.py --assets "${out}" --flavor "${FLAVOR}" --accel tcg --timeout 1500 --expect-mismatch
       - name: Upload Release Artifacts
         if: github.event_name == 'release'
         # --clobber replaces an asset of the same name, so a re-run of a failed flavor
@@ -188,7 +205,9 @@ jobs:
         run: |
           gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber \
             "packer/output-images/${FLAVOR}"/*.qcow2.zst "packer/output-images/${FLAVOR}"/*.raw.zst \
-            "packer/output-images/${FLAVOR}"/sbom-*.json
+            "packer/output-images/${FLAVOR}"/sbom-*.json \
+            "packer/output-images/${FLAVOR}"/*-netboot.vmlinuz "packer/output-images/${FLAVOR}"/*-netboot.initrd \
+            "packer/output-images/${FLAVOR}"/*-root.squashfs "packer/output-images/${FLAVOR}"/*.ipxe
 
   sign:
     # Runs only when every flavor built, so the signed SHA256SUMS covers the whole release.

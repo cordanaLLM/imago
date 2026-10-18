@@ -132,8 +132,14 @@ def find_marker_line(log_path: pathlib.Path, pattern: re.Pattern[str]) -> str | 
 
 
 def kill_process_group(pgid: int | None) -> None:
-    """Terminate and kill a process group if still active."""
-    if pgid is None:
+    """Terminate and kill a process group if still active.
+
+    `os.killpg(1, sig)` is `kill(-1, sig)` and reaches every process the user owns; a
+    `MagicMock` pid indexes to 1. Only a real `int` above 1 that is not this process's own
+    group is signalled. `tools/ci/boot_smoke.py` `signal_group` holds the same check; this
+    script runs under `python3 -I` from `tools/aegis/` and cannot import it.
+    """
+    if not isinstance(pgid, int) or isinstance(pgid, bool) or pgid <= 1 or pgid == os.getpgrp():
         return
     try:
         os.killpg(pgid, signal.SIGTERM)
