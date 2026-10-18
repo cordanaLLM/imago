@@ -376,3 +376,83 @@ def test_resolve_ovmf_explicit_and_missing(tmp_path: pathlib.Path) -> None:
 
     with pytest.raises(boot_once.BootError, match="OVMF code file not found"):
         boot_once.resolve_ovmf(tmp_path / "nonexistent.fd", vars_file)
+
+
+# -----------------------------------------------------------------------------
+# Failure Evidence Tests
+# -----------------------------------------------------------------------------
+
+
+def boot_args(tmp_path: pathlib.Path) -> list[str]:
+    """Command line for boot_once.main with every output under tmp_path."""
+    return [
+        "--image",
+        str(tmp_path / "aegis-os.raw"),
+        "--correlation-id",
+        "cid-001",
+        "--serial-log",
+        str(tmp_path / "serial.log"),
+        "--evidence",
+        str(tmp_path / "boot-evidence.json"),
+        "--failure-evidence",
+        str(tmp_path / "boot-failure.json"),
+        "--deadline",
+        "600",
+    ]
+
+
+def test_failed_boot_writes_failure_record(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A planted boot timeout leaves a failure record bound to the serial log, and no boot evidence."""
+    (tmp_path / "serial.log").write_text("Still booting...\n", encoding="utf-8")
+
+    def timed_out(*_args: object, **_kwargs: object) -> None:
+        raise boot_once.BootError("Boot timed out after 600.0 seconds without reaching marker")
+
+    monkeypatch.setattr(boot_once, "execute_boot", timed_out)
+    assert boot_once.main(boot_args(tmp_path)) == 1
+    record = json.loads((tmp_path / "boot-failure.json").read_text(encoding="utf-8"))
+    assert record["schema"] == "imago.aegis.boot-failure.v1"
+    assert record["correlation-id"] == "cid-001"
+    assert "timed out" in record["reason"]
+    assert record["deadline-seconds"] == 600.0
+    serial_sha = hashlib.sha256(b"Still booting...\n").hexdigest()
+    assert record["serial-log"] == {"name": "serial.log", "sha256": serial_sha}
+    assert not (tmp_path / "boot-evidence.json").exists()
+
+
+def test_failed_boot_without_serial_log_records_null_digest(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failure before QEMU wrote any output still leaves a record, with no serial digest."""
+
+    def missing_firmware(*_args: object, **_kwargs: object) -> None:
+        raise boot_once.BootError("OVMF code file not found")
+
+    monkeypatch.setattr(boot_once, "execute_boot", missing_firmware)
+    assert boot_once.main(boot_args(tmp_path)) == 1
+    record = json.loads((tmp_path / "boot-failure.json").read_text(encoding="utf-8"))
+    assert record["serial-log"] == {"name": "serial.log", "sha256": None}
+
+
+def test_successful_boot_writes_no_failure_record(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A boot that reaches the marker leaves no failure record next to its evidence."""
+    monkeypatch.setattr(boot_once, "execute_boot", lambda *_args, **_kwargs: {})
+    assert boot_once.main(boot_args(tmp_path)) == 0
+    assert not (tmp_path / "boot-failure.json").exists()
+
+
+def test_failed_run_keeps_boot_evidence() -> None:
+    """The serial log and the failure record leave the runner only when a step failed."""
+    steps = load_workflow()["jobs"]["build"]["steps"]
+    names = [step.get("name") for step in steps]
+    keep = steps[names.index("Keep the Boot Evidence of a Failed Run")]
+    assert names.index("Boot the Image Once") < names.index(keep["name"]) < names.index("Generate Checksums")
+    assert keep["if"] == "failure()"
+    assert "continue-on-error" not in keep
+    assert re.fullmatch(r"actions/upload-artifact@[0-9a-f]{40}", keep["uses"])
+    paths = keep["with"]["path"].split()
+    assert paths == ["aegis-output/serial.log", "aegis-output/boot-failure.json", "aegis-output/boot-evidence.json"]
+    assert 1 <= keep["with"]["retention-days"] <= 7
+    boot_run = steps[names.index("Boot the Image Once")]["run"]
+    assert '--failure-evidence "${out_dir}/boot-failure.json"' in boot_run
+    assert '--serial-log "${out_dir}/serial.log"' in boot_run

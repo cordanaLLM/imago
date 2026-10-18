@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Aegis build workflow: a failed run keeps `serial.log` and the new `boot-failure.json` (`imago.aegis.boot-failure.v1`, written by `tools/aegis/boot_once.py` when the boot fails) as a three-day run artifact, because run 39075280378 timed out in the boot step and its serial log was lost with the runner (`docs/operations/aegis-build.md`).
 - Aegis build workflow: mkosi now builds with `--tools-tree=yes --tools-tree-distribution=arch`, because the first dispatch (run 39067484406) failed on the hosted runner without `systemd-repart`; the Arch tools tree carries repart, ukify and the erofs, btrfs and vfat tools and follows the image snapshot (`docs/adr/0033-aegis-build-workflow.md`).
 
 ### Added

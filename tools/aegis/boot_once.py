@@ -9,7 +9,9 @@ over the raw image, and serial output redirected to a log file. Passes the
 SMBIOS Type 11 string io.systemd.stub.kernel-cmdline-extra=console=ttyS0 so
 systemd-stub appends console=ttyS0 to the kernel command line. Polls until a
 systemd target success marker appears or the deadline expires. Kills the
-process group on all exit paths and writes boot-evidence.json.
+process group on all exit paths and writes boot-evidence.json. A failed boot
+writes boot-failure.json instead, with its own schema, so the record of a
+failure can never pass for boot evidence.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ import tempfile
 import time
 
 SCHEMA_ID = "imago.aegis.boot-evidence.v1"
+FAILURE_SCHEMA_ID = "imago.aegis.boot-failure.v1"
 CMDLINE_EXTRA = "console=ttyS0"
 SMBIOS_ARG = "io.systemd.stub.kernel-cmdline-extra=console=ttyS0"
 DEFAULT_DEADLINE_S = 600.0
@@ -376,6 +379,28 @@ def save_boot_evidence(
     return evidence
 
 
+def save_boot_failure(
+    correlation_id: str,
+    serial_log: pathlib.Path,
+    failure_path: pathlib.Path,
+    *,
+    reason: str,
+    deadline_s: float,
+) -> dict[str, object]:
+    """Write the failure record; the serial log digest is null when QEMU never wrote one."""
+    serial_sha = compute_file_sha256(serial_log) if serial_log.is_file() else None
+    record = {
+        "schema": FAILURE_SCHEMA_ID,
+        "correlation-id": correlation_id,
+        "reason": reason,
+        "deadline-seconds": deadline_s,
+        "serial-log": {"name": serial_log.name, "sha256": serial_sha},
+        "runner-image": detect_runner_image(),
+    }
+    failure_path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+    return record
+
+
 def execute_boot(
     image_path: pathlib.Path,
     correlation_id: str,
@@ -445,6 +470,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--evidence", default=pathlib.Path("boot-evidence.json"), type=pathlib.Path, help="Output evidence JSON path"
     )
+    parser.add_argument(
+        "--failure-evidence",
+        default=pathlib.Path("boot-failure.json"),
+        type=pathlib.Path,
+        help="Failure record JSON path, written only when the boot fails",
+    )
     parser.add_argument("--deadline", type=float, default=DEFAULT_DEADLINE_S, help="Hard deadline in seconds")
     parser.add_argument("--marker", default=DEFAULT_MARKER_REGEX, help="Success marker regex")
     parser.add_argument("--ovmf-code", type=pathlib.Path, default=None, help="Custom OVMF code file path")
@@ -464,6 +495,13 @@ def main(argv: list[str] | None = None) -> int:
         )
     except BootError as err:
         sys.stderr.write(f"boot_once: error: {err}\n")
+        save_boot_failure(
+            args.correlation_id,
+            args.serial_log,
+            args.failure_evidence,
+            reason=str(err),
+            deadline_s=args.deadline,
+        )
         return 1
 
     sys.stdout.write(f"boot_once: Success marker found. Evidence written to {args.evidence}\n")

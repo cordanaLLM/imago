@@ -80,6 +80,8 @@ The pre-release contains:
 - `SHA256SUMS.bundle`: Sigstore Cosign keyless signature bundle covering `SHA256SUMS`.
 - `result.json`: Imago product-result payload conforming to `imago.p01.product-result.v1`.
 
+A failed run publishes nothing. Its step `Keep the Boot Evidence of a Failed Run` keeps `serial.log`, `boot-failure.json` and, if present, `boot-evidence.json` as the run artifact `aegis-boot-failure-<run attempt>` for three days. `boot-failure.json` follows `imago.aegis.boot-failure.v1`: correlation id, the reason `boot_once.py` stopped, the deadline, the serial log digest (null when QEMU wrote no log) and the runner image. Read it with `gh run download <run id> --repo cordanaLLM/imago --name aegis-boot-failure-1`.
+
 ---
 
 ## 5. Downstream Verification (Aegis M11)
