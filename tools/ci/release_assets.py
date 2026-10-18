@@ -5,8 +5,10 @@
 
 Syft cannot read a qcow2 disk: pointed at the file it catalogues nothing and still writes a
 valid, empty SBOM. The attach command connects the image read-only through qemu-nbd and
-mounts the partition labelled cloudimg-rootfs read-only, so Syft can catalogue that tree;
-detach undoes both. The check command fails unless the CycloneDX and the SPDX document each
+mounts the partition labelled cloudimg-rootfs read-only, so Syft can catalogue that tree.
+The Ubuntu cloud image keeps /boot on its own partition labelled BOOT; attach mounts it
+read-only at <root>/boot, so the kernel and the netboot initrd are where the image boots
+them from. detach undoes all three. The check command fails unless the CycloneDX and the SPDX document each
 list at least MIN_DEB_PACKAGES Debian packages, so an empty catalogue never ships as an SBOM.
 
 The merge command joins the checksum files of all flavors into the one SHA256SUMS the release
@@ -26,6 +28,7 @@ Usage:
 
 import argparse
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -33,6 +36,7 @@ import sys
 import time
 
 ROOT_LABEL = "cloudimg-rootfs"
+BOOT_LABEL = "BOOT"
 MIN_DEB_PACKAGES = 100
 MAX_PACKAGES = 100_000
 MAX_CHECKSUM_LINES = 4096
@@ -63,6 +67,19 @@ def partition_label(partition: str) -> str:
         return ""
 
 
+def labelled(device: str, label: str) -> list[str]:
+    names = [n for n in run(["lsblk", "-nrpo", "NAME", device]).split() if n != device]
+    return [n for n in names if partition_label(n) == label]
+
+
+def boot_partition(device: str) -> str | None:
+    """Return the partition of device labelled BOOT_LABEL, or None when /boot lives on the root."""
+    found = labelled(device, BOOT_LABEL)
+    if len(found) > 1:
+        raise AssetError(f"{len(found)} partitions of {device} carry the label {BOOT_LABEL}")
+    return found[0] if found else None
+
+
 def root_partition(device: str) -> str:
     """Return the one partition of device labelled ROOT_LABEL, waiting for the kernel scan.
 
@@ -70,12 +87,11 @@ def root_partition(device: str) -> str:
     carries the same label, so a lookup by label across all devices could mount the host.
     """
     for _ in range(PARTITION_POLLS):
-        names = [n for n in run(["lsblk", "-nrpo", "NAME", device]).split() if n != device]
-        labelled = [n for n in names if partition_label(n) == ROOT_LABEL]
-        if len(labelled) > 1:
-            raise AssetError(f"{len(labelled)} partitions of {device} carry the label {ROOT_LABEL}")
-        if labelled:
-            return labelled[0]
+        found = labelled(device, ROOT_LABEL)
+        if len(found) > 1:
+            raise AssetError(f"{len(found)} partitions of {device} carry the label {ROOT_LABEL}")
+        if found:
+            return found[0]
         time.sleep(1)
     raise AssetError(f"no partition of {device} carries the label {ROOT_LABEL}")
 
@@ -95,12 +111,28 @@ def attach(image: pathlib.Path, mount: pathlib.Path, device: str) -> None:
         detach(mount, device)
         raise AssetError(f"the {ROOT_LABEL} partition holds no var/lib/dpkg/status")
     print(f"{image.name}: {ROOT_LABEL} mounted read-only at {mount}")
+    attach_boot(mount, device)
+
+
+def attach_boot(mount: pathlib.Path, device: str) -> None:
+    try:
+        boot = boot_partition(device)
+        if boot is not None:
+            run(["sudo", "mount", "-o", "ro,noload", boot, str(mount / "boot")])
+    except AssetError:
+        detach(mount, device)
+        raise
+    where = f"{BOOT_LABEL} mounted read-only at {mount / 'boot'}" if boot else f"no {BOOT_LABEL} partition"
+    print(f"{device}: {where}")
 
 
 def detach(mount: pathlib.Path, device: str) -> None:
-    """Unmount and disconnect; both are tried, and either failure fails the command."""
+    """Unmount /boot and the root, then disconnect; each step is tried, and any failure fails the command."""
     errors = []
-    for command in (["sudo", "umount", str(mount)], ["sudo", "qemu-nbd", "--disconnect", device]):
+    commands = [["sudo", "umount", str(mount)], ["sudo", "qemu-nbd", "--disconnect", device]]
+    if os.path.ismount(mount / "boot"):
+        commands.insert(0, ["sudo", "umount", str(mount / "boot")])
+    for command in commands:
         try:
             run(command)
         except AssetError as error:

@@ -122,6 +122,21 @@ class TestFlavorsIntegrity:
             assert len(scripts) >= 4, f"Build {name} has fewer than 4 provisioner steps"
             assert "00-base-strip.sh" in scripts[0], f"Build {name} must start with 00-base-strip.sh"
             assert "99-cleanup.sh" in scripts[-1], f"Build {name} must end with 99-cleanup.sh"
+            assert "80-netboot-initrd.sh" in scripts[-2], (
+                f"Build {name} must have 80-netboot-initrd.sh immediately before 99-cleanup.sh"
+            )
+
+    def test_every_build_lists_netboot_initrd_provisioner(self) -> None:
+        """Verify all 44 build definitions list 80-netboot-initrd.sh."""
+        content = BUILDS_PKR.read_text(encoding="utf-8")
+        build_blocks = re.findall(
+            r'build\s*\{[^}]*name\s*=\s*"([^"]+)"[^}]*scripts\s*=\s*\[(.*?)\]', content, re.DOTALL
+        )
+        assert len(build_blocks) >= 44, "Failed to parse build blocks from builds.pkr.hcl"
+        for name, scripts_raw in build_blocks:
+            assert "80-netboot-initrd.sh" in scripts_raw, (
+                f"Build {name} is missing 80-netboot-initrd.sh in its provisioners list"
+            )
 
     def test_no_orphan_provisioner_scripts(self) -> None:
         """Verify every provisioner script in packer/provisioners/ is utilized in builds."""

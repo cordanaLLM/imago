@@ -340,6 +340,36 @@ ctr() {
   mock_status ctr
 }
 export -f ctr
+
+dracut() {
+  echo "dracut $*" >> "$SANDBOX_ROOT/journal_cmds.log"
+  local target=""
+  for arg in "$@"; do
+    case "$arg" in
+      -*) ;;
+      /*)
+        target="$arg"
+        break
+        ;;
+    esac
+  done
+  if [ -n "$target" ] && [ -n "$SANDBOX_ROOT" ]; then
+    local clean="${target#/}"
+    command mkdir -p "$(dirname "$SANDBOX_ROOT/$clean")" 2>/dev/null || true
+    command touch "$SANDBOX_ROOT/$clean" 2>/dev/null || true
+  fi
+  mock_status dracut
+}
+export -f dracut
+
+# lsinitrd prints a listing of a built netboot initrd; MOCK_LSINITRD_LISTING replaces it,
+# so a test can hand the provisioner an initrd that lacks the imago-netroot wrap.
+lsinitrd() {
+  echo "lsinitrd $*" >> "$SANDBOX_ROOT/journal_cmds.log"
+  printf '%b\n' "${MOCK_LSINITRD_LISTING:-dracut modules:\nimago-netroot\nusr/sbin/dmsquash-live-root\nusr/sbin/dmsquash-live-root.orig}"
+  mock_status lsinitrd
+}
+export -f lsinitrd
 """
 
 
