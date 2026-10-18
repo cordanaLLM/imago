@@ -67,13 +67,15 @@ func TestMCPToolsRefuseOutOfRangeInput(t *testing.T) {
 		{"confirm_action_empty_id", "confirm_action", map[string]any{"action_id": ""}, "not found"},
 		{"discard_action_empty_id", "discard_staged_action", map[string]any{"action_id": ""}, "not found"},
 		{"route_plan_absolute", "route_plan", map[string]any{"plan_path": "/etc/hostname"}, "relative to the repository"},
+		{"list_epics_unknown_argument", "list_epics", map[string]any{"unused": true}, "unexpected additional properties"},
+		{"get_milestones_unknown_argument", "get_milestones", map[string]any{"unused": true}, "unexpected additional properties"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			text, refused := call(t, session, tc.tool, tc.args)
 			assert.True(t, refused, text)
 			assert.Contains(t, text, tc.want)
-			assert.NotContains(t, text, "root:")
+			assert.NotContains(t, text, "root:x:")
 		})
 	}
 
@@ -99,8 +101,8 @@ func TestMCPToolsAcceptBoundaryInput(t *testing.T) {
 		{"get_standards_last_of_matrix", "get_standards", map[string]any{"flavor_id": "appliance-game-server"}, "appliance-game-server"},
 		{"validate_manifest_dot_prefix", "validate_manifest", map[string]any{"path": "./versions.json"}, "Validation SUCCESS"},
 		{"inspect_compliance_explicit_default", "inspect_compliance", map[string]any{"path": "tests/compliance/goss.yaml"}, "kernel-param"},
-		{"list_epics_ignores_unknown_argument", "list_epics", map[string]any{"unused": true}, "EPIC-01"},
-		{"get_milestones_ignores_unknown_argument", "get_milestones", map[string]any{"unused": true}, "1.0"},
+		{"list_epics_empty_object", "list_epics", map[string]any{}, "EPIC-01"},
+		{"get_milestones_empty_object", "get_milestones", map[string]any{}, "1.0"},
 		{"apply_flavor_live_script", "apply_flavor", map[string]any{"flavor_id": "base-generic", "dry_run": false}, "#!/usr/bin/env bash"},
 		{"trigger_build_dry_run_last_backend", "trigger_build", map[string]any{"flavor": "appliance-game-server", "backend": "github", "dry_run": true}, `"status": "planned"`},
 		{"list_staged_actions_empty", "list_staged_actions", nil, "[]"},
