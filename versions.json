@@ -16,7 +16,7 @@
       "cilium": "quay.io/cilium/cilium:v1.20.1",
       "cilium_operator": "quay.io/cilium/operator-generic:v1.20.1",
       "kube_vip": "ghcr.io/kube-vip/kube-vip:v1.2.3",
-      "node_exporter": "prom/node-exporter:v1.12.1",
+      "node_exporter": "docker.io/prom/node-exporter:v1.12.1",
       "calico_cni": "docker.io/calico/cni:v3.32.2",
       "calico_node": "docker.io/calico/node:v3.32.2",
       "calico_controllers": "docker.io/calico/kube-controllers:v3.32.2",
@@ -26,12 +26,12 @@
   },
   "drivers": {
     "intel": {
-      "k8s_plugin": "intel/intel-gpu-plugin:0.36.0"
+      "k8s_plugin": "docker.io/intel/intel-gpu-plugin:0.36.0"
     },
     "amd": {
       "rocm_legacy_version": "7.14",
       "rocm_bleeding_version": "10.0",
-      "k8s_plugin": "rocm/k8s-device-plugin:1.31.0.11"
+      "k8s_plugin": "docker.io/rocm/k8s-device-plugin:1.31.0.11"
     },
     "nvidia": {
       "legacy_driver": "535",

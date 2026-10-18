@@ -4,6 +4,13 @@
   "description": "Validates the structure and semantic invariants of versions.json Single Source of Truth",
   "type": "object",
   "required": ["distro", "kubernetes", "drivers", "runtimes", "build", "time"],
+  "$defs": {
+    "imageRef": {
+      "description": "Container image reference whose first component names the registry host. containerd's ctr takes the first component as the host and has no docker.io default, so intel/intel-gpu-plugin:0.36.0 is looked up at a host named intel.",
+      "type": "string",
+      "pattern": "^(localhost|[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+|[A-Za-z0-9-]+:[0-9]+)(:[0-9]+)?/[a-z0-9]+([._-]+[a-z0-9]+)*(/[a-z0-9]+([._-]+[a-z0-9]+)*)*:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$"
+    }
+  },
   "properties": {
     "$schema": { "type": "string" },
     "distro": {
@@ -38,7 +45,7 @@
             "flannel",
             "flannel_cni"
           ],
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": { "$ref": "#/$defs/imageRef" }
         }
       }
     },
@@ -50,7 +57,7 @@
           "type": "object",
           "required": ["k8s_plugin"],
           "properties": {
-            "k8s_plugin": { "type": "string" }
+            "k8s_plugin": { "$ref": "#/$defs/imageRef" }
           }
         },
         "amd": {
@@ -59,7 +66,7 @@
           "properties": {
             "rocm_legacy_version": { "type": "string" },
             "rocm_bleeding_version": { "type": "string" },
-            "k8s_plugin": { "type": "string" }
+            "k8s_plugin": { "$ref": "#/$defs/imageRef" }
           }
         },
         "nvidia": {
@@ -88,7 +95,7 @@
             "cuda_modern": { "type": "string" },
             "cuda_bleeding": { "type": "string" },
             "container_toolkit": { "type": "string" },
-            "k8s_plugin": { "type": "string" }
+            "k8s_plugin": { "$ref": "#/$defs/imageRef" }
           }
         }
       }

@@ -112,7 +112,7 @@
         "/^versions\\.json$/"
       ],
       "matchStrings": [
-        "\"(?<depName>(?:registry\\.k8s\\.io|docker\\.io|quay\\.io|ghcr\\.io|prom|nvcr\\.io|intel|rocm)[^:\"]+):(?<currentValue>[^\"]+)\""
+        "\"(?<depName>(?:registry\\.k8s\\.io|docker\\.io|quay\\.io|ghcr\\.io|nvcr\\.io)[^:\"]+):(?<currentValue>[^\"]+)\""
       ],
       "datasourceTemplate": "docker"
     },

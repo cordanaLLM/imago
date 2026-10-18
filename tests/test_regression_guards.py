@@ -159,8 +159,8 @@ def test_precache_pulls_every_image_of_the_profile(tmp_path: Path, require_bash)
         "docker.io/flannel/flannel:0.28.9",
         "docker.io/flannel/flannel-cni-plugin:v1.6.2-flannel1",
         "ghcr.io/kube-vip/kube-vip:v1.2.3",
-        "prom/node-exporter:v1.12.1",
-        "rocm/k8s-device-plugin:1.31.0.11",
+        "docker.io/prom/node-exporter:v1.12.1",
+        "docker.io/rocm/k8s-device-plugin:1.31.0.11",
     ]
 
 
@@ -176,7 +176,7 @@ def test_lean_profile_pulls_only_the_pause_image(tmp_path: Path, require_bash) -
         ("lean", "k8s-node-generic", "registry.k8s.io/pause:3.10"),
         ("flannel", "k8s-node-flannel", "docker.io/flannel/flannel:0.28.9"),
         ("cilium", "k8s-node-cilium", "quay.io/cilium/operator-generic:v1.20.1"),
-        ("lean", "k8s-node-amd", "rocm/k8s-device-plugin:1.31.0.11"),
+        ("lean", "k8s-node-amd", "docker.io/rocm/k8s-device-plugin:1.31.0.11"),
         ("lean", "k8s-node-nvidia", "nvcr.io/nvidia/k8s-device-plugin:v0.20.0"),
     ],
 )

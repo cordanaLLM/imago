@@ -11,7 +11,7 @@ precache_by_profile() {
   local pause_img="${IMG_PAUSE:-registry.k8s.io/pause:3.10}"
   local coredns_img="${IMG_COREDNS:-registry.k8s.io/coredns/coredns:v1.14.7}"
   local kubevip_img="${IMG_KUBE_VIP:-ghcr.io/kube-vip/kube-vip:v1.2.3}"
-  local exporter_img="${IMG_NODE_EXPORTER:-prom/node-exporter:v1.12.1}"
+  local exporter_img="${IMG_NODE_EXPORTER:-docker.io/prom/node-exporter:v1.12.1}"
   local images_to_pull=("${pause_img}")
 
   echo "==> Executing preheat profile: '${PREHEAT_PROFILE}'..."
@@ -68,7 +68,7 @@ precache_hardware_plugins() {
 
   case "${flavor}" in
     *intel*)
-      local intel_plugin="${IMG_INTEL_PLUGIN:-intel/intel-gpu-plugin:0.36.0}"
+      local intel_plugin="${IMG_INTEL_PLUGIN:-docker.io/intel/intel-gpu-plugin:0.36.0}"
       echo "    Pulling Intel Device Plugin: ${intel_plugin}..."
       pull_plugin "${intel_plugin}"
       ;;
@@ -78,7 +78,7 @@ precache_hardware_plugins() {
       pull_plugin "${nvidia_plugin}"
       ;;
     *amd*)
-      local amd_plugin="${IMG_AMD_PLUGIN:-rocm/k8s-device-plugin:1.31.0.11}"
+      local amd_plugin="${IMG_AMD_PLUGIN:-docker.io/rocm/k8s-device-plugin:1.31.0.11}"
       echo "    Pulling AMD Device Plugin: ${amd_plugin}..."
       pull_plugin "${amd_plugin}"
       ;;

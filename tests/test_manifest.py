@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 import jsonschema
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = REPO_ROOT / "versions.json"
@@ -101,6 +102,30 @@ class TestManifestIntegrity:
         for cni in ("cilium", "calico_cni", "flannel", "kube_vip"):
             assert cni in images, f"Missing {cni} image declaration"
             assert "/" in images[cni], f"Invalid image repository format: {images[cni]}"
+
+    @pytest.mark.parametrize(
+        "ref",
+        [
+            "intel/intel-gpu-plugin:0.36.0",
+            "prom/node-exporter:v1.12.1",
+            "pause:3.10",
+            "docker.io/rocm/k8s-device-plugin",
+        ],
+    )
+    def test_schema_refuses_image_without_registry_host(self, ref: str) -> None:
+        """ctr resolves the first component as the host, so a bare Docker Hub name fails the pull."""
+        data = load_manifest()
+        data["drivers"]["intel"]["k8s_plugin"] = ref
+        with pytest.raises(jsonschema.ValidationError):
+            jsonschema.validate(instance=data, schema=load_schema())
+
+    @pytest.mark.parametrize(
+        "ref", ["docker.io/intel/intel-gpu-plugin:0.36.0", "localhost:5000/a/b:1", "registry:5000/a:1"]
+    )
+    def test_schema_accepts_image_with_registry_host(self, ref: str) -> None:
+        data = load_manifest()
+        data["kubernetes"]["images"]["pause"] = ref
+        jsonschema.validate(instance=data, schema=load_schema())
 
     def test_network_time_servers(self) -> None:
         """Verify authoritative Anycast and Stratum-1 NTS server configurations."""
