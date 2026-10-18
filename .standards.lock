@@ -1,22 +1,22 @@
 ---
 version: 1
-pinned_version: v0.0.0+catalog.33773a292166
+pinned_version: v0.0.0+catalog.4f92951255ff
 digest: sha256:66642009104fd63e4c5a9f42249af4ad0122f40f59a3cdd13f93292247a05278
 profiles:
   - id: os-image
-    version: v0.0.0+catalog.33773a292166
+    version: v0.0.0+catalog.4f92951255ff
     digest:
       sha256:a12fad5cad3ba7c779ff9ec7430df26dad2c600fd06a7f1b36dc4612b480e3ce
 facets:
   - id: security:high
-    version: v0.0.0+catalog.33773a292166
+    version: v0.0.0+catalog.4f92951255ff
     digest:
       sha256:9bd59f0725d472b1516ba74556feada0e3868f4642bc08dd2d67a2cc26e87778
   - id: agent:sandboxed
-    version: v0.0.0+catalog.33773a292166
+    version: v0.0.0+catalog.4f92951255ff
     digest:
       sha256:bc87486dea71e54d20549d6054dcf290d3d700e37b304cbdb6d6c1a2def895f2
   - id: docs:seo-portal
-    version: v0.0.0+catalog.33773a292166
+    version: v0.0.0+catalog.4f92951255ff
     digest:
       sha256:145722c161ed8e436369d573c2b736fe7f579b8a1e33a85119e3b10268563428

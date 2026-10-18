@@ -113,7 +113,7 @@ exclude_docs: |
 ```
 
 The hook replaces each `figure` fence with the figure markup and publishes
-`figures.css` and the player files in `dist/`, so the site needs no `extra_css`
+`figures.css` and the player files in `player/`, so the site needs no `extra_css`
 or `extra_javascript` entry. A fence that names a figure without a JSON file
 logs a warning, which fails `mkdocs build --strict`.
 
@@ -150,6 +150,20 @@ its content, so keep `make docs-figures` in the gate.
   replaces each `figure` fence with absolute image URLs under `<url>` and a link
   to the interactive figure. `--wiki` takes the URL from `site_url` in
   `mkdocs.yml` instead.
+
+## ESLint
+
+When an adopter's flat config lints JavaScript files with type checking enabled
+(`parserOptions: { project: true }`) without a root `tsconfig.json` covering
+`tools/figures/`, import the emitted figure lint configuration:
+
+```js
+import figures from './tools/figures/eslint.figures.mjs';
+```
+
+And add `figures(ts)` to your ESLint configuration array. It sets
+`parserOptions: { project: false }` and disables type-checked rules for
+`tools/figures/**`, leaving every syntactic rule in place.
 
 ## Checks
 
@@ -202,13 +216,14 @@ byte for byte.
 - `types.ts`: the spec type a `docs/figures/<slug>.ts` file checks against.
 - `third_party/interfig/`: the vendored interfig render source, byte-identical
   to its pin in `vendor.json`, with its upstream `LICENSE`.
-- `dist/`: the player. `loader.js` runs on every page and loads `player.js` when
+- `player/`: the player. `loader.js` runs on every page and loads `player.js` when
   a figure nears the viewport; `THIRD-PARTY-LICENSES.txt` holds the license
   texts of the code both files bundle.
 - `figures.css`: the figure stylesheet, following the site's light and dark
   palette.
 - `mkdocs_hook.py`, `astro.mjs`, `serve.mjs`: the MkDocs hook, the Astro
   integration and the file server it uses.
+- `eslint.figures.mjs`: flat-config entry for type-checked ESLint setups.
 
 An edit to `core.mjs` or to the vendored render files changes the engine hash
 recorded in every figure's JSON, so after an update that changes them, run
@@ -219,7 +234,7 @@ recorded in every figure's JSON, so after an update that changes them, run
 The engine is interfig by Vectorize AI, Inc., under the MIT License
 (`third_party/interfig/upstream/LICENSE`). The player bundles interfig with
 React, react-dom and scheduler, whose license texts are in
-`dist/THIRD-PARTY-LICENSES.txt`. Every exported SVG and both player scripts
+`player/THIRD-PARTY-LICENSES.txt`. Every exported SVG and both player scripts
 carry the interfig credit; keep these notices in every copy. A repository that
 declares its licensing in `REUSE.toml` labels
 `tools/figures/third_party/interfig/upstream/**` MIT in an override annotation
