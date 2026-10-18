@@ -138,3 +138,12 @@ docker run -d --name llama-cpp-cpu \
   ghcr.io/ggerganov/llama.cpp:server \
   -m /models/Llama-3.2-3B-Instruct-Q4_K_M.gguf -c 4096 --threads 32
 ```
+
+---
+
+## Lazy-Pulling Snapshotter & HPC Sandboxing (`stargz-snapshotter` & `enroot`)
+
+Following [ADR-0010](../adr/0010-container-ecosystem-runtimes-and-tooling.md):
+
+- **`stargz-snapshotter`**: Pre-installed and registered as an opt-in proxy plugin in containerd (`[proxy_plugins.stargz]`), for on-demand block streaming of eStargz images pulled through containerd (`ctr-remote image rpull`, `nerdctl --snapshotter=stargz`). Docker pulls keep their own storage driver and are not affected.
+- **NVIDIA `enroot`**: Pre-installed on `ai-infer-nvidia*` and `base-nvidia-datacenter` for rootless, unprivileged user-space container sandboxing with native GPU driver integration.

@@ -199,6 +199,19 @@ dpkg() {
 }
 export -f dpkg
 
+uname() {
+  if [ "$1" = "-m" ]; then
+    case "${MOCK_ARCH:-x86_64}" in
+      amd64) echo "x86_64" ;;
+      arm64) echo "aarch64" ;;
+      *) echo "${MOCK_ARCH:-x86_64}" ;;
+    esac
+    return 0
+  fi
+  command uname "$@"
+}
+export -f uname
+
 systemctl() {
   echo "systemctl $*" >> "$SANDBOX_ROOT/journal_cmds.log"
   mock_status systemctl
@@ -245,9 +258,51 @@ export -f sed
 
 curl() {
   echo "curl $*" >> "$SANDBOX_ROOT/journal_cmds.log"
-  return 0
+  local output=""
+  local args=("$@")
+  local i=0
+  while [ $i -lt ${#args[@]} ]; do
+    if [ "${args[$i]}" = "-o" ]; then
+      output="${args[$((i+1))]}"
+      break
+    fi
+    i=$((i+1))
+  done
+  if [ -n "$output" ]; then
+    if [[ "$output" == *.tar.gz ]]; then
+      printf "mock-tarball\n" > "$output"
+    elif [[ "$output" == *.sha256sum ]]; then
+      local base="${output%.sha256sum}"
+      local fname
+      fname=$(basename "$base")
+      if [ -n "${MOCK_MISMATCH_SHA:-}" ]; then
+        printf "0000000000000000000000000000000000000000000000000000000000000000  %s\n" "$fname" > "$output"
+      else
+        local hash
+        hash=$(sha256sum "$base" | awk '{print $1}')
+        printf "%s  %s\n" "$hash" "$fname" > "$output"
+      fi
+    else
+      touch "$output" 2>/dev/null || true
+    fi
+  fi
+  mock_status curl
 }
 export -f curl
+
+enroot() {
+  echo "enroot $*" >> "$SANDBOX_ROOT/journal_cmds.log"
+  if [ "$1" = "version" ]; then
+    if [ -n "${MOCK_ENROOT_VERSION:-}" ]; then
+      echo "${MOCK_ENROOT_VERSION}"
+    else
+      echo "${ENROOT_VERSION:-3.4.1}"
+    fi
+    return 0
+  fi
+  mock_status enroot
+}
+export -f enroot
 
 udevadm() {
   echo "udevadm $*" >> "$SANDBOX_ROOT/journal_cmds.log"

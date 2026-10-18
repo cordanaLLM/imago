@@ -140,12 +140,12 @@ A published release and the weekly schedule build `base-generic`, `docker-generi
 
 | Tier | Flavors | Hardware Acceleration | Key Runtime Components | Documentation |
 | :--- | :---: | :--- | :--- | :--- |
-| **1. Base Cloud** | 8 | Generic, Intel Xe, AMD Mesa, NVIDIA (535 to 615) | Hardened OS, Anycast NTS, QEMU/VMware agents | [📖 Base Guide](docs/flavors/base.md) |
+| **1. Base Cloud** | 8 | Generic, Intel Xe, AMD Mesa, NVIDIA (535 to 615) | Hardened OS, Anycast NTS, enroot (datacenter), QEMU/VMware agents | [📖 Base Guide](docs/flavors/base.md) |
 | **2. Container Hosts** | 7 | Generic, Intel QuickSync, AMD ROCm, NVIDIA CDI | Docker CE 29.8, Docker Compose v2, Podman 5.x | [📖 Containers Guide](docs/flavors/containers.md) |
-| **3. Enterprise K8s** | 9 | Generic, Intel Arc, AMD ROCm 10, NVIDIA Mainstream/Bleeding | containerd 2.3.5, kubelet 1.37.0, Cilium/Calico preheat | [📖 Kubernetes Guide](docs/flavors/kubernetes.md) |
+| **3. Enterprise K8s** | 9 | Generic, Intel Arc, AMD ROCm 10, NVIDIA Mainstream/Bleeding | containerd 2.3.5, kubelet 1.37.0, stargz-snapshotter (opt-in), Cilium/Calico preheat | [📖 Kubernetes Guide](docs/flavors/kubernetes.md) |
 | **4. K3s Edge Fleet** | 5 | Generic, Intel QuickSync, AMD ROCm 10, NVIDIA CDI | Lightweight K3s (< 300MB RAM), Flannel, SQLite | [📖 K3s Guide](docs/flavors/k3s.md) |
 | **5. CloudNative & Storage** | 4 | Generic, Baremetal, NVMe-oF, OpenZFS 2.3 | Read-only root immutability, OpenZFS, CloudNativePG | [📖 CloudNative Guide](docs/flavors/cloudnative.md) |
-| **6. AI & LLM Inference** | 6 | AMX/AVX-512, Intel Xe2, AMD ROCm 10, NVIDIA (565/610/615) | Transparent Hugepages, NUMA, vLLM / Ollama | [📖 AI Inference Guide](docs/flavors/ai-infer.md) |
+| **6. AI & LLM Inference** | 6 | AMX/AVX-512, Intel Xe2, AMD ROCm 10, NVIDIA (565/610/615) | Transparent Hugepages, NUMA, stargz-snapshotter (opt-in), enroot (NVIDIA), vLLM / Ollama | [📖 AI Inference Guide](docs/flavors/ai-infer.md) |
 | **7. Homelab Appliances** | 5 | Coral TPU, QuickSync, Dual VA-API, ARM64 binfmt, i386 | Frigate NVR, AdGuard/Pi-hole, Jellyfin, CI runner, SteamCMD | [📖 Homelab Guide](docs/flavors/homelab-appliances.md) |
 
 > 📋 **Detailed Specifications**: Browse the complete list of all 44 target configurations in [**`FLAVORS.md`**](FLAVORS.md) or explore them interactively in the [**Documentation Portal Matrix**](https://cordanallm.github.io/imago/flavors/matrix/).
