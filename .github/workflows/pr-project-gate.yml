@@ -9,9 +9,13 @@ permissions:
   pull-requests: read # read the milestone, labels and body under check
   contents: read
 
+# Label and milestone events re-run the gate on the same head commit. A cancelled run, pending
+# or in progress, leaves a cancelled check suite on that commit that holds the pull request
+# BLOCKED although the newest run passed. The run id gives every run its own group, so no run
+# waits behind or cancels another; each run checks the metadata of its own event.
 concurrency:
-  group: pr-project-gate-${{ github.ref }}
-  cancel-in-progress: true
+  group: pr-project-gate-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   validate-metadata:

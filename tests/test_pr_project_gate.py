@@ -6,13 +6,14 @@ an issue or epic reference in its title or body, or without a `tier/*` or `area/
 The tests below run the step script of the workflow with planted metadata: complete
 metadata passes, each missing part fails with its own error, and near misses at the edge
 of each pattern fail as well. They also hold the triggers that re-run the gate when the
-metadata changes.
+metadata changes, and the concurrency group that keeps those re-runs from cancelling each other.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -33,6 +34,10 @@ COMPLETE = {"title": "fix(ci): planted title", "body": "Ref #6", "milestone": "1
 MILESTONE_ERROR = "missing an assigned milestone"
 REFERENCE_ERROR = "must reference a tracked Issue or Epic"
 LABEL_ERROR = "at least one 'tier/*' or 'area/*' label"
+# Two runs of one pull request on one head commit, as two label events start them.
+RUN_A = {"github.ref": "refs/pull/6/merge", "github.run_id": "101", "github.event.action": "labeled"}
+RUN_B = {"github.ref": "refs/pull/6/merge", "github.run_id": "102", "github.event.action": "milestoned"}
+EXPRESSION = re.compile(r"\$\{\{\s*([^}]*?)\s*\}\}")
 
 
 def load() -> dict:
@@ -136,3 +141,47 @@ def test_gate_step_carries_no_bypass():
     assert "if" not in step and "if" not in job
     assert step["run"].lstrip().startswith("set -euo pipefail")
     assert "|| true" not in step["run"]
+
+
+def render(group: str, context: dict[str, str]) -> str:
+    """Fill the `${{ name }}` expressions of a group; an unknown expression fails the test."""
+
+    def value(match: re.Match[str]) -> str:
+        name = match.group(1)
+        assert name in context, f"group uses {name}, which the test does not model"
+        return context[name]
+
+    return EXPRESSION.sub(value, group)
+
+
+def run_can_be_cancelled(concurrency: dict) -> bool:
+    """Whether one of two runs on the same head commit can cancel the other.
+
+    Runs in one group queue: a new run cancels the pending one, and with
+    `cancel-in-progress` also the running one. Only distinct groups cancel nothing.
+    """
+    group = str(concurrency["group"])
+    return render(group, RUN_A) == render(group, RUN_B) or concurrency.get("cancel-in-progress") is not False
+
+
+def test_metadata_reruns_cancel_no_run():
+    concurrency = load()["concurrency"]
+    assert not run_can_be_cancelled(concurrency), concurrency
+
+
+@pytest.mark.parametrize(
+    "concurrency",
+    [
+        {"group": "pr-project-gate-${{ github.ref }}", "cancel-in-progress": True},
+        {"group": "pr-project-gate-${{ github.ref }}", "cancel-in-progress": False},
+        {"group": "pr-project-gate-${{ github.ref }}-${{ github.run_id }}", "cancel-in-progress": True},
+    ],
+    ids=["shape-before-fix", "shared-group-without-cancel", "own-group-with-cancel"],
+)
+def test_planted_cancelling_concurrency_is_refused(concurrency):
+    assert run_can_be_cancelled(concurrency)
+
+
+def test_unmodelled_group_expression_fails():
+    with pytest.raises(AssertionError, match="github.sha"):
+        render("pr-project-gate-${{ github.sha }}", RUN_A)
