@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v3"
 
 	"github.com/cordanaLLM/imago/pkg/cloudinit"
 )
@@ -18,10 +19,21 @@ func TestGenerateUserDataDefault(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, userData, "#cloud-config")
-	assert.Contains(t, userData, `hostname: "lusoris-node"`)
-	assert.Contains(t, userData, "disable_root: true")
-	assert.Contains(t, userData, "ssh_pwauth: false")
-	assert.Contains(t, userData, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGenericKeyForTestingOnly")
+
+	var parsed struct {
+		Hostname    string `yaml:"hostname"`
+		DisableRoot bool   `yaml:"disable_root"`
+		SSHPwauth   bool   `yaml:"ssh_pwauth"`
+		Users       []struct {
+			SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
+		} `yaml:"users"`
+	}
+	require.NoError(t, yaml.Unmarshal([]byte(userData), &parsed))
+	assert.Equal(t, "lusoris-node", parsed.Hostname)
+	assert.True(t, parsed.DisableRoot)
+	assert.False(t, parsed.SSHPwauth)
+	require.Len(t, parsed.Users, 1)
+	assert.Contains(t, parsed.Users[0].SSHAuthorizedKeys, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGenericKeyForTestingOnly")
 }
 
 func TestGenerateUserDataPlatforms(t *testing.T) {
@@ -56,6 +68,9 @@ func TestGenerateMetaData(t *testing.T) {
 	cfg.Hostname = "custom-host"
 	metaData, err := cloudinit.GenerateMetaData(cfg)
 	require.NoError(t, err)
-	assert.Contains(t, metaData, `instance-id: "custom-host-01"`)
-	assert.Contains(t, metaData, `local-hostname: "custom-host"`)
+
+	var meta map[string]string
+	require.NoError(t, yaml.Unmarshal([]byte(metaData), &meta))
+	assert.Equal(t, "custom-host-01", meta["instance-id"])
+	assert.Equal(t, "custom-host", meta["local-hostname"])
 }

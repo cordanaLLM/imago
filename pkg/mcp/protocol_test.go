@@ -177,7 +177,7 @@ func TestMCPProtocolCloudInitBounds(t *testing.T) {
 		host := strings.Repeat("h", 63)
 		res, text := callTool(t, session, "generate_cloudinit", map[string]any{"flavor": "base-generic", "hostname": host, "platform": "UTM"})
 		assert.False(t, res.IsError)
-		assert.Contains(t, text, `hostname: "`+host+`"`)
+		assert.Contains(t, text, "hostname: "+host)
 	})
 }
 

@@ -4,12 +4,13 @@
 package cloudinit
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/cordanaLLM/imago/pkg/flavors"
+	"go.yaml.in/yaml/v3"
 )
 
 // Config specifies the runtime identity and platform targets for cloud-init generation.
@@ -109,14 +110,130 @@ func validateLists(cfg Config) error {
 	return nil
 }
 
-// quote renders s as a YAML double-quoted scalar; JSON strings are valid YAML.
-func quote(s string) string {
-	data, err := json.Marshal(s)
-	if err != nil {
-		// json.Marshal of a string cannot fail; the fallback still yields a scalar.
-		return `""`
+// userDataHeader precedes the encoded document; cloud-init requires the first line.
+const userDataHeader = "#cloud-config\n# Lusoris Hardened Cloud-Init User-Data\n"
+
+// userDataDoc is the user-data document; field order is the emitted key order.
+type userDataDoc struct {
+	Hostname       string           `yaml:"hostname"`
+	FQDN           string           `yaml:"fqdn"`
+	ManageEtcHosts bool             `yaml:"manage_etc_hosts"`
+	Users          []userDataUser   `yaml:"users"`
+	SSHPwauth      bool             `yaml:"ssh_pwauth"`
+	DisableRoot    bool             `yaml:"disable_root"`
+	Timezone       string           `yaml:"timezone"`
+	Growpart       userDataGrowpart `yaml:"growpart"`
+	Mounts         [][]string       `yaml:"mounts,omitempty"`
+	WriteFiles     []userDataFile   `yaml:"write_files,omitempty"`
+	Packages       []string         `yaml:"packages,omitempty"`
+	FinalMessage   string           `yaml:"final_message"`
+}
+
+type userDataUser struct {
+	Name              string   `yaml:"name"`
+	Gecos             string   `yaml:"gecos"`
+	Sudo              string   `yaml:"sudo"`
+	Groups            []string `yaml:"groups,flow"`
+	Shell             string   `yaml:"shell"`
+	LockPasswd        bool     `yaml:"lock_passwd"`
+	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys,omitempty"`
+}
+
+type userDataGrowpart struct {
+	Mode                   string   `yaml:"mode"`
+	Devices                []string `yaml:"devices,flow"`
+	IgnoreGrowrootDisabled bool     `yaml:"ignore_growroot_disabled"`
+}
+
+type userDataFile struct {
+	Path    string `yaml:"path"`
+	Content string `yaml:"content"`
+}
+
+// metaDataDoc is the NoCloud meta-data document.
+type metaDataDoc struct {
+	InstanceID    string `yaml:"instance-id"`
+	LocalHostname string `yaml:"local-hostname"`
+}
+
+func buildUser(cfg Config) userDataUser {
+	u := userDataUser{
+		Name:       cfg.User,
+		Gecos:      "Lusoris Operator",
+		Sudo:       "ALL=(ALL) NOPASSWD:ALL",
+		Groups:     []string{"adm", "audio", "cdrom", "dialout", "floppy", "video", "plugdev", "dip", "netdev", "render", "sudo"},
+		Shell:      "/bin/bash",
+		LockPasswd: true,
 	}
-	return string(data)
+	for _, key := range cfg.SSHAuthorizedKeys {
+		if trimmed := strings.TrimSpace(key); trimmed != "" {
+			u.SSHAuthorizedKeys = append(u.SSHAuthorizedKeys, trimmed)
+		}
+	}
+	return u
+}
+
+func platformUserData(platform string) ([][]string, []userDataFile) {
+	switch platform {
+	case "unraid":
+		return [][]string{{"share", "/mnt/share", "virtiofs", "rw,sync", "0", "0"}}, nil
+	case "truenas":
+		return [][]string{{"nfs_share", "/mnt/truenas", "nfs", "rw,hard,intr,noatime", "0", "0"}},
+			[]userDataFile{{
+				Path:    "/etc/udev/rules.d/99-truenas-virtio.rules",
+				Content: "ACTION==\"add|change\", SUBSYSTEM==\"block\", KERNEL==\"sd[a-z]|vd[a-z]\", ATTR{queue/discard_max_bytes}!=\"0\", ATTR{queue/discard_granularity}!=\"0\"\n",
+			}}
+	case "macos", "utm":
+		return [][]string{{"workspace", "/mnt/workspace", "virtiofs", "rw,sync", "0", "0"}}, nil
+	case "windows", "hyperv":
+		return nil, []userDataFile{{
+			Path:    "/etc/modules-load.d/hyperv.conf",
+			Content: "hv_vmbus\nhv_storvsc\nhv_netvsc\nhv_utils\n",
+		}}
+	default:
+		return nil, nil
+	}
+}
+
+func buildUserDataDoc(cfg Config) userDataDoc {
+	doc := userDataDoc{
+		Hostname:       cfg.Hostname,
+		FQDN:           cfg.Hostname + ".local",
+		ManageEtcHosts: true,
+		Users:          []userDataUser{buildUser(cfg)},
+		SSHPwauth:      false,
+		DisableRoot:    true,
+		Timezone:       cfg.Timezone,
+		Growpart: userDataGrowpart{
+			Mode:                   "auto",
+			Devices:                []string{"/"},
+			IgnoreGrowrootDisabled: false,
+		},
+		FinalMessage: "The Lusoris system is up, after $UPTIME seconds.",
+	}
+	if len(cfg.ExtraPackages) > 0 {
+		doc.Packages = cfg.ExtraPackages
+	}
+	doc.Mounts, doc.WriteFiles = platformUserData(cfg.Platform)
+	return doc
+}
+
+func renderUserData(cfg Config) (string, error) {
+	cfg = normalize(cfg)
+	doc := buildUserDataDoc(cfg)
+
+	var buf bytes.Buffer
+	buf.WriteString(userDataHeader)
+
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(doc); err != nil {
+		return "", fmt.Errorf("cloudinit: encode user-data: %w", err)
+	}
+	if err := enc.Close(); err != nil {
+		return "", fmt.Errorf("cloudinit: encode user-data: %w", err)
+	}
+	return buf.String(), nil
 }
 
 // GenerateUserData renders hardened cloud-init YAML user-data.
@@ -124,83 +241,26 @@ func GenerateUserData(cfg Config) (string, error) {
 	if err := Validate(cfg); err != nil {
 		return "", err
 	}
+	return renderUserData(cfg)
+}
+
+func renderMetaData(cfg Config) (string, error) {
 	cfg = normalize(cfg)
-
-	var sb strings.Builder
-	sb.WriteString("#cloud-config\n")
-	sb.WriteString("# Lusoris Hardened Cloud-Init User-Data\n\n")
-
-	fmt.Fprintf(&sb, "hostname: %s\n", quote(cfg.Hostname))
-	fmt.Fprintf(&sb, "fqdn: %s\n", quote(cfg.Hostname+".local"))
-	sb.WriteString("manage_etc_hosts: true\n\n")
-
-	appendUser(&sb, cfg)
-
-	sb.WriteString("ssh_pwauth: false\n")
-	sb.WriteString("disable_root: true\n\n")
-
-	fmt.Fprintf(&sb, "timezone: %s\n\n", quote(cfg.Timezone))
-
-	sb.WriteString("growpart:\n")
-	sb.WriteString("  mode: auto\n")
-	sb.WriteString("  devices: ['/']\n")
-	sb.WriteString("  ignore_growroot_disabled: false\n\n")
-
-	appendPlatformUserData(&sb, cfg.Platform)
-
-	if len(cfg.ExtraPackages) > 0 {
-		sb.WriteString("packages:\n")
-		for _, pkg := range cfg.ExtraPackages {
-			fmt.Fprintf(&sb, "  - %s\n", quote(pkg))
-		}
-		sb.WriteString("\n")
+	doc := metaDataDoc{
+		InstanceID:    cfg.Hostname + "-01",
+		LocalHostname: cfg.Hostname,
 	}
 
-	sb.WriteString("final_message: \"The Lusoris system is up, after $UPTIME seconds.\"\n")
-	return sb.String(), nil
-}
-
-func appendUser(sb *strings.Builder, cfg Config) {
-	sb.WriteString("users:\n")
-	fmt.Fprintf(sb, "  - name: %s\n", quote(cfg.User))
-	sb.WriteString("    gecos: Lusoris Operator\n")
-	sb.WriteString("    sudo: ALL=(ALL) NOPASSWD:ALL\n")
-	sb.WriteString("    groups: [adm, audio, cdrom, dialout, floppy, video, plugdev, dip, netdev, render, sudo]\n")
-	sb.WriteString("    shell: /bin/bash\n")
-	sb.WriteString("    lock_passwd: true\n")
-
-	if len(cfg.SSHAuthorizedKeys) > 0 {
-		sb.WriteString("    ssh_authorized_keys:\n")
-		for _, key := range cfg.SSHAuthorizedKeys {
-			if strings.TrimSpace(key) != "" {
-				fmt.Fprintf(sb, "      - %s\n", quote(strings.TrimSpace(key)))
-			}
-		}
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(doc); err != nil {
+		return "", fmt.Errorf("cloudinit: encode meta-data: %w", err)
 	}
-	sb.WriteString("\n")
-}
-
-func appendPlatformUserData(sb *strings.Builder, platform string) {
-	switch platform {
-	case "unraid":
-		sb.WriteString("mounts:\n")
-		sb.WriteString("  - [ share, /mnt/share, virtiofs, \"rw,sync\", \"0\", \"0\" ]\n\n")
-	case "truenas":
-		sb.WriteString("mounts:\n")
-		sb.WriteString("  - [ nfs_share, /mnt/truenas, nfs, \"rw,hard,intr,noatime\", \"0\", \"0\" ]\n\n")
-		sb.WriteString("write_files:\n")
-		sb.WriteString("  - path: /etc/udev/rules.d/99-truenas-virtio.rules\n")
-		sb.WriteString("    content: |\n")
-		sb.WriteString("      ACTION==\"add|change\", SUBSYSTEM==\"block\", KERNEL==\"sd[a-z]|vd[a-z]\", ATTR{queue/discard_max_bytes}!=\"0\", ATTR{queue/discard_granularity}!=\"0\"\n\n")
-	case "macos", "utm":
-		sb.WriteString("mounts:\n")
-		sb.WriteString("  - [ workspace, /mnt/workspace, virtiofs, \"rw,sync\", \"0\", \"0\" ]\n\n")
-	case "windows", "hyperv":
-		sb.WriteString("write_files:\n")
-		sb.WriteString("  - path: /etc/modules-load.d/hyperv.conf\n")
-		sb.WriteString("    content: |\n")
-		sb.WriteString("      hv_vmbus\n      hv_storvsc\n      hv_netvsc\n      hv_utils\n\n")
+	if err := enc.Close(); err != nil {
+		return "", fmt.Errorf("cloudinit: encode meta-data: %w", err)
 	}
+	return buf.String(), nil
 }
 
 // GenerateMetaData renders cloud-init meta-data.
@@ -209,8 +269,5 @@ func GenerateMetaData(cfg Config) (string, error) {
 	if err := validateIdentity(cfg); err != nil {
 		return "", err
 	}
-	var sb strings.Builder
-	fmt.Fprintf(&sb, "instance-id: %s\n", quote(cfg.Hostname+"-01"))
-	fmt.Fprintf(&sb, "local-hostname: %s\n", quote(cfg.Hostname))
-	return sb.String(), nil
+	return renderMetaData(cfg)
 }
