@@ -12,7 +12,7 @@ OpenMediaVault is a Debian-based NAS solution popular in lightweight homelab env
 
 - **OMV-KVM Virtualization**:
   - The `openmediavault-kvm` (Cockpit Machines) plugin runs standard QEMU/KVM virtual machines.
-  - Download the `.qcow2.zst` artifact into the OMV storage pool:
+  - Download the `.qcow2.zst` artifact into the OMV storage pool; an image of 2 GiB or more ships as `.part00`, `.part01`, ... parts, joined as [Supply Chain Security](../security/supply-chain.md#1-cryptographic-signing-via-cosign) shows:
 
     ```bash
     zstdcat lusoris-cloud-docker-generic.qcow2.zst > /srv/dev-disk-by-uuid-.../vms/docker-node.qcow2
