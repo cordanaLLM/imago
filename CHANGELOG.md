@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Build provenance for release assets: the build and sign jobs moved from `release-matrix.yml` into the called workflow `.github/workflows/release-build.yml`, and the `build-matrix` job attests SLSA build provenance over each flavor's checksum file with `actions/attest` after `make build`, checks it with `gh attestation verify` and uploads the bundle as `provenance-<flavor>.sigstore.json`. The cosign identity of `SHA256SUMS.bundle` is now `release-build.yml@refs/tags/<tag>`; the HISS-11 exception in `.standards.yaml` is removed (ADR-0037, `docs/security/supply-chain.md`).
 - Release assets over the forge limit: the forge refuses a release asset of 2 GiB or more, and 14 of 44 flavors compressed to 2.08–2.62 GiB in the 2026-10-18 sweep. `tools/ci/release_assets.py split` now lists every asset whole in the flavor's checksum file and cuts each asset of 2 GiB or more into 1792 MiB parts with their own checksum lines; `release-matrix.yml` uploads the parts instead of the asset, and the sizes check measures what is uploaded. `release_assets.py join` rebuilds an asset from its parts and checks each part and the result against `SHA256SUMS` (`docs/security/supply-chain.md`); `tests/test_release_assets.py` covers the boundary, a corrupt part, a missing part and a wrong joined digest.
 
 ### Changed

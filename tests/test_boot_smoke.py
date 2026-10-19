@@ -21,7 +21,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "tools" / "ci" / "boot_smoke.py"
-WORKFLOW = ROOT / ".github" / "workflows" / "release-matrix.yml"
+WORKFLOW = ROOT / ".github" / "workflows" / "release-build.yml"
 
 _spec = importlib.util.spec_from_file_location("boot_smoke", SCRIPT)
 smoke = importlib.util.module_from_spec(_spec)

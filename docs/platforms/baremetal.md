@@ -17,7 +17,7 @@ for asset in lusoris-cloud-base-generic.raw.zst SHA256SUMS SHA256SUMS.bundle; do
   curl -fsSLO "https://github.com/${OWNER}/imago/releases/download/${TAG}/${asset}"
 done
 cosign verify-blob --bundle SHA256SUMS.bundle \
-  --certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-matrix.yml@refs/tags/${TAG}" \
+  --certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-build.yml@refs/tags/${TAG}" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS
 sha256sum --check --ignore-missing SHA256SUMS
 ```
@@ -108,7 +108,7 @@ for asset in "${FLAVOR}-netboot.vmlinuz" "${FLAVOR}-netboot.initrd" "${FLAVOR}-r
   curl -fsSLO "https://github.com/${OWNER}/imago/releases/download/${TAG}/${asset}"
 done
 cosign verify-blob --bundle SHA256SUMS.bundle \
-  --certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-matrix.yml@refs/tags/${TAG}" \
+  --certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-build.yml@refs/tags/${TAG}" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS
 sha256sum --check --ignore-missing SHA256SUMS
 ```

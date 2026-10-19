@@ -86,18 +86,6 @@ needs:
 # Declared gaps (one rule, one path, a reason, an expiry). The audit prints each entry and
 # fails once it expires.
 exceptions:
-    - rule: HISS-11
-      path: .github/workflows/release-matrix.yml
-      reason: >-
-          the release workflow signs SHA256SUMS with cosign and ships Syft SBOMs, but publishes
-          no build provenance (SLSA Build Level 3 declared, Level 0 measured); move the build and
-          actions/attest-build-provenance into a reusable workflow as docs/guides/releasing.md in
-          Praetor describes, then remove this entry. The 90-day interval (category A)
-          from entry covers moving the image build into a reusable workflow, which also
-          has to carry the split release assets still under decision
-      category: A
-      entered: "2026-10-11"
-      expires: "2027-01-09"
     - rule: codespell
       path: tools/figures/player/player.js
       category: C

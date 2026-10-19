@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "tools" / "ci" / "release_assets.py"
 WORKFLOWS = ROOT / ".github" / "workflows"
 RELEASE = WORKFLOWS / "release-matrix.yml"
+BUILD = WORKFLOWS / "release-build.yml"
 BAREMETAL = ROOT / "docs" / "platforms" / "baremetal.md"
 DEVICE = "/dev/nbd7"
 
@@ -462,7 +463,7 @@ def test_part_size_stays_under_the_forge_limit():
 
 
 def test_build_job_generates_and_checks_sboms_before_compressing():
-    job = load(RELEASE)["jobs"]["build-matrix"]
+    job = load(BUILD)["jobs"]["build-matrix"]
     sbom = index(job, lambda s: runs(s, r"(?m)^\s*syft scan .*-o \"?cyclonedx-json=.*-o \"?spdx-json="))
     compress = index(job, lambda s: runs(s, r"zstd "))
     assert sbom < compress
@@ -486,7 +487,7 @@ def test_build_job_generates_and_checks_sboms_before_compressing():
 
 
 def test_compress_step_converts_to_raw_splits_then_checks_the_upload_sizes():
-    job = load(RELEASE)["jobs"]["build-matrix"]
+    job = load(BUILD)["jobs"]["build-matrix"]
     lines = steps(job)[index(job, lambda s: runs(s, r"zstd "))]["run"].splitlines()
     wanted = [
         r"qcow2=\(\./\*\.qcow2\)$",
@@ -511,7 +512,7 @@ def upload_artifact(job: dict, name: str) -> dict:
 
 
 def test_manual_run_keeps_the_raw_image_for_a_day():
-    job = load(RELEASE)["jobs"]["build-matrix"]
+    job = load(BUILD)["jobs"]["build-matrix"]
     keep = upload_artifact(job, "raw-${{ matrix.flavor }}")
     assert keep["if"] == "github.event_name == 'workflow_dispatch'"
     assert keep["with"]["path"] == "packer/output-images/${{ matrix.flavor }}/*.raw.zst"
@@ -520,7 +521,7 @@ def test_manual_run_keeps_the_raw_image_for_a_day():
 
 
 def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
-    job = load(RELEASE)["jobs"]["build-matrix"]
+    job = load(BUILD)["jobs"]["build-matrix"]
     keep = upload_artifact(job, "checksums-${{ matrix.flavor }}")
     assert keep["with"]["if-no-files-found"] == "error"
     paths = keep["with"]["path"].strip().splitlines()
@@ -536,16 +537,18 @@ def test_build_job_keeps_the_checksums_and_uploads_no_unsigned_sha256sums():
     assert upload["if"] == "github.event_name == 'release'"
     assert upload["env"]["TAG"] == "${{ github.event.release.tag_name }}"
     assert upload["env"]["FLAVOR"] == "${{ matrix.flavor }}"
+    assert upload["env"]["BUNDLE"] == "${{ steps.attest.outputs.bundle-path }}"
     assert "SHA256SUMS" not in upload["run"]
     assert upload["run"].strip().splitlines() == [
         'cd "packer/output-images/${FLAVOR}"',
+        'cp "${BUNDLE}" "provenance-${FLAVOR}.sigstore.json"',
         'mapfile -t upload < "upload-${FLAVOR}.txt"',
-        'gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber "${upload[@]}"',
+        'gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber "${upload[@]}" "provenance-${FLAVOR}.sigstore.json"',
     ]
 
 
 def test_netboot_smoke_step_runs_on_manual_dispatch_with_negative_check():
-    job = load(RELEASE)["jobs"]["build-matrix"]
+    job = load(BUILD)["jobs"]["build-matrix"]
     step = steps(job)[index(job, lambda s: s.get("name") == "Netboot Smoke Test")]
     assert step["if"] == "github.event_name == 'workflow_dispatch'"
     assert step.get("continue-on-error") is None or step["continue-on-error"] is False
@@ -557,7 +560,7 @@ def test_netboot_smoke_step_runs_on_manual_dispatch_with_negative_check():
 
 
 def test_sign_job_signs_verifies_then_uploads_on_release_only():
-    job = load(RELEASE)["jobs"]["sign"]
+    job = load(BUILD)["jobs"]["sign"]
     assert job["needs"] == "build-matrix"
     assert job["if"] == "github.event_name == 'release'"
     assert job["permissions"] == {"contents": "write", "id-token": "write"}
@@ -567,14 +570,20 @@ def test_sign_job_signs_verifies_then_uploads_on_release_only():
     upload = index(job, lambda s: runs(s, r"gh release upload "))
     assert merge < sign < verify < upload
     verify_run = steps(job)[verify]["run"]
-    assert '--certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}"' in verify_run
+    assert (
+        '--certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release-build.yml@${GITHUB_REF}"'
+        in verify_run
+    )
     assert "--certificate-oidc-issuer https://token.actions.githubusercontent.com" in verify_run
     upload_run = steps(job)[upload]["run"].split()
-    assert upload_run[upload_run.index("--clobber") + 1 :] == ["SHA256SUMS", "SHA256SUMS.bundle"]
+    assert upload_run[upload_run.index("--clobber") + 1 :] == [
+        "SHA256SUMS",
+        "SHA256SUMS.bundle",
+    ]
 
 
 def test_every_action_is_pinned_to_a_commit():
-    for name, job in load(RELEASE)["jobs"].items():
+    for name, job in load(BUILD)["jobs"].items():
         for step in steps(job):
             if "uses" in step:
                 assert re.fullmatch(r"[\w./-]+@[0-9a-f]{40}", step["uses"]), (name, step["uses"])
@@ -604,7 +613,7 @@ def test_baremetal_guide_downloads_a_raw_image_the_release_ships():
     guide = BAREMETAL.read_text(encoding="utf-8")
     hcl = (ROOT / "packer" / "variables.pkr.hcl").read_text(encoding="utf-8")
     image_name = re.search(r'variable "image_name" \{[^}]*default\s*=\s*"([^"]+)"', hcl)
-    expression = load(RELEASE)["jobs"]["build-matrix"]["strategy"]["matrix"]["flavor"]
+    expression = load(RELEASE)["jobs"]["release"]["with"]["flavors"]
     released = re.search(r"\|\|\s*'(\[[^']+\])'", expression)
     assert released, "the matrix expression lists no release flavors"
     flavors = json.loads(released[1])
@@ -616,7 +625,7 @@ def test_baremetal_guide_downloads_a_raw_image_the_release_ships():
     streamed = re.findall(re.escape(RELEASE_URL) + r"([\w.-]+\.raw\.zst)", guide)
     assert streamed and {fetched[0], *streamed} <= shipped, (fetched, streamed, shipped)
     assert (
-        '--certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-matrix.yml@refs/tags/${TAG}"'
+        '--certificate-identity "https://github.com/${OWNER}/imago/.github/workflows/release-build.yml@refs/tags/${TAG}"'
         in guide
     )
 

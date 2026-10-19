@@ -227,6 +227,7 @@ class TestGovernanceIntegrity:
             "required-aggregator.yml",
             "pages.yml",
             "release-matrix.yml",
+            "release-build.yml",
             "release-please.yml",
             "scorecard.yml",
             "security-scans.yml",
