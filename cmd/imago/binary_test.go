@@ -2,20 +2,24 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -194,4 +198,93 @@ func TestBinaryMCPOverStdio(t *testing.T) {
 	assert.Contains(t, res.Content[0].(*sdkmcp.TextContent).Text, "00-base-strip.sh")
 
 	require.NoError(t, session.Close(), "server did not stop when the client closed stdin")
+}
+
+type binaryRPCResponse struct {
+	JSONRPC string          `json:"jsonrpc"`
+	ID      int             `json:"id"`
+	Result  json.RawMessage `json:"result,omitempty"`
+	Error   *binaryRPCError `json:"error,omitempty"`
+}
+
+type binaryRPCError struct {
+	Code    int64  `json:"code"`
+	Message string `json:"message"`
+}
+
+// TestBinaryMCPStdioJSONRPCErrorCodes verifies end-to-end JSON-RPC error codes over
+// stdio when calling unknown tools and unknown methods against `imago mcp`.
+func TestBinaryMCPStdioJSONRPCErrorCodes(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, imagoBinary(t), "mcp")
+	cmd.Dir = repoRoot(t)
+	stderr := new(lockedBuffer)
+	cmd.Stderr = stderr
+
+	stdin, err := cmd.StdinPipe()
+	require.NoError(t, err)
+	defer func() { _ = stdin.Close() }()
+
+	stdout, err := cmd.StdoutPipe()
+	require.NoError(t, err)
+
+	require.NoError(t, cmd.Start())
+
+	latestVersion := sdkmcp.SupportedProtocolVersions()[0]
+	payload := strings.Join([]string{
+		fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":%q,"capabilities":{},"clientInfo":{"name":"binary-test","version":"1.0.0"}}}`, latestVersion),
+		`{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}`,
+		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"definitely_unknown_tool"}}`,
+		`{"jsonrpc":"2.0","id":3,"method":"no/such/method","params":{}}`,
+		`{"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}`,
+	}, "\n") + "\n"
+
+	_, err = io.WriteString(stdin, payload)
+	require.NoError(t, err)
+
+	responses := make(map[int]binaryRPCResponse)
+	scanner := bufio.NewScanner(stdout)
+	const maxResponses = 10
+	for i := 0; i < maxResponses && scanner.Scan(); i++ {
+		var resp binaryRPCResponse
+		require.NoError(t, json.Unmarshal(scanner.Bytes(), &resp))
+		responses[resp.ID] = resp
+		if len(responses) == 4 {
+			_ = stdin.Close()
+		}
+	}
+	require.NoError(t, scanner.Err())
+	require.NoError(t, cmd.Wait(), "server exited with error; stderr:\n%s", stderr.String())
+
+	assertBinaryMCPResponses(t, responses)
+}
+
+func assertBinaryMCPResponses(t *testing.T, responses map[int]binaryRPCResponse) {
+	t.Helper()
+
+	// Assert id 2: unknown tool returns CodeInvalidParams (-32602)
+	require.Contains(t, responses, 2)
+	require.NotNil(t, responses[2].Error)
+	assert.Equal(t, int64(jsonrpc.CodeInvalidParams), responses[2].Error.Code)
+	assert.Equal(t, int64(-32602), responses[2].Error.Code)
+	assert.Contains(t, responses[2].Error.Message, `unknown tool "definitely_unknown_tool"`)
+
+	// Assert id 3: unknown method returns CodeMethodNotFound (-32601)
+	require.Contains(t, responses, 3)
+	require.NotNil(t, responses[3].Error)
+	assert.Equal(t, int64(jsonrpc.CodeMethodNotFound), responses[3].Error.Code)
+	assert.Equal(t, int64(-32601), responses[3].Error.Code)
+
+	// Assert id 4: positive tools/list returns non-empty tools array
+	require.Contains(t, responses, 4)
+	assert.Nil(t, responses[4].Error)
+	var listResult struct {
+		Tools []struct {
+			Name string `json:"name"`
+		} `json:"tools"`
+	}
+	require.NoError(t, json.Unmarshal(responses[4].Result, &listResult))
+	assert.NotEmpty(t, listResult.Tools)
 }

@@ -1,0 +1,9 @@
+# Copyright 2026 Lusoris
+# OSV-Scanner ignores for the Go module in this directory, read by the OpenSSF Scorecard
+# Vulnerabilities check. Each entry mirrors a not_affected statement of
+# security/vex/go.openvex.json, with the same expiry; tests/test_osv_ignores.py holds them equal.
+
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+ignoreUntil = 2027-02-15
+reason = "Category D, entered 2026-10-19, see security/vex/go.openvex.json: osv matches the whole golang.org/x/crypto module, but the advisory covers only the openpgp package, which no imago build contains; the module comes in through golusoris core -> go-playground/validator -> x/crypto/sha3, and govulncheck in symbol mode reports it required but not called."
