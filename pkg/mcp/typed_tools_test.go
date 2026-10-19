@@ -3,9 +3,11 @@ package mcp_test
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"testing"
 
+	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,6 +27,10 @@ func TestMCPUnknownToolReturnsSDKError(t *testing.T) {
 	require.Error(t, err)
 	assert.Nil(t, res)
 	assert.Contains(t, err.Error(), `unknown tool "definitely_unknown_tool"`)
+
+	var rpcErr *jsonrpc.Error
+	require.True(t, errors.As(err, &rpcErr), "expected *jsonrpc.Error, got: %T (%v)", err, err)
+	assert.Equal(t, int64(jsonrpc.CodeInvalidParams), rpcErr.Code)
 }
 
 type testToolArgs struct {
