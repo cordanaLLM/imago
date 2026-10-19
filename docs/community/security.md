@@ -130,7 +130,7 @@ The Vulnerabilities check runs OSV-Scanner over `go.mod` and honours [`osv-scann
 All official release artifacts produced by the release matrix are fortified with verifiable provenance:
 
 1. **Cryptographic Keyless Signatures (Cosign)**:
-   Each published release carries one `SHA256SUMS` over every image (`.qcow2.zst`) and SBOM, signed with Sigstore Cosign through the GitHub Actions OIDC identity of `release-matrix.yml` at the release tag (`SHA256SUMS.bundle`). The verification command is in [Supply Chain Security](../security/supply-chain.md).
+   Each published release carries one `SHA256SUMS` over every image (`.qcow2.zst`, `.raw.zst`), netboot asset and SBOM, and over each part of an asset the forge's 2 GiB limit forces into parts, signed with Sigstore Cosign through the GitHub Actions OIDC identity of `release-matrix.yml` at the release tag (`SHA256SUMS.bundle`). The verification and join commands are in [Supply Chain Security](../security/supply-chain.md#1-cryptographic-signing-via-cosign).
 2. **Software Bill of Materials (SBOM)**:
    Every image build generates CycloneDX and SPDX SBOMs with Syft from the image's root file system, listing every installed Debian package; a build whose SBOM lists fewer than 100 fails.
 3. **Build Provenance**:

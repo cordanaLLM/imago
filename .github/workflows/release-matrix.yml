@@ -167,7 +167,9 @@ jobs:
         # lusoris-install-to-disk writes its input to a disk unchanged, so the release also
         # ships the image as raw disk: handed the qcow2 container, the helper refuses it.
         # qemu-img writes the raw file sparse, and zstd packs the unused space to almost
-        # nothing; the sizes check fails before an asset reaches the forge limit.
+        # nothing. The forge refuses a release asset of 2 GiB or more, so split lists every
+        # asset whole in the checksum file and cuts each larger one into parts that the
+        # upload list names instead; the sizes check then measures exactly what is uploaded.
         env:
           FLAVOR: ${{ matrix.flavor }}
         run: |
@@ -177,8 +179,10 @@ jobs:
           qemu-img convert -O raw "${qcow2[0]}" "${qcow2[0]%.qcow2}.raw"
           zstd -T0 -19 --rm ./*.qcow2 ./*.raw
           netboot=(./*-netboot.vmlinuz ./*-netboot.initrd ./*-root.squashfs ./*.ipxe)
-          python3 -I "${GITHUB_WORKSPACE}/tools/ci/release_assets.py" sizes --summary "${GITHUB_STEP_SUMMARY}" ./*.qcow2.zst ./*.raw.zst "${netboot[@]}"
-          sha256sum -- *.qcow2.zst *.raw.zst sbom-*.json "${netboot[@]#./}" > "checksums-${FLAVOR}.sha256"
+          python3 -I "${GITHUB_WORKSPACE}/tools/ci/release_assets.py" split --sums "checksums-${FLAVOR}.sha256" \
+            --list "upload-${FLAVOR}.txt" ./*.qcow2.zst ./*.raw.zst ./sbom-*.json "${netboot[@]}"
+          mapfile -t upload < "upload-${FLAVOR}.txt"
+          python3 -I "${GITHUB_WORKSPACE}/tools/ci/release_assets.py" sizes --summary "${GITHUB_STEP_SUMMARY}" "${upload[@]}"
       - name: Keep the Checksums and SBOMs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -222,11 +226,9 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
           FLAVOR: ${{ matrix.flavor }}
         run: |
-          gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber \
-            "packer/output-images/${FLAVOR}"/*.qcow2.zst "packer/output-images/${FLAVOR}"/*.raw.zst \
-            "packer/output-images/${FLAVOR}"/sbom-*.json \
-            "packer/output-images/${FLAVOR}"/*-netboot.vmlinuz "packer/output-images/${FLAVOR}"/*-netboot.initrd \
-            "packer/output-images/${FLAVOR}"/*-root.squashfs "packer/output-images/${FLAVOR}"/*.ipxe
+          cd "packer/output-images/${FLAVOR}"
+          mapfile -t upload < "upload-${FLAVOR}.txt"
+          gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber "${upload[@]}"
 
   sign:
     # Runs only when every flavor built, so the signed SHA256SUMS covers the whole release.

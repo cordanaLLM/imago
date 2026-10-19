@@ -4,6 +4,8 @@
 
 ## Direct Import via CLI (`qm importdisk`)
 
+An image of 2 GiB or more is too large for one release asset, so the release carries it as `<asset>.part00`, `<asset>.part01`, and so on, and the `curl` below fails for that flavor. Download the parts with `SHA256SUMS`, check and join them as [Supply Chain Security](../security/supply-chain.md#1-cryptographic-signing-via-cosign) shows, and decompress the joined file with `zstdcat`.
+
 ```bash
 # 1. Download and decompress the desired release image
 curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > /tmp/image.qcow2

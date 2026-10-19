@@ -18,15 +18,25 @@ The sizes command lists the size of each compressed image, appends the list to t
 summary when one is given, and fails when an asset reaches ASSET_LIMIT_BYTES: the forge
 refuses a release asset of 2 GiB or more, and a raw disk image grows with the disk size.
 
+The split command writes the flavor's checksum file and the list of files to upload. It
+lists the SHA-256 of every asset whole, and cuts each asset of ASSET_LIMIT_BYTES or more into
+parts of PART_BYTES named <asset>.part00, <asset>.part01, ...; each part gets its own line, and
+the upload list names the parts instead of the asset. The join command rebuilds an asset from
+its parts on the download side: it checks every part and then the joined file against the
+signed SHA256SUMS, and removes the joined file when a digest differs.
+
 Usage:
   python3 -I tools/ci/release_assets.py attach --image IMG.qcow2 --at DIR [--device /dev/nbd0]
   python3 -I tools/ci/release_assets.py detach --at DIR [--device /dev/nbd0]
   python3 -I tools/ci/release_assets.py check --cdx sbom.cdx.json --spdx sbom.spdx.json
   python3 -I tools/ci/release_assets.py merge --out SHA256SUMS checksums/*.sha256
   python3 -I tools/ci/release_assets.py sizes [--summary FILE] IMG.qcow2.zst IMG.raw.zst
+  python3 -I tools/ci/release_assets.py split --sums checksums.sha256 --list upload.txt ASSET...
+  python3 -I tools/ci/release_assets.py join --sums SHA256SUMS --out ASSET ASSET.part00 ...
 """
 
 import argparse
+import hashlib
 import json
 import os
 import pathlib
@@ -46,6 +56,10 @@ COMMAND_TIMEOUT_S = 120
 # checked 2026-10-14).
 ASSET_LIMIT_BYTES = 2 * 1024**3
 MAX_ASSETS = 1000
+# A part stays 256 MiB under the limit, so no part ever meets the sizes check's boundary.
+PART_BYTES = 1792 * 1024**2
+MAX_PARTS = 16
+COPY_CHUNK = 64 * 1024**2
 CHECKSUM_LINE = re.compile(r"^([0-9a-f]{64}) [ *]([A-Za-z0-9._+-]{1,255})$")
 
 
@@ -213,6 +227,90 @@ def sizes(paths: list[pathlib.Path], summary: pathlib.Path | None) -> None:
         raise AssetError(f"{', '.join(too_large)} reach the forge limit of {ASSET_LIMIT_BYTES} bytes per asset")
 
 
+def digest(path: pathlib.Path) -> str:
+    sha = hashlib.sha256()
+    with path.open("rb") as source:
+        for _ in range(path.stat().st_size // COPY_CHUNK + 1):
+            sha.update(source.read(COPY_CHUNK))
+    return sha.hexdigest()
+
+
+def copy_bytes(source, out, count: int) -> None:
+    for _ in range(count // COPY_CHUNK + 1):
+        chunk = source.read(min(COPY_CHUNK, count))
+        if not chunk:
+            break
+        out.write(chunk)
+        count -= len(chunk)
+    if count:
+        raise AssetError(f"{out.name}: input ended {count} bytes early")
+
+
+def write_parts(path: pathlib.Path) -> list[pathlib.Path]:
+    size = path.stat().st_size
+    count = -(-size // PART_BYTES)
+    if count > MAX_PARTS:
+        raise AssetError(f"{path.name}: {count} parts, more than {MAX_PARTS}")
+    parts = []
+    with path.open("rb") as source:
+        for index in range(count):
+            part = path.with_name(f"{path.name}.part{index:02d}")
+            with part.open("wb") as out:
+                copy_bytes(source, out, min(PART_BYTES, size - index * PART_BYTES))
+            parts.append(part)
+    return parts
+
+
+def split(paths: list[pathlib.Path], sums: pathlib.Path, listing: pathlib.Path) -> None:
+    if not paths:
+        raise AssetError("no release assets to split")
+    if len(paths) > MAX_ASSETS:
+        raise AssetError(f"{len(paths)} assets, more than the {MAX_ASSETS} a release holds")
+    lines, upload = [], []
+    for path in paths:
+        lines.append(f"{digest(path)}  {path.name}")
+        if path.stat().st_size < ASSET_LIMIT_BYTES:
+            upload.append(path.name)
+            continue
+        for part in write_parts(path):
+            lines.append(f"{digest(part)}  {part.name}")
+            upload.append(part.name)
+    sums.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+    listing.write_text("".join(name + "\n" for name in upload), encoding="utf-8")
+    print(f"{sums.name}: {len(lines)} lines; {listing.name}: {len(upload)} files to upload")
+
+
+def read_sums(sums: pathlib.Path) -> dict[str, str]:
+    listed = {}
+    for line in sums.read_text(encoding="utf-8").splitlines()[:MAX_CHECKSUM_LINES]:
+        match = CHECKSUM_LINE.match(line)
+        if not match:
+            raise AssetError(f"{sums.name}: not a sha256sum line: {line[:80]!r}")
+        listed[match[2]] = match[1]
+    return listed
+
+
+def join(sums: pathlib.Path, out: pathlib.Path, parts: list[pathlib.Path]) -> None:
+    listed = read_sums(sums)
+    expected = [f"{out.name}.part{index:02d}" for index in range(len(parts))]
+    if not parts or len(parts) > MAX_PARTS or sorted(part.name for part in parts) != expected:
+        raise AssetError(f"parts must be {out.name}.part00 up to .part{MAX_PARTS - 1:02d}, each once, none left out")
+    if out.name not in listed:
+        raise AssetError(f"{sums.name} does not list {out.name}")
+    ordered = sorted(parts, key=lambda part: part.name)
+    for part in ordered:
+        if listed.get(part.name) != digest(part):
+            raise AssetError(f"{part.name} does not match {sums.name}")
+    with out.open("wb") as joined:
+        for part in ordered:
+            with part.open("rb") as source:
+                copy_bytes(source, joined, part.stat().st_size)
+    if digest(out) != listed[out.name]:
+        out.unlink()
+        raise AssetError(f"joined {out.name} does not match {sums.name}; removed it")
+    print(f"{out.name}: joined {len(ordered)} parts, sha256 matches {sums.name}")
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     commands = root.add_subparsers(dest="command", required=True)
@@ -231,6 +329,14 @@ def parser() -> argparse.ArgumentParser:
     sub = commands.add_parser("sizes")
     sub.add_argument("--summary", type=pathlib.Path)
     sub.add_argument("assets", type=pathlib.Path, nargs="*")
+    sub = commands.add_parser("split")
+    sub.add_argument("--sums", type=pathlib.Path, required=True)
+    sub.add_argument("--list", dest="listing", type=pathlib.Path, required=True)
+    sub.add_argument("assets", type=pathlib.Path, nargs="*")
+    sub = commands.add_parser("join")
+    sub.add_argument("--sums", type=pathlib.Path, required=True)
+    sub.add_argument("--out", type=pathlib.Path, required=True)
+    sub.add_argument("parts", type=pathlib.Path, nargs="*")
     return root
 
 
@@ -242,6 +348,8 @@ def main(argv: list[str] | None = None) -> int:
         "check": lambda: check(args.cdx, args.spdx),
         "merge": lambda: merge(args.parts, args.out),
         "sizes": lambda: sizes(args.assets, args.summary),
+        "split": lambda: split(args.assets, args.sums, args.listing),
+        "join": lambda: join(args.sums, args.out, args.parts),
     }
     try:
         actions[args.command]()

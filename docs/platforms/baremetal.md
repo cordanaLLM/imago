@@ -113,6 +113,13 @@ cosign verify-blob --bundle SHA256SUMS.bundle \
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
+A squashfs of 2 GiB or more is too large for one release asset (in the 2026-10-18 build, `ai-infer-nvidia`, `ai-infer-amd` and `k3s-agent-amd`). The release then carries `${FLAVOR}-root.squashfs.part00`, `.part01`, and so on instead, the first `curl` above fails, and `SHA256SUMS` lists each part. Download the parts, check them, and join them with `tools/ci/release_assets.py join` from a checkout of the release tag, which also checks the joined squashfs ([supply chain](../security/supply-chain.md#1-cryptographic-signing-via-cosign)):
+
+```bash
+python3 -I tools/ci/release_assets.py join --sums SHA256SUMS \
+  --out "${FLAVOR}-root.squashfs" "${FLAVOR}-root.squashfs".part*
+```
+
 Serve the four files from one directory of a web server, with `boot.example.com` standing for that server, and chain the script from your iPXE configuration:
 
 ```ipxe
