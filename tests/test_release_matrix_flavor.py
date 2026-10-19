@@ -21,11 +21,18 @@ from tests.test_flavors import EXPECTED_FLAVORS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-matrix.yml"
+BUILD_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-build.yml"
 
 
 def load_workflow() -> dict:
     """Load release-matrix.yml workflow definition."""
     with WORKFLOW.open(encoding="utf-8") as handle:
+        return yaml.safe_load(handle)
+
+
+def load_build_workflow() -> dict:
+    """Load release-build.yml workflow definition."""
+    with BUILD_WORKFLOW.open(encoding="utf-8") as handle:
         return yaml.safe_load(handle)
 
 
@@ -45,7 +52,9 @@ def test_dispatch_choice_options() -> None:
 def test_matrix_flavor_expression() -> None:
     """Verify matrix.flavor references inputs.flavor and defaults to the 3 generic flavors."""
     workflow = load_workflow()
-    expr = workflow["jobs"]["build-matrix"]["strategy"]["matrix"]["flavor"]
+    build_workflow = load_build_workflow()
+    assert build_workflow["jobs"]["build-matrix"]["strategy"]["matrix"]["flavor"] == "${{ fromJSON(inputs.flavors) }}"
+    expr = workflow["jobs"]["release"]["with"]["flavors"]
     assert isinstance(expr, str)
     assert "inputs.flavor" in expr
     match = re.search(r"\|\|\s*'(\[[^']+\])'", expr)
@@ -56,7 +65,7 @@ def test_matrix_flavor_expression() -> None:
 
 def refuse_step() -> dict:
     """Return the refuse step, which must directly follow the checkout it reads from."""
-    steps = load_workflow()["jobs"]["build-matrix"]["steps"]
+    steps = load_build_workflow()["jobs"]["build-matrix"]["steps"]
     assert steps[0].get("uses", "").startswith("actions/checkout@"), "steps[0] is not the checkout"
     assert steps[1].get("name") == "Refuse an Unknown Flavor", "steps[1] is not the refuse step"
     return steps[1]
@@ -133,8 +142,8 @@ JOB_TIMEOUT_CEILING_MINUTES = 360  # GitHub's own per-job default; a bound must 
 
 def test_every_job_has_a_timeout_below_the_platform_default() -> None:
     """Every job names timeout-minutes, so a lost runner fails the run instead of waiting 6 h."""
-    jobs = load_workflow()["jobs"]
-    assert jobs, "release-matrix.yml defines no jobs"
+    jobs = load_build_workflow()["jobs"]
+    assert jobs, "release-build.yml defines no jobs"
     for name, job in jobs.items():
         bound = job.get("timeout-minutes")
         assert isinstance(bound, int), f"job {name} has no integer timeout-minutes"

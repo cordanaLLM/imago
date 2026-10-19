@@ -27,7 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TOOL = REPO_ROOT / "tools" / "ci" / "upstream_sources.py"
 PROVISIONERS = REPO_ROOT / "packer" / "provisioners"
 ROCM_SCRIPT = PROVISIONERS / "32-gpu-amd-rocm.sh"
-WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-matrix.yml"
+WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-build.yml"
 MANIFEST = json.loads((REPO_ROOT / "versions.json").read_text(encoding="utf-8"))
 
 _SPEC = importlib.util.spec_from_file_location("upstream_sources", TOOL)

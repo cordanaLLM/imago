@@ -54,7 +54,7 @@ jobs:
           # starts (ADR-0035). A manual release-matrix run on main reports its build
           # jobs on main's head, takes up to 240 min and outlasted this job's bound.
           # tests/test_required_aggregator.py derives the excluded names from the workflows.
-          KEEP_CHECKS: '^(?!Build Image \(|Sign the Release Checksums$|Build, Boot, and Release Aegis OS Image$|Verify and Pin Kernel Release from nucleus$)'
+          KEEP_CHECKS: '^(?!(?:release / )?(?:Build Image \(|Sign the Release Checksums$)|Build, Boot, and Release Aegis OS Image$|Verify and Pin Kernel Release from nucleus$)'
         # Queue time never counts: each check runs at most 30 min from its own start,
         # and the whole wait ends at 120 min of wall clock (ADR-0036).
         run: python3 -I tools/ci/wait_gate_checks.py --ref "$REF" --own required-checks --keep "$KEEP_CHECKS"

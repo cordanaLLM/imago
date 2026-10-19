@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKER = ROOT / "packer"
 PROVISIONERS = PACKER / "provisioners"
 PRECACHE = PROVISIONERS / "55-k8s-precache.sh"
-RELEASE = ROOT / ".github" / "workflows" / "release-matrix.yml"
+RELEASE = ROOT / ".github" / "workflows" / "release-build.yml"
 BUILD_PASSWORD = "build-pass"
 COMMAND_TIMEOUT_S = 60
 SEALED = ["sudo", "rm -f /etc/sudoers.d/90-cloud-init-users", "passwd -l ubuntu", "shutdown -P now"]
@@ -250,7 +250,7 @@ def test_qemu_source_takes_the_accelerator_variable() -> None:
 
 
 def test_release_build_emulates() -> None:
-    _, step = step_running(build_steps(), "packer build")
+    _, step = step_running(build_steps(), "make build")
     assert step.get("env", {}).get("PKR_VAR_accelerator") == "tcg"
 
 
@@ -281,8 +281,8 @@ def test_packer_validates_the_accelerator(value: str, accepted: bool) -> None:
 def test_compress_step_reads_the_flavor_output_directory() -> None:
     assert hcl_attribute(qemu_source(), "output_directory") == '"${var.output_dir}/${var.flavor}"'
     steps = build_steps()
-    _, build = step_running(steps, "packer build")
-    assert build["run"].lstrip().startswith("cd packer\n")
+    _, build = step_running(steps, "make build")
+    assert "make build" in build["run"]
     assert build.get("env", {}).get("PKR_VAR_flavor") == "${{ matrix.flavor }}"
     _, compress = step_running(steps, "zstd ")
     script = compress["run"]
@@ -300,7 +300,7 @@ def test_release_build_installs_an_iso_author_before_packer() -> None:
     assert "cd_files" in qemu_source()
     steps = build_steps()
     install_at, install = step_running(steps, "apt-get install")
-    build_at, _ = step_running(steps, "packer build")
+    build_at, _ = step_running(steps, "make build")
     packages = set(install["run"].split("apt-get install", 1)[1].split())
     assert packages & ISO_AUTHORS, packages
     assert install_at < build_at

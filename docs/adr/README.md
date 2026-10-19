@@ -46,3 +46,4 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0034](0034-ipxe-netboot.md) | iPXE Netboot Assets and Root Integrity | Accepted | 2026-10-17 |
 | [0035](0035-required-checks-wait-only-for-gate-workflows.md) | Required Checks Wait Only for Gate Workflows | Accepted | 2026-10-19 |
 | [0036](0036-required-checks-clock-starts-at-check-start.md) | Required Checks Count Run Time, Not Queue Time | Accepted | 2026-10-19 |
+| [0037](0037-release-build-in-reusable-workflow-with-provenance.md) | Release Build in Reusable Workflow with SLSA v1 Build Level 3 Provenance | Accepted | 2026-10-19 |

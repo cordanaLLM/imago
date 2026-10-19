@@ -130,8 +130,8 @@ The Vulnerabilities check runs OSV-Scanner over `go.mod` and honours [`osv-scann
 All official release artifacts produced by the release matrix are fortified with verifiable provenance:
 
 1. **Cryptographic Keyless Signatures (Cosign)**:
-   Each published release carries one `SHA256SUMS` over every image (`.qcow2.zst`, `.raw.zst`), netboot asset and SBOM, and over each part of an asset the forge's 2 GiB limit forces into parts, signed with Sigstore Cosign through the GitHub Actions OIDC identity of `release-matrix.yml` at the release tag (`SHA256SUMS.bundle`). The verification and join commands are in [Supply Chain Security](../security/supply-chain.md#1-cryptographic-signing-via-cosign).
+   Each published release carries one `SHA256SUMS` over every image (`.qcow2.zst`, `.raw.zst`), netboot asset and SBOM, and over each part of an asset the forge's 2 GiB limit forces into parts, signed with Sigstore Cosign through the GitHub Actions OIDC identity of `release-build.yml` at the release tag (`SHA256SUMS.bundle`). The verification and join commands are in [Supply Chain Security](../security/supply-chain.md#1-cryptographic-signing-via-cosign).
 2. **Software Bill of Materials (SBOM)**:
    Every image build generates CycloneDX and SPDX SBOMs with Syft from the image's root file system, listing every installed Debian package; a build whose SBOM lists fewer than 100 fails.
-3. **Build Provenance**:
-   No SLSA build provenance or GitHub artifact attestation is published yet. The gap is a dated HISS-11 exception in `.standards.yaml`: category A, entered 2026-10-11, expires 2027-01-09; the audit fails after that date.
+3. **Build Provenance (SLSA v1 Build Level 3)**:
+   Each published release carries SLSA v1 build provenance over each flavor's assets, attested with `actions/attest` in the `build-matrix` job of the called workflow `release-build.yml` over that flavor's checksum file after `make build` and uploaded as `provenance-<flavor>.sigstore.json` ([ADR-0037](../adr/0037-release-build-in-reusable-workflow-with-provenance.md)). The verification commands are in [Supply Chain Security](../security/supply-chain.md#2-slsa-v1-build-level-3-provenance).

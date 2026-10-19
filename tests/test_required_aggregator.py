@@ -187,6 +187,15 @@ def job_names(gate: bool) -> list[str]:
         if bool(GATE_EVENTS & set(triggers(document))) != gate:
             continue
         for job_id, job in (document.get("jobs") or {}).items():
+            if "uses" in job and job["uses"].startswith("./.github/workflows/"):
+                called_path = REPO_ROOT / job["uses"].removeprefix("./")
+                if called_path.exists():
+                    called_doc = load(called_path)
+                    caller_id = job.get("name", job_id)
+                    for cjob_id, cjob in (called_doc.get("jobs") or {}).items():
+                        cname = re.sub(r"\$\{\{[^}]*\}\}", MATRIX_SAMPLE, cjob.get("name", cjob_id))
+                        names.append(f"{caller_id} / {cname}")
+                continue
             names.append(re.sub(r"\$\{\{[^}]*\}\}", MATRIX_SAMPLE, job.get("name", job_id)))
     return names
 
@@ -204,12 +213,21 @@ def test_aggregator_skips_only_jobs_no_gate_event_starts():
     keep = aggregator_filter()
     names = job_names(gate=False)
     assert f"Build Image ({MATRIX_SAMPLE})" in names
+    assert f"release / Build Image ({MATRIX_SAMPLE})" in names
     assert [name for name in names if keep.search(name)] == []
 
 
 @pytest.mark.parametrize(
     "name",
-    ["Build Image", "Sign the Release Checksums v2", "Run Build Image (x)", "Go Build & Unit Tests", "required-checks"],
+    [
+        "Build Image",
+        "release / Build Image",
+        "Sign the Release Checksums v2",
+        "release / Sign the Release Checksums v2",
+        "Run Build Image (x)",
+        "Go Build & Unit Tests",
+        "required-checks",
+    ],
 )
 def test_planted_gate_names_are_waited_for(name):
     """Names that only resemble an excluded job stay in the wait."""
