@@ -2,11 +2,11 @@
 package builder
 
 import (
-	"bytes"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
+	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -21,8 +21,7 @@ type Pins struct {
 }
 
 // LoadPins reads only the build toolchain pins; unrelated manifest keys are allowed.
-// Duplicate keys at any depth are refused before decoding (encoding/json otherwise
-// silently keeps the last value). The iterative token walk avoids recursive descent.
+// Duplicate keys at any depth are refused before decoding.
 func LoadPins(path string) (Pins, error) {
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
@@ -69,70 +68,13 @@ func (p Pins) validate() error {
 	return nil
 }
 
-type jsonFrame struct {
-	keys    map[string]bool
-	wantKey bool
-}
-
 func uniqueJSONKeys(data []byte) error {
-	if !json.Valid(data) {
-		return fmt.Errorf("invalid JSON document")
-	}
-	dec := json.NewDecoder(bytes.NewReader(data))
-	var stack []jsonFrame
-	// Each token consumes at least one input byte; EOF ends the walk earlier.
-	for i := 0; i <= len(data); i++ {
-		token, err := dec.Token()
-		if err == io.EOF {
-			return nil
+	var raw any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		if serr, ok := errors.AsType[*jsontext.SyntacticError](err); ok && serr.Err == jsontext.ErrDuplicateName {
+			return fmt.Errorf("duplicate JSON key %q: %w", serr.JSONPointer.LastToken(), err)
 		}
-		if err != nil {
-			return fmt.Errorf("read JSON token: %w", err)
-		}
-		if err := consumeJSONToken(&stack, token); err != nil {
-			return err
-		}
+		return fmt.Errorf("invalid JSON document: %w", err)
 	}
-	return fmt.Errorf("JSON token limit exceeded")
-}
-
-func consumeJSONToken(stack *[]jsonFrame, token json.Token) error {
-	if delim, ok := token.(json.Delim); ok && (delim == '}' || delim == ']') {
-		*stack = (*stack)[:len(*stack)-1]
-		return nil
-	}
-	if err := acceptJSONToken(*stack, token); err != nil {
-		return err
-	}
-	if delim, ok := token.(json.Delim); ok {
-		frame := jsonFrame{}
-		if delim == '{' {
-			frame.keys = make(map[string]bool)
-			frame.wantKey = true
-		}
-		*stack = append(*stack, frame)
-	}
-	return nil
-}
-
-func acceptJSONToken(stack []jsonFrame, token json.Token) error {
-	if len(stack) == 0 {
-		return nil
-	}
-	frame := &stack[len(stack)-1]
-	if frame.keys == nil {
-		return nil
-	}
-	if frame.wantKey {
-		key, ok := token.(string)
-		if !ok {
-			return fmt.Errorf("invalid JSON object key")
-		}
-		if frame.keys[key] {
-			return fmt.Errorf("duplicate JSON key %q", key)
-		}
-		frame.keys[key] = true
-	}
-	frame.wantKey = !frame.wantKey
 	return nil
 }

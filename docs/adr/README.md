@@ -44,3 +44,5 @@ Once an ADR reaches status **Accepted**, its text is immutable. If architectural
 | [0032](0032-local-packer-executor.md) | Local Packer Executor | Accepted | 2026-10-17 |
 | [0033](0033-aegis-build-workflow.md) | Aegis OS Image Build and Release Workflow | Accepted | 2026-10-17 |
 | [0034](0034-ipxe-netboot.md) | iPXE Netboot Assets and Root Integrity | Accepted | 2026-10-17 |
+| [0035](0035-required-checks-wait-only-for-gate-workflows.md) | Required Checks Wait Only for Gate Workflows | Accepted | 2026-10-19 |
+| [0036](0036-required-checks-clock-starts-at-check-start.md) | Required Checks Count Run Time, Not Queue Time | Accepted | 2026-10-19 |

@@ -71,6 +71,8 @@ The repository runs the OpenSSF Scorecard supply-chain security analysis via Git
 | **Pinned-Dependencies** | **10 / 10** | **PASS (✓)** | 100% of GitHub Actions pinned to 40-character immutable commit SHAs. |
 | **Token-Permissions** | **10 / 10** | **PASS (✓)** | Top-level `contents: read` least privilege enforced; job-scoped write tokens only. |
 
+The Vulnerabilities check runs OSV-Scanner over `go.mod` and honours [`osv-scanner.toml`](https://github.com/cordanaLLM/imago/blob/main/osv-scanner.toml) beside it. Each ignore there mirrors a `not_affected` statement of [`security/vex/go.openvex.json`](https://github.com/cordanaLLM/imago/blob/main/security/vex/go.openvex.json) with the same expiry and an exception category. The one entry, GO-2026-5932, is category D (entered 2026-10-19, expires 2027-02-15): OSV matches the whole `golang.org/x/crypto` module, but the advisory covers only `openpgp`, which no imago build contains, and govulncheck reports the module required but not called. The fix is a dependency bump in golusoris core, which pulls the module in through go-playground/validator. `tests/test_osv_ignores.py` fails on an expired ignore, an expiry beyond the category interval, a drifted expiry, an ignore without a VEX statement and a VEX statement without an ignore.
+
 ### B. Trivy Vulnerability & Container Scan (v0.36.0)
 
 - **Scope**: Repository filesystem, package dependency manifests, and workflow configurations.
@@ -132,4 +134,4 @@ All official release artifacts produced by the release matrix are fortified with
 2. **Software Bill of Materials (SBOM)**:
    Every image build generates CycloneDX and SPDX SBOMs with Syft from the image's root file system, listing every installed Debian package; a build whose SBOM lists fewer than 100 fails.
 3. **Build Provenance**:
-   No SLSA build provenance or GitHub artifact attestation is published yet. The gap is a dated HISS-11 exception in `.standards.yaml`.
+   No SLSA build provenance or GitHub artifact attestation is published yet. The gap is a dated HISS-11 exception in `.standards.yaml`: category A, entered 2026-10-11, expires 2027-01-09; the audit fails after that date.

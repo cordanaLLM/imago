@@ -132,6 +132,7 @@ nav:
       - "0032: Local Packer Executor": adr/0032-local-packer-executor.md
       - "0033: Aegis Build Workflow": adr/0033-aegis-build-workflow.md
       - "0034: iPXE Netboot": adr/0034-ipxe-netboot.md
+      - "0035: Required Checks Wait Only for Gate Workflows": adr/0035-required-checks-wait-only-for-gate-workflows.md
       - "0018: NAS & Storage Appliance Ecosystem": adr/0018-nas-and-storage-appliance-ecosystem.md
   - Engineering & Governance:
       - Engineering Principles: principles.md

@@ -7,8 +7,14 @@
     ":semanticCommitScope(deps)",
     "helpers:pinGitHubActionDigests"
   ],
+  "milestone": 1,
   "labels": [
-    "dependencies"
+    "dependencies",
+    "kind/chore",
+    "area/ci-cd"
+  ],
+  "prBodyNotes": [
+    "Relates to #53 (Dependency Dashboard)."
   ],
   "schedule": [
     "before 6am on monday"
