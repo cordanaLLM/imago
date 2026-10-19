@@ -4,7 +4,7 @@ Date: 2026-10-14
 
 ## Status
 
-Accepted. Supersedes [ADR-0026](0026-required-checks-accept-only-detector-decided-skips.md).
+Accepted. Supersedes [ADR-0026](0026-required-checks-accept-only-detector-decided-skips.md). Point 5 is amended by [ADR-0035](0035-required-checks-wait-only-for-gate-workflows.md).
 
 ## Context
 
