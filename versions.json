@@ -45,7 +45,7 @@
       "cuda_mainstream": "13.2",
       "cuda_modern": "13.4",
       "cuda_bleeding": "13.4",
-      "container_toolkit": "1.20.0",
+      "container_toolkit": "1.20.1",
       "k8s_plugin": "nvcr.io/nvidia/k8s-device-plugin:v0.20.0"
     }
   },
