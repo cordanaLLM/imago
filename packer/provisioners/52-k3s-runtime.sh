@@ -32,12 +32,16 @@ install_k3s_binaries() {
   curl -fsSL --max-time 60 https://get.k3s.io -o "${install_script}"
   chmod +x "${install_script}"
 
+  # SKIP_ENABLE leaves the unit out of multi-user.target until cloud-init provisions the
+  # token on first boot; an enabled server unit crash-loops on a netboot overlay root.
   if [ "${K3S_ROLE}" = "server" ]; then
-    INSTALL_K3S_SKIP_START=true \
+    INSTALL_K3S_SKIP_ENABLE=true \
+      INSTALL_K3S_SKIP_START=true \
       INSTALL_K3S_VERSION="${K3S_VERSION}" \
       sh "${install_script}"
   else
-    INSTALL_K3S_SKIP_START=true \
+    INSTALL_K3S_SKIP_ENABLE=true \
+      INSTALL_K3S_SKIP_START=true \
       INSTALL_K3S_VERSION="${K3S_VERSION}" \
       INSTALL_K3S_EXEC="agent" \
       sh "${install_script}"
@@ -61,20 +65,27 @@ EOF
 # Lusoris K3s baseline configuration
 protect-kernel-defaults: true
 EOF
+}
 
-  # Keep service stopped until cloud-init provisions credentials/token on first boot
-  if systemctl list-unit-files | grep -q "k3s-agent.service"; then
-    sudo systemctl disable k3s-agent.service
+# The previous disable step piped `systemctl list-unit-files` into `grep -q`; under pipefail the
+# SIGPIPE status (141) skipped it, so the image booted with the unit enabled.
+verify_k3s_unit_disabled() {
+  local unit="k3s-agent.service"
+  if [ "${K3S_ROLE}" = "server" ]; then
+    unit="k3s.service"
   fi
-  if systemctl list-unit-files | grep -q "k3s.service"; then
-    sudo systemctl disable k3s.service
+  if systemctl is-enabled --quiet "${unit}"; then
+    echo "ERROR: ${unit} is enabled; it must stay off until cloud-init provisions the node" >&2
+    exit 1
   fi
+  echo "==> ${unit} stays disabled until first-boot provisioning."
 }
 
 main() {
   setup_k3s_prerequisites
   install_k3s_binaries
   configure_k3s_defaults
+  verify_k3s_unit_disabled
   echo "==> 52-k3s-runtime: K3s ${K3S_VERSION} installation complete (${K3S_ROLE})."
 }
 

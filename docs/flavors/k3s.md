@@ -38,6 +38,8 @@ Pre-configures `/etc/rancher/k3s/registries.yaml` with registry mirror fallbacks
 
 ## Cloud-Init Bootstrap Examples
 
+Every K3s image ships with `k3s.service` and `k3s-agent.service` disabled: the installer runs with `INSTALL_K3S_SKIP_ENABLE=true`, and `packer/provisioners/52-k3s-runtime.sh` fails the build when `systemctl is-enabled` reports the role's unit enabled. The node starts K3s only after cloud-init has written the join or server configuration, as the `runcmd` lines below do. An image built before this check booted with the unit enabled; on a netboot root, whose root file system is an overlay, the server crash-looped because containerd's overlayfs snapshotter cannot use that root as an upper directory, and the boot never reached `multi-user.target` (release-matrix run 39140519699).
+
 ### Worker Node (`k3s-agent-*`)
 
 To join a K3s cluster, provide the cluster URL and token in your cloud-init `user-data`:
