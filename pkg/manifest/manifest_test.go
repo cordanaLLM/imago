@@ -2,6 +2,7 @@
 package manifest_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -464,4 +465,66 @@ func TestLoadRefusesDocValidForStructChecksButInvalidForSchema(t *testing.T) {
 	require.Error(t, err)
 	assert.Nil(t, m)
 	assert.Contains(t, err.Error(), "manifest: schema")
+}
+
+func TestLoadPlantedDuplicateKeyErrors(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(raw []byte) []byte
+		expectKey string
+	}{
+		{
+			name: "duplicate_top_level_build",
+			mutate: func(raw []byte) []byte {
+				return bytes.Replace(raw, []byte(`"build": {`), []byte(`"build": {}, "build": {`), 1)
+			},
+			expectKey: "build",
+		},
+		{
+			name: "duplicate_nested_distro_key",
+			mutate: func(raw []byte) []byte {
+				return bytes.Replace(raw, []byte(`"name": "ubuntu",`), []byte(`"name": "ubuntu", "name": "debian",`), 1)
+			},
+			expectKey: "name",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rootPath, err := filepath.Abs("../../versions.json")
+			require.NoError(t, err)
+
+			orig, err := os.ReadFile(rootPath)
+			require.NoError(t, err)
+
+			corrupted := tc.mutate(orig)
+			require.NotEqual(t, orig, corrupted, "mutation must alter versions.json bytes")
+
+			tmpFile := filepath.Join(t.TempDir(), "versions-duplicate.json")
+			require.NoError(t, os.WriteFile(tmpFile, corrupted, 0o600))
+
+			m, err := manifest.Load(tmpFile)
+			require.Error(t, err)
+			assert.Nil(t, m)
+			assert.Contains(t, err.Error(), "manifest: parse")
+			assert.Contains(t, err.Error(), tc.expectKey)
+		})
+	}
+}
+
+func TestLoadVersionsJSONMatchesV1(t *testing.T) {
+	rootPath, err := filepath.Abs("../../versions.json")
+	require.NoError(t, err)
+
+	m, err := manifest.Load(rootPath)
+	require.NoError(t, err)
+	require.NotNil(t, m)
+
+	data, err := os.ReadFile(rootPath)
+	require.NoError(t, err)
+
+	var v1Manifest manifest.Manifest
+	require.NoError(t, json.Unmarshal(data, &v1Manifest))
+
+	assert.Equal(t, &v1Manifest, m)
 }
