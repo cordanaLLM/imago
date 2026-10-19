@@ -23,7 +23,8 @@ WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 AGGREGATOR = WORKFLOWS / "required-aggregator.yml"
 RULESET = REPO_ROOT / ".github" / "rulesets" / "main.json"
 VERSION = re.compile(r"\d+\.\d+")
-WAIT_ACTION = "lewagon/wait-on-check-action@"
+WAIT_STEP = "Wait for every other check; each must succeed"
+WAIT_SCRIPT = "tools/ci/wait_gate_checks.py"
 READY = "ready_for_review"
 
 DRAFT_STEP = {
@@ -155,16 +156,18 @@ def test_codespell_runs_on_every_event():
         assert "if" not in step, step
 
 
+def wait_step() -> dict:
+    (step,) = [s for s in load(AGGREGATOR)["jobs"]["required-checks"]["steps"] if s.get("name") == WAIT_STEP]
+    return step
+
+
 def test_aggregator_accepts_no_skip():
     document = load(AGGREGATOR)
     assert "MAY_SKIP" not in (document.get("env") or {})
-    steps = document["jobs"]["required-checks"]["steps"]
-    waits = [step for step in steps if step.get("uses", "").startswith(WAIT_ACTION)]
-    assert len(waits) == 1
-    inputs = waits[0]["with"]
-    assert inputs["allowed-conclusions"] == "success"
-    assert inputs["running-workflow-name"] == "required-checks"
-    assert "ignore-checks" not in inputs and "check-name" not in inputs
+    step = wait_step()
+    assert "uses" not in step
+    assert step["run"].startswith(f"python3 -I {WAIT_SCRIPT} ")
+    assert "--own required-checks" in step["run"]
 
 
 GATE_EVENTS = {"push", "pull_request", "merge_group"}
@@ -172,11 +175,8 @@ MATRIX_SAMPLE = "sample-flavor"
 
 
 def aggregator_filter() -> re.Pattern[str]:
-    """The `check-regexp` of the wait step; the action keeps a check whose name it matches."""
-    (wait,) = [
-        s for s in load(AGGREGATOR)["jobs"]["required-checks"]["steps"] if s.get("uses", "").startswith(WAIT_ACTION)
-    ]
-    return re.compile(wait["with"]["check-regexp"])
+    """The `KEEP_CHECKS` pattern of the wait step; the script keeps a check whose name it matches."""
+    return re.compile(wait_step()["env"]["KEEP_CHECKS"])
 
 
 def job_names(gate: bool) -> list[str]:
