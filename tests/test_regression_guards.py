@@ -3,8 +3,8 @@
 
 - #41, #42: the build account is sealed by the shutdown command and nowhere earlier; the
   seal runs before the power-off and a failed seal stops it.
-- #44: a preheated image that cannot be pulled fails the build, and the fallback pins in
-  the precache script equal the versions.json pins the build passes.
+- #44: a preheated image that cannot be pulled fails the build; precache requires every
+  image to be injected by the build with no fallback pins.
 - #40: the QEMU accelerator is a validated variable, and the release build emulates.
 - #43: the compress step reads the directory Packer writes the flavor's image to.
 - #39: the release build installs an ISO authoring tool before Packer writes the seed.
@@ -141,8 +141,35 @@ def test_no_provisioner_seals_the_build_account_early() -> None:
 # --- #44: a preheated image that cannot be pulled fails the build ------------------------
 
 
-def run_precache(tmp_path: Path, profile: str, flavor: str, failing_image: str = ""):
-    env = {"PREHEAT_PROFILE": profile, "FLAVOR": flavor, "MOCK_FAIL_IMAGE": failing_image}
+def precache_image_pins() -> dict[str, str]:
+    builds = (PACKER / "builds.pkr.hcl").read_text(encoding="utf-8")
+    manifest = json.loads((ROOT / "versions.json").read_text(encoding="utf-8"))
+    paths = dict(re.findall(r"^\s*(img_\w+)\s*=\s*local\.manifest\.([\w.]+)\s*$", builds, re.M))
+    passed = dict(re.findall(r'"(IMG_\w+)=\$\{local\.(img_\w+)\}"', builds))
+    pins: dict[str, str] = {}
+    for variable, local_var in passed.items():
+        value = manifest
+        for key in paths[local_var].split("."):
+            value = value[key]
+        pins[variable] = value
+    return pins
+
+
+def run_precache(
+    tmp_path: Path,
+    profile: str,
+    flavor: str,
+    failing_image: str = "",
+    extra_env: dict[str, str] | None = None,
+):
+    env = {
+        **precache_image_pins(),
+        "PREHEAT_PROFILE": profile,
+        "FLAVOR": flavor,
+        "MOCK_FAIL_IMAGE": failing_image,
+    }
+    if extra_env:
+        env.update(extra_env)
     return MockSandbox(tmp_path).run_script(PRECACHE, env_vars=env)
 
 
@@ -151,33 +178,34 @@ def pulled(result) -> list[str]:
 
 
 def test_precache_pulls_every_image_of_the_profile(tmp_path: Path, require_bash) -> None:
+    pins = precache_image_pins()
     result = run_precache(tmp_path, "flannel", "k8s-node-amd")
     assert result.returncode == 0, result.stderr
     assert pulled(result) == [
-        "registry.k8s.io/pause:3.10",
-        "registry.k8s.io/coredns/coredns:v1.14.7",
-        "docker.io/flannel/flannel:0.28.9",
-        "docker.io/flannel/flannel-cni-plugin:v1.6.2-flannel1",
-        "ghcr.io/kube-vip/kube-vip:v1.2.3",
-        "docker.io/prom/node-exporter:v1.12.1",
-        "docker.io/rocm/k8s-device-plugin:1.31.0.11",
+        pins["IMG_PAUSE"],
+        pins["IMG_COREDNS"],
+        pins["IMG_FLANNEL"],
+        pins["IMG_FLANNEL_CNI"],
+        pins["IMG_KUBE_VIP"],
+        pins["IMG_NODE_EXPORTER"],
+        pins["IMG_AMD_PLUGIN"],
     ]
 
 
 def test_lean_profile_pulls_only_the_pause_image(tmp_path: Path, require_bash) -> None:
     result = run_precache(tmp_path, "lean", "k8s-node-generic")
     assert result.returncode == 0, result.stderr
-    assert pulled(result) == ["registry.k8s.io/pause:3.10"]
+    assert pulled(result) == [precache_image_pins()["IMG_PAUSE"]]
 
 
 @pytest.mark.parametrize(
     ("profile", "flavor", "image"),
     [
-        ("lean", "k8s-node-generic", "registry.k8s.io/pause:3.10"),
-        ("flannel", "k8s-node-flannel", "docker.io/flannel/flannel:0.28.9"),
-        ("cilium", "k8s-node-cilium", "quay.io/cilium/operator-generic:v1.20.1"),
-        ("lean", "k8s-node-amd", "docker.io/rocm/k8s-device-plugin:1.31.0.11"),
-        ("lean", "k8s-node-nvidia", "nvcr.io/nvidia/k8s-device-plugin:v0.20.0"),
+        ("lean", "k8s-node-generic", precache_image_pins()["IMG_PAUSE"]),
+        ("flannel", "k8s-node-flannel", precache_image_pins()["IMG_FLANNEL"]),
+        ("cilium", "k8s-node-cilium", precache_image_pins()["IMG_CILIUM_OPERATOR"]),
+        ("lean", "k8s-node-amd", precache_image_pins()["IMG_AMD_PLUGIN"]),
+        ("lean", "k8s-node-nvidia", precache_image_pins()["IMG_NVIDIA_PLUGIN"]),
     ],
 )
 def test_precache_fails_when_an_image_cannot_be_pulled(
@@ -189,18 +217,28 @@ def test_precache_fails_when_an_image_cannot_be_pulled(
     assert "Complete" not in result.stdout
 
 
-def test_precache_fallbacks_equal_the_pins_the_build_passes() -> None:
-    builds = (PACKER / "builds.pkr.hcl").read_text(encoding="utf-8")
-    manifest = json.loads((ROOT / "versions.json").read_text(encoding="utf-8"))
-    paths = dict(re.findall(r"^\s*(img_\w+)\s*=\s*local\.manifest\.([\w.]+)\s*$", builds, re.M))
-    passed = dict(re.findall(r'"(IMG_\w+)=\$\{local\.(img_\w+)\}"', builds))
-    fallbacks = dict(re.findall(r"\$\{(IMG_\w+):-([^}]+)\}", PRECACHE.read_text(encoding="utf-8")))
-    assert len(fallbacks) >= 14
-    for variable, fallback in fallbacks.items():
-        value = manifest
-        for key in paths[passed[variable]].split("."):
-            value = value[key]
-        assert fallback == value, f"{variable}: precache falls back to {fallback}, the build passes {value}"
+def test_precache_holds_no_fallback_defaults() -> None:
+    fallbacks = re.findall(r"\$\{(IMG_\w+):-", PRECACHE.read_text(encoding="utf-8"))
+    assert fallbacks == [], f"precache script still holds hardcoded fallbacks: {fallbacks}"
+
+
+def test_every_image_read_by_precache_is_passed_by_build() -> None:
+    script_vars = set(re.findall(r"\$\{?(IMG_[A-Z0-9_]+)", PRECACHE.read_text(encoding="utf-8")))
+    passed_vars = set(precache_image_pins().keys())
+    assert script_vars, "precache script reads no IMG_* variables"
+    assert script_vars <= passed_vars, f"precache reads variables not passed by builds: {script_vars - passed_vars}"
+
+
+def test_precache_with_unset_image_exits_nonzero_and_pulls_nothing(
+    tmp_path: Path, require_bash, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("IMG_PAUSE", raising=False)
+    env = {k: v for k, v in precache_image_pins().items() if k != "IMG_PAUSE"}
+    env.update({"PREHEAT_PROFILE": "lean", "FLAVOR": "k8s-node-generic"})
+    result = MockSandbox(tmp_path).run_script(PRECACHE, env_vars=env)
+    assert result.returncode != 0
+    assert "IMG_PAUSE" in result.stderr
+    assert pulled(result) == []
 
 
 # --- #40: the accelerator is a validated variable, and CI emulates -----------------------
