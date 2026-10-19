@@ -20,7 +20,7 @@ The overlay names the issue in the `evidence` field of each open step. When an i
 | File | Authority | Contents |
 | :--- | :--- | :--- |
 | `planning/plan.json` | Canonical draft (praetor planning schema version 1) | Sources with SHA-256, cited requirements, milestones, steps with `depends_on`, actions, expected outputs, and positive/negative/boundary acceptance proposals. |
-| `planning/TODO.md`, `ROADMAP.md`, `MILESTONES.md` | Generated projections | Rendered by `praetorctl planning prepare`; cross-linked by stable IDs and the plan digest. Never edited by hand. |
+| `planning/TODO.md`, `ROADMAP.md`, `MILESTONES.md` | Generated projections | Rendered by `praetorctl planning prepare`; cross-linked by stable IDs and the plan digest. Never edited by hand, except the frozen-record marker on the first line of `TODO.md` and the note under its title (ADR-0025): the marker `<!-- praetor: frozen-record; open-work: forge; adr: 0025 -->` tells the Praetor plan-doc scan that its unchecked boxes are not open work. |
 | `planning/routing.json` | Routing overlay | Per-step cost class, completion, owner, and the flags that push work behind local steps (`needs_external_contract`, `needs_hardware`). |
 | `planning/DECISIONS.md` | Planning source | Operator decisions the plan cites by hash; changing a decision invalidates the dependent draft. |
 | `planning/archetypes/os-image.yaml` | Recorded draft | The archetype proposed upstream and accepted in praetor#54. Retained as the output of `step-archetype-draft`; the authoritative copy is the vendored `.config/archetypes/os-image.yaml`. |
