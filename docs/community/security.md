@@ -134,4 +134,4 @@ All official release artifacts produced by the release matrix are fortified with
 2. **Software Bill of Materials (SBOM)**:
    Every image build generates CycloneDX and SPDX SBOMs with Syft from the image's root file system, listing every installed Debian package; a build whose SBOM lists fewer than 100 fails.
 3. **Build Provenance**:
-   No SLSA build provenance or GitHub artifact attestation is published yet. The gap is a dated HISS-11 exception in `.standards.yaml`.
+   No SLSA build provenance or GitHub artifact attestation is published yet. The gap is a dated HISS-11 exception in `.standards.yaml`: category A, entered 2026-10-11, expires 2027-01-09; the audit fails after that date.

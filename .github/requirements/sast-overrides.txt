@@ -1,0 +1,5 @@
+# Copyright 2026 Lusoris
+# Overrides for the sast lock. semgrep 1.180.0 and 1.181.0 (latest, checked 2026-10-19) pin
+# mcp==1.29.0, which GHSA-84m7-p3x7-pcfv affects (fixed in 1.30.0). The semgrep job runs
+# `semgrep scan` only and never starts the MCP server; drop this entry once semgrep allows 1.30.0.
+mcp==1.30.0
