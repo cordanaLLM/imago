@@ -11,7 +11,9 @@ moves the clocks:
 
 - a check counts once a workflow created it; the newest run per name decides, the job that
   runs this script is left out, and `--keep` (a Python pattern) names the gate checks;
-- a check that completed with any conclusion other than `success` fails the wait;
+- once every gate check has completed, a conclusion other than `success` fails the wait;
+  as in the action, no conclusion is judged earlier, because the CodeQL check of code
+  scanning is updated in place while its analyses upload (run 39198928256);
 - a check runs at most `GATE_RUN_MINUTES` from its own `started_at`; time spent queued
   before that never counts;
 - the whole wait ends at `OUTER_MINUTES` of wall clock, so a check that never starts fails
@@ -65,9 +67,6 @@ def newest_gate_checks(runs: list[dict], keep: re.Pattern[str], own: str) -> dic
 
 def verdict(checks: dict[str, dict], now: datetime.datetime) -> tuple[str, str]:
     """`pass`, `fail` or `wait` for the gate checks at `now`, with the reason."""
-    failed = [n for n, r in checks.items() if r["status"] == "completed" and r["conclusion"] != "success"]
-    if failed:
-        return "fail", "did not succeed: " + ", ".join(sorted(failed))
     bound = datetime.timedelta(minutes=GATE_RUN_MINUTES)
     stuck = [
         n
@@ -81,7 +80,23 @@ def verdict(checks: dict[str, dict], now: datetime.datetime) -> tuple[str, str]:
         return "wait", "waiting for: " + ", ".join(open_checks)
     if not checks:
         return "wait", "no gate check reported yet"
+    failed = sorted(f"{n} ({r['conclusion']})" for n, r in checks.items() if r["conclusion"] != "success")
+    if failed:
+        return "fail", "did not succeed: " + ", ".join(failed)
     return "pass", f"{len(checks)} gate checks succeeded"
+
+
+def https_opener() -> urllib.request.OpenerDirector:
+    """Return an opener that speaks HTTPS only: no file://, ftp:// or plain http:// handler."""
+    opener = urllib.request.OpenerDirector()
+    for handler in (
+        urllib.request.HTTPSHandler(),
+        urllib.request.HTTPRedirectHandler(),
+        urllib.request.HTTPDefaultErrorHandler(),
+        urllib.request.HTTPErrorProcessor(),
+    ):
+        opener.add_handler(handler)
+    return opener
 
 
 def fetch_runs(repo: str, ref: str, token: str) -> list[dict]:
@@ -97,7 +112,7 @@ def fetch_runs(repo: str, ref: str, token: str) -> list[dict]:
                 "X-GitHub-Api-Version": "2022-11-28",
             },
         )
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+        with https_opener().open(request, timeout=TIMEOUT_SECONDS) as response:
             batch = json.load(response)["check_runs"]
         runs += batch
         if len(batch) < PER_PAGE:
@@ -155,6 +170,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--own", required=True)
     parser.add_argument("--keep", required=True)
     args = parser.parse_args(argv)
+    # The job log stamps each line when it arrives; unbuffered lines keep the poll times.
+    sys.stdout.reconfigure(line_buffering=True)
     token = os.environ.get("GITHUB_TOKEN", "")
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     if not token or not repo:

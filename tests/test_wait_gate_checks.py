@@ -99,6 +99,24 @@ def test_gate_with_other_conclusion_fails(conclusion):
     assert code == 1
 
 
+def test_conclusion_is_judged_only_when_every_check_completed():
+    """Planted: the CodeQL check of code scanning reads non-success while other checks still run."""
+
+    def forge(c):
+        codeql = check("CodeQL", c, 0, 1, conclusion="neutral" if c.elapsed < 600 else "success")
+        return [codeql, check("Pytest", c, 0, 12)]
+
+    code, minutes = run_wait(forge)
+    assert code == 0
+    assert minutes >= 12
+
+
+def test_failure_is_reported_once_every_check_completed():
+    code, minutes = run_wait(lambda c: [check("Go", c, 0, 1, conclusion="failure"), check("Pytest", c, 0, 12)])
+    assert code == 1
+    assert minutes >= 12
+
+
 def test_own_check_and_excluded_names_do_not_hold_the_wait():
     code, _ = run_wait(
         lambda c: [
