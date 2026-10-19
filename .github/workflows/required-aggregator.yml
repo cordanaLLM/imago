@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  checks: read # read the check runs of the commit under check
 
 # A newer run for the same ref replaces the waiting one. The wait step keeps the newest
 # run per check name, so a cancelled run of an older event does not fail this one.
@@ -27,7 +28,8 @@ jobs:
   required-checks:
     name: required-checks
     runs-on: ubuntu-26.04
-    timeout-minutes: 30
+    # tools/ci/wait_gate_checks.py ends its wait at 120 min of wall clock (ADR-0036).
+    timeout-minutes: 125
     steps:
       - name: Stop on a draft pull request
         if: github.event.pull_request.draft == true
@@ -41,13 +43,20 @@ jobs:
           echo "::error title=$TITLE::$MESSAGE"
           echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
           exit 1
-      - name: Wait for every other check; each must succeed
-        uses: lewagon/wait-on-check-action@369769072fe522a3a8a85c03c96af1e5242a1994 # v1.9.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          running-workflow-name: required-checks
-          allowed-conclusions: success
-          wait-interval: 20
+          persist-credentials: false
+      - name: Wait for every other check; each must succeed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Waits for every check except the jobs of workflows no push or pull request
+          # starts (ADR-0035). A manual release-matrix run on main reports its build
+          # jobs on main's head, takes up to 240 min and outlasted this job's bound.
+          # tests/test_required_aggregator.py derives the excluded names from the workflows.
+          KEEP_CHECKS: '^(?!Build Image \(|Sign the Release Checksums$|Build, Boot, and Release Aegis OS Image$|Verify and Pin Kernel Release from nucleus$)'
+        # Queue time never counts: each check runs at most 30 min from its own start,
+        # and the whole wait ends at 120 min of wall clock (ADR-0036).
+        run: python3 -I tools/ci/wait_gate_checks.py --ref "$REF" --own required-checks --keep "$KEEP_CHECKS"
       - name: All required checks passed
         run: echo "ok"
