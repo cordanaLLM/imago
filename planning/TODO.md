@@ -1,4 +1,7 @@
+<!-- praetor: frozen-record; open-work: forge; adr: 0025 -->
 # cordanaLLM/imago fleet migration TODO
+
+> **Frozen record.** This file is the migration record of [ADR-0025](../docs/adr/0025-forge-as-record-of-open-work-and-frozen-planning-graph.md); its boxes are not updated. [`routing.json`](routing.json) records which steps are done, with evidence. The two open steps are carried by issues [#46](https://github.com/cordanaLLM/imago/issues/46) (`step-aegis-pair`) and [#47](https://github.com/cordanaLLM/imago/issues/47) (`step-nucleus-contract`).
 
 Status: draft proposal; structurally valid; review required. Source provenance is caller-asserted and unverified.
 
