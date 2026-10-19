@@ -14,8 +14,10 @@ moves the clocks:
 - once every gate check has completed, a conclusion other than `success` fails the wait;
   as in the action, no conclusion is judged earlier, because the CodeQL check of code
   scanning is updated in place while its analyses upload (run 39198928256);
-- a check runs at most `GATE_RUN_MINUTES` from its own `started_at`; time spent queued
-  before that never counts;
+- a check runs at most `GATE_RUN_MINUTES` from its own `started_at`, counted only while
+  it is `in_progress`: a queued check run already carries its creation time as
+  `started_at`, and the forge moves it to the job start (run 39204073732 failed five gate
+  checks queued since 05:20Z at 05:51Z), so time spent queued never counts;
 - the whole wait ends at `OUTER_MINUTES` of wall clock, so a check that never starts fails
   the wait instead of holding it open; the job bound sits a few minutes above it.
 
@@ -71,7 +73,7 @@ def verdict(checks: dict[str, dict], now: datetime.datetime) -> tuple[str, str]:
     stuck = [
         n
         for n, r in checks.items()
-        if r["status"] != "completed" and r.get("started_at") and now - parse_time(r["started_at"]) > bound
+        if r["status"] == "in_progress" and r.get("started_at") and now - parse_time(r["started_at"]) > bound
     ]
     if stuck:
         return "fail", f"running longer than {GATE_RUN_MINUTES} min: " + ", ".join(sorted(stuck))

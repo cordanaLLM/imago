@@ -59,10 +59,11 @@ def check(
     """One check run as the forge reports it at the clock's time.
 
     It is queued until minute `queued`, then runs for `runs` minutes (None = never ends).
+    While queued, the forge already reports its creation time (minute 0) as `started_at`.
     """
     minute = clock.elapsed / 60
     if minute < queued:
-        return {"id": run_id, "name": name, "status": "queued", "conclusion": None, "started_at": None}
+        return {"id": run_id, "name": name, "status": "queued", "conclusion": None, "started_at": stamp(0)}
     if runs is None or minute < queued + runs:
         return {"id": run_id, "name": name, "status": "in_progress", "conclusion": None, "started_at": stamp(queued)}
     return {"id": run_id, "name": name, "status": "completed", "conclusion": conclusion, "started_at": stamp(queued)}
