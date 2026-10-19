@@ -17,6 +17,9 @@ PACKER_DIR = REPO_ROOT / "packer"
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 REQUIREMENTS_DIR = REPO_ROOT / ".github" / "requirements"
 PIP_INSTALL = re.compile(r"\bpip3?\s+install\b(.*)$")
+OVERRIDES_SUFFIX = "-overrides.txt"
+# Fixed versions an override must keep in its lock (advisory, package, lowest fixed version).
+OVERRIDE_FLOORS = {"sast": [("GHSA-84m7-p3x7-pcfv", "mcp", (1, 30, 0))]}
 # The last revision published under Apache-2.0; every later one is EUPL-1.2 (ADR-0023).
 APACHE_LAST_REVISION = "44a6bfa"
 # Built from two parts so that this file does not carry the header it searches for.
@@ -266,7 +269,7 @@ class TestGovernanceIntegrity:
         `--python-version 3.12` and `--output-file <path>` written with a space, and
         then extracts no dependency from that lock.
         """
-        locks = sorted(REQUIREMENTS_DIR.glob("*.txt"))
+        locks = sorted(path for path in REQUIREMENTS_DIR.glob("*.txt") if not path.name.endswith(OVERRIDES_SUFFIX))
         inputs = sorted(REQUIREMENTS_DIR.glob("*.in"))
         assert locks, "No lock was found under .github/requirements"
         assert [lock.stem for lock in locks] == [source.stem for source in inputs], (
@@ -281,6 +284,41 @@ class TestGovernanceIntegrity:
             assert f"--output-file={relative}" in command, f"{relative}: --output-file must use '='"
             versions = [option for option in command if option.startswith("--python-version")]
             assert versions and all("=" in option for option in versions), f"{relative}: --python-version must use '='"
+
+    def test_override_files_are_compiled_into_their_lock(self) -> None:
+        """Verify each `<lock>-overrides.txt` is named in its lock header and its pins are in the lock.
+
+        An override replaces a version a dependency pins exactly (semgrep pins mcp==1.29.0).
+        pip resolves that pin again at install time and refuses the lock, so a workflow that
+        installs a lock with overrides must pass `--no-deps`; the lock already names every package.
+        """
+        overrides = sorted(REQUIREMENTS_DIR.glob(f"*{OVERRIDES_SUFFIX}"))
+        assert sorted(OVERRIDE_FLOORS) == [path.name[: -len(OVERRIDES_SUFFIX)] for path in overrides], (
+            "Every override file needs its floors in OVERRIDE_FLOORS and every floor its file"
+        )
+        installs = [
+            line
+            for workflow in sorted(WORKFLOWS_DIR.glob("*.yml"))
+            for line in workflow.read_text(encoding="utf-8").splitlines()
+            if PIP_INSTALL.search(line)
+        ]
+        for override in overrides:
+            stem = override.name[: -len(OVERRIDES_SUFFIX)]
+            lock = REQUIREMENTS_DIR / f"{stem}.txt"
+            relative = override.relative_to(REPO_ROOT).as_posix()
+            text = lock.read_text(encoding="utf-8")
+            assert f"--override={relative}" in text.splitlines()[1].split(), f"{lock.name}: header omits {relative}"
+            pins = [line.strip() for line in override.read_text(encoding="utf-8").splitlines()]
+            for pin in (line for line in pins if line and not line.startswith("#")):
+                assert re.search(rf"^{re.escape(pin)} \\$", text, re.MULTILINE), f"{lock.name}: {pin} is not locked"
+            for advisory, package, floor in OVERRIDE_FLOORS[stem]:
+                found = re.search(rf"^{re.escape(package)}==([0-9.]+) ", text, re.MULTILINE)
+                assert found, f"{lock.name}: {package} is not locked"
+                version = tuple(int(part) for part in found.group(1).split("."))
+                assert version >= floor, f"{lock.name}: {package} {found.group(1)} is affected by {advisory}"
+            users = [line for line in installs if f".github/requirements/{stem}.txt" in line]
+            assert users, f"No workflow installs {lock.name}"
+            assert all("--no-deps" in line.split() for line in users), f"{lock.name}: pip install without --no-deps"
 
     def test_audit_repository_health_script_executable(self) -> None:
         """Verify audit-repository-health.sh is present and executable."""

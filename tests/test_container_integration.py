@@ -178,11 +178,13 @@ def run_preparation(cmd: list[str], bound_s: float, what: str) -> subprocess.Com
         return subprocess.run(cmd, capture_output=True, text=True, timeout=bound_s, check=False)
     except subprocess.TimeoutExpired:
         elapsed = time.monotonic() - started
-    skip_or_fail(
-        f"{what} did not finish within {bound_s:g} s on this host "
-        f"(stopped after {elapsed:.1f} s); the check that needs it was not run",
-        os.environ,
-    )
+        skip_or_fail(
+            f"{what} did not finish within {bound_s:g} s on this host "
+            f"(stopped after {elapsed:.1f} s); the check that needs it was not run",
+            os.environ,
+        )
+        # skip_or_fail never returns; the re-raise keeps every exit of this function explicit.
+        raise
 
 
 def start_container(name: str) -> None:

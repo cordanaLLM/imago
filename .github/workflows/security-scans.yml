@@ -50,7 +50,9 @@ jobs:
         if: github.event_name != 'pull_request' || steps.filter.outputs.semgrep == 'true'
         with:
           python-version: "3.12"
-      - run: pip install --require-hashes -r .github/requirements/sast.txt
+      # --no-deps: the lock names every package, and semgrep pins mcp==1.29.0, which
+      # sast-overrides.txt replaces with 1.30.0 (GHSA-84m7-p3x7-pcfv); pip would refuse it.
+      - run: pip install --require-hashes --no-deps -r .github/requirements/sast.txt
         if: github.event_name != 'pull_request' || steps.filter.outputs.semgrep == 'true'
       # The canary scans a planted finding outside the checkout first, so a rule
       # set or flag that stops reporting turns the job red instead of green.
