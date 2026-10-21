@@ -97,7 +97,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         if: github.event_name != 'pull_request' || steps.filter.outputs.govulncheck == 'true'
         with:
-          go-version: "1.27.x"
+          go-version-file: go.mod
           check-latest: true
       # tools/govulncheck/go.mod pins the scanner. The text output exits 3 on a
       # reachable vulnerability and 1 when the scan cannot run (no database, a
