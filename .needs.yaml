@@ -1,7 +1,7 @@
 version: 1
 repository: github.com/cordanaLLM/imago
 language: go
-go_version: 1.27.2
+go_version: 1.27.3
 framework: github.com/golusoris/golusoris
 capabilities:
   required: []
