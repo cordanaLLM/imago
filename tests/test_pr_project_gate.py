@@ -7,6 +7,7 @@ The tests below run the step script of the workflow with planted metadata: compl
 metadata passes, each missing part fails with its own error, and near misses at the edge
 of each pattern fail as well. They also hold the triggers that re-run the gate when the
 metadata changes, and the concurrency group that keeps those re-runs from cancelling each other.
+A body longer than grep reads before it exits is tested too.
 """
 
 from __future__ import annotations
@@ -34,6 +35,9 @@ COMPLETE = {"title": "fix(ci): planted title", "body": "Ref #6", "milestone": "1
 MILESTONE_ERROR = "missing an assigned milestone"
 REFERENCE_ERROR = "must reference a tracked Issue or Epic"
 LABEL_ERROR = "at least one 'tier/*' or 'area/*' label"
+# Long enough that grep -q exits before echo has written the body (measured: the unfixed
+# step refuses every run from 120 KB), below the 128 KiB exec limit for one variable.
+LONG_BODY_FILLER_BYTES = 125_000
 # Two runs of one pull request on one head commit, as two label events start them.
 RUN_A = {"github.ref": "refs/pull/6/merge", "github.run_id": "101", "github.event.action": "labeled"}
 RUN_B = {"github.ref": "refs/pull/6/merge", "github.run_id": "102", "github.event.action": "milestoned"}
@@ -126,6 +130,25 @@ def test_planted_incomplete_metadata_fails(changes, error):
     result = run_gate(**changes)
     assert result.returncode == 1, result.stdout + result.stderr
     assert "::error::" in result.stdout and error in result.stdout
+
+
+def test_long_body_with_reference_passes():
+    body = "Relates to #53\n" + "x" * LONG_BODY_FILLER_BYTES
+    result = run_gate(body=body)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_long_body_without_reference_fails():
+    body = "x" * LONG_BODY_FILLER_BYTES
+    result = run_gate(body=body)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert REFERENCE_ERROR in result.stdout
+
+
+def test_gate_step_pipes_nothing_into_grep_q():
+    # The long-body tests above catch SIGPIPE only when the race goes wrong; this one always does.
+    piped = re.findall(r"\|\s*grep\s+-[A-Za-z]*q", gate_step()["run"])
+    assert not piped, piped
 
 
 def test_gate_reruns_on_every_metadata_change():
