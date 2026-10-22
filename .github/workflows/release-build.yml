@@ -217,7 +217,7 @@ jobs:
       - name: Merge the Flavor Checksums
         run: python3 -I tools/ci/release_assets.py merge --out SHA256SUMS checksums/checksums-*.sha256
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
       - name: Sign SHA256SUMS
         run: cosign sign-blob --yes --bundle SHA256SUMS.bundle SHA256SUMS
       - name: Verify the Signature
