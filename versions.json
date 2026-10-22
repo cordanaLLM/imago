@@ -18,15 +18,15 @@
       "kube_vip": "ghcr.io/kube-vip/kube-vip:v1.2.3",
       "node_exporter": "docker.io/prom/node-exporter:v1.12.1",
       "calico_cni": "docker.io/calico/cni:v3.32.2",
-      "calico_node": "docker.io/calico/node:v3.32.2",
+      "calico_node": "docker.io/calico/node:v3.33.0",
       "calico_controllers": "docker.io/calico/kube-controllers:v3.32.2",
-      "flannel": "docker.io/flannel/flannel:0.28.9",
-      "flannel_cni": "docker.io/flannel/flannel-cni-plugin:v1.6.2-flannel1"
+      "flannel": "docker.io/flannel/flannel:v0.28.10",
+      "flannel_cni": "docker.io/flannel/flannel-cni-plugin:v1.9.1-flannel1"
     }
   },
   "drivers": {
     "intel": {
-      "k8s_plugin": "docker.io/intel/intel-gpu-plugin:0.36.0"
+      "k8s_plugin": "docker.io/intel/intel-gpu-plugin:0.37.1"
     },
     "amd": {
       "rocm_legacy_version": "6.4.4",
