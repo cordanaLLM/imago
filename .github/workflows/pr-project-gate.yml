@@ -58,14 +58,16 @@ jobs:
 
           # 2. Issue/Epic Reference Check
           COMBINED="${PR_TITLE}"$'\n'"${PR_BODY}"
-          if ! echo "${COMBINED}" | grep -Eqi '(fixes|closes|resolves|relates to|ref)[[:space:]]+(#[0-9]+|[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+|EPIC-[0-9]+)'; then
+          # A here-string, not a pipe from echo: grep -q exits at the first match, echo then dies
+          # of SIGPIPE on a body longer than the pipe buffer, and pipefail refuses the PR.
+          if ! grep -Eqi '(fixes|closes|resolves|relates to|ref)[[:space:]]+(#[0-9]+|[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+|EPIC-[0-9]+)' <<<"${COMBINED}"; then
             echo "::error::PR description must reference a tracked Issue or Epic (e.g. 'Fixes #123' or 'Relates to EPIC-01')."
             exit 1
           fi
 
           # 3. Label Check
           HAS_VALID_LABEL=false
-          if echo "${PR_LABELS}" | grep -Eq '"(tier/[^"]+|area/[^"]+)"'; then
+          if grep -Eq '"(tier/[^"]+|area/[^"]+)"' <<<"${PR_LABELS}"; then
             HAS_VALID_LABEL=true
           fi
 
