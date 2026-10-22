@@ -53,7 +53,7 @@
     "version": "v1.36.4+k3s1"
   },
   "runtimes": {
-    "containerd": "2.3.5",
+    "containerd": "2.4.2",
     "docker_ce": "29.8",
     "crun": "1.20",
     "stargz_snapshotter": "0.18.2"
