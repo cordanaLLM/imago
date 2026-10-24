@@ -5,6 +5,115 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.0 (2026-10-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ci:** attest SLSA build provenance in a reusable release workflow ([#196](https://github.com/cordanaLLM/imago/issues/196))
+* **builder:** fail closed when no build backend has an executor ([#134](https://github.com/cordanaLLM/imago/issues/134))
+* **aegis:** emit the product-result and fix the signature reference form ([#79](https://github.com/cordanaLLM/imago/issues/79))
+* **standards:** a provisioner step that fails now ends the image build. A flavor whose upstream package is not published for the base release fails to build instead of producing an image without that component.
+* **precache:** pin preheated images to tags that exist, and fail when one cannot be cached ([#44](https://github.com/cordanaLLM/imago/issues/44))
+* **kernel:** pin the nucleus kernel artifact contract and accept the Aegis kernel-requirement payload ([#35](https://github.com/cordanaLLM/imago/issues/35))
+* **fleet:** migrate to cordanaLLM/imago with praetor governance, golusoris core, and a routed planning graph ([#30](https://github.com/cordanaLLM/imago/issues/30))
+
+### Features
+
+* **aegis:** accept the aegis.p01.product-input.v1 manifest with strict decoding and correlated errors ([#32](https://github.com/cordanaLLM/imago/issues/32)) ([4d2e2e5](https://github.com/cordanaLLM/imago/commit/4d2e2e5e4e698899c1d1a223a96aaaad488713f2))
+* **aegis:** build, boot, sign and pre-release Aegis images by dispatch ([#140](https://github.com/cordanaLLM/imago/issues/140)) ([0895df2](https://github.com/cordanaLLM/imago/commit/0895df281545bfdfcc491d78b161f8d18dd50972))
+* **aegis:** emit the product-result and fix the signature reference form ([#79](https://github.com/cordanaLLM/imago/issues/79)) ([0841cbe](https://github.com/cordanaLLM/imago/commit/0841cbe356397ff92ed5d64ddff6b7accbf1e5c7)), closes [#46](https://github.com/cordanaLLM/imago/issues/46)
+* **agents:** implement ai studio managed agents fleet, compliance pipeline, and diagram styling ([#24](https://github.com/cordanaLLM/imago/issues/24)) ([c1605d9](https://github.com/cordanaLLM/imago/commit/c1605d98489167c8ba389079bba81a7a0c21721d))
+* **builder:** fail closed when no build backend has an executor ([#134](https://github.com/cordanaLLM/imago/issues/134)) ([0745dbd](https://github.com/cordanaLLM/imago/commit/0745dbd3221f379b950eb3b65543c8a863ad1987))
+* **builder:** run local builds through a pinned Packer QEMU executor ([#139](https://github.com/cordanaLLM/imago/issues/139)) ([4afa875](https://github.com/cordanaLLM/imago/commit/4afa87552d1de2cdf033d7250abd5453e79d0195))
+* **ci:** attest SLSA build provenance in a reusable release workflow ([#196](https://github.com/cordanaLLM/imago/issues/196)) ([6927d14](https://github.com/cordanaLLM/imago/commit/6927d1451d0498cb4466adfe0526de8bbf61ee75))
+* **core:** audit modernization, enterprise test suites, and hardened hindsight mcp ([#26](https://github.com/cordanaLLM/imago/issues/26)) ([ffb111c](https://github.com/cordanaLLM/imago/commit/ffb111c5b79dfa445557e915645e107a169fd6a9))
+* **fleet:** migrate to cordanaLLM/imago with praetor governance, golusoris core, and a routed planning graph ([#30](https://github.com/cordanaLLM/imago/issues/30)) ([ed782df](https://github.com/cordanaLLM/imago/commit/ed782df025090b026bf0b8d136b37010d533cd37))
+* **forge:** add cloudnative immutable and cncf storage appliances ([#18](https://github.com/cordanaLLM/imago/issues/18)) ([a8d4cca](https://github.com/cordanaLLM/imago/commit/a8d4ccaa164ac99acadca57c53dea1aad67d2e53))
+* **forge:** implement Go 1.27 CLI/MCP, project gates, and hardening ([#22](https://github.com/cordanaLLM/imago/issues/22)) ([4327bf8](https://github.com/cordanaLLM/imago/commit/4327bf8ad0e6d6c61dffa1a69ac0a69a3f3e8f7f))
+* **governance:** adopt fleet engineering principles, crosswalk, and agent skills ([#10](https://github.com/cordanaLLM/imago/issues/10)) ([5be7558](https://github.com/cordanaLLM/imago/commit/5be755830de17a8fb3b8ff0521756b872421e859))
+* **governance:** declare the os-image archetype now that praetor ships it ([#37](https://github.com/cordanaLLM/imago/issues/37)) ([26d8249](https://github.com/cordanaLLM/imago/commit/26d824913c4c6e28d133bd91721f94224b78c60a))
+* **gpu-nvidia:** add 600-series (R610) and CUDA 13.3 modern flavors ([#13](https://github.com/cordanaLLM/imago/issues/13)) ([284875c](https://github.com/cordanaLLM/imago/commit/284875c41301abd9ce9cc3c67e9b24378b48e490))
+* **homelab:** add 5 specialized homelab appliance flavors and provisioners ([#21](https://github.com/cordanaLLM/imago/issues/21)) ([4b04cba](https://github.com/cordanaLLM/imago/commit/4b04cba18818c2aaa32eb880646b8dcbaa2e89ea))
+* **images:** install stargz-snapshotter and enroot per ADR-0010 ([#154](https://github.com/cordanaLLM/imago/issues/154)) ([b7d1b79](https://github.com/cordanaLLM/imago/commit/b7d1b7918db5983b738098e095f1206209578101))
+* **images:** verify each image in the guest with container-structure-test ([#158](https://github.com/cordanaLLM/imago/issues/158)) ([a9c1b69](https://github.com/cordanaLLM/imago/commit/a9c1b694e40a21cc4f39b5e214132a5e03f091f8))
+* initial repository bootstrap for lusoris-cloud-images ([c0e6389](https://github.com/cordanaLLM/imago/commit/c0e63898522f36fe7c5e9ddef40c2575c929d123))
+* **k3s:** add 5 lightweight edge fleet flavors and runtime provisioner ([#17](https://github.com/cordanaLLM/imago/issues/17)) ([c4dc002](https://github.com/cordanaLLM/imago/commit/c4dc0028390b9463fb8e21e086d242265a1d97d5))
+* **kernel:** pin the nucleus kernel artifact contract and accept the Aegis kernel-requirement payload ([#35](https://github.com/cordanaLLM/imago/issues/35)) ([c16c9cb](https://github.com/cordanaLLM/imago/commit/c16c9cb56d7e239e0dcf9038a17043cf672111ed))
+* **platform:** implement progressive skills, staged mcp, nas ecosystem, and kernel forge blueprint ([#28](https://github.com/cordanaLLM/imago/issues/28)) ([73a4e1d](https://github.com/cordanaLLM/imago/commit/73a4e1dadd5b206ac828c0230ea7b50be91c8418))
+* **release:** ship each image as a raw disk for flashing ([#116](https://github.com/cordanaLLM/imago/issues/116)) ([c983273](https://github.com/cordanaLLM/imago/commit/c983273bbaf3409674f1dfdbdcba1e7f09464b0d))
+* **release:** ship iPXE netboot assets with a root digest check ([#142](https://github.com/cordanaLLM/imago/issues/142)) ([d27f315](https://github.com/cordanaLLM/imago/commit/d27f3158b1ebaccefaa223fe7b629d05aff124b4))
+* **release:** split assets over the forge limit into verified parts ([#190](https://github.com/cordanaLLM/imago/issues/190)) ([f1f9399](https://github.com/cordanaLLM/imago/commit/f1f9399961356978d68e61aae4a30f7fde6c8d12))
+* **security:** implement native codeql static analysis, zero-noise renovate, and openssf least-privilege workflows ([#27](https://github.com/cordanaLLM/imago/issues/27)) ([70ecd68](https://github.com/cordanaLLM/imago/commit/70ecd681658cb6c2385c33d11dbe6cee212c1b9d))
+* **ssot:** add versions.schema.json, dynamic test invariants, and fleet rules parity ([#16](https://github.com/cordanaLLM/imago/issues/16)) ([68326d3](https://github.com/cordanaLLM/imago/commit/68326d306e4ba117e1f9e765e260108a5f290920))
+* universal community image forge, fleet repo setup, and SSOT manifest ([#1](https://github.com/cordanaLLM/imago/issues/1)) ([8ac4dc9](https://github.com/cordanaLLM/imago/commit/8ac4dc9829f7d6a1636144486be1a15a45d911ae))
+
+
+### Bug Fixes
+
+* **aegis:** bound the rejection reason to 256 bytes ([#71](https://github.com/cordanaLLM/imago/issues/71)) ([eb6babf](https://github.com/cordanaLLM/imago/commit/eb6babf235faa7b2541e2d2ad4314222ce404ee1)), closes [#6](https://github.com/cordanaLLM/imago/issues/6)
+* **aegis:** build with a pinned Arch mkosi tools tree ([#141](https://github.com/cordanaLLM/imago/issues/141)) ([6fd9c17](https://github.com/cordanaLLM/imago/commit/6fd9c170be9b2038b17b26751560b5e17dbb36f8))
+* **aegis:** keep the serial log and boot evidence of a failed run ([#143](https://github.com/cordanaLLM/imago/issues/143)) ([45ee75b](https://github.com/cordanaLLM/imago/commit/45ee75b7e98cd9205758970fd09fefaf1b63d649))
+* **amd:** install ROCm from releases and a suite AMD publishes ([#164](https://github.com/cordanaLLM/imago/issues/164)) ([2dc928e](https://github.com/cordanaLLM/imago/commit/2dc928efcc151194334cdf55c2e62fc0c9e99a13))
+* **baremetal:** point the flash example at the reader's fork release ([#119](https://github.com/cordanaLLM/imago/issues/119)) ([b1d7c41](https://github.com/cordanaLLM/imago/commit/b1d7c413d4ba9c2e6a3196abab9f8c697ae7e809))
+* **baremetal:** refuse a flashed disk without a partition table ([#114](https://github.com/cordanaLLM/imago/issues/114)) ([d8dbe34](https://github.com/cordanaLLM/imago/commit/d8dbe34c1a07d5fceadac89e036ecf1289db9d80))
+* **ci:** accept a skipped job only when a change detector skipped it ([#90](https://github.com/cordanaLLM/imago/issues/90)) ([ee16e1a](https://github.com/cordanaLLM/imago/commit/ee16e1a1f68b36bd21d29fcd8d7215f96a7ab9e7))
+* **ci:** bound the release matrix jobs below the 6 h default ([#176](https://github.com/cordanaLLM/imago/issues/176)) ([64322a1](https://github.com/cordanaLLM/imago/commit/64322a1a2a442bc09e85b943fcf9436a84f1394f)), closes [#152](https://github.com/cordanaLLM/imago/issues/152)
+* **ci:** build the selected flavor on a manual release-matrix run ([#153](https://github.com/cordanaLLM/imago/issues/153)) ([ce2ac0e](https://github.com/cordanaLLM/imago/commit/ce2ac0e1ad57a779aec98afcb0e53ae34ae5f0d7))
+* **ci:** fail the kernel requirement dispatch without its token ([#93](https://github.com/cordanaLLM/imago/issues/93)) ([c18a1fc](https://github.com/cordanaLLM/imago/commit/c18a1fc0b09758042b121f0a3ec297c3075aea7d))
+* **ci:** fail the Trivy scan job on a finding ([#92](https://github.com/cordanaLLM/imago/issues/92)) ([4f54b62](https://github.com/cordanaLLM/imago/commit/4f54b6296669f0a44aae407dd64cacdd3e413704))
+* **ci:** find the built image where it is written, and give each flavor its own directory ([#43](https://github.com/cordanaLLM/imago/issues/43)) ([335a22a](https://github.com/cordanaLLM/imago/commit/335a22a534d80aec78f52f94df8008fe250b8d23))
+* **ci:** give each manually dispatched flavor its own concurrency group ([#162](https://github.com/cordanaLLM/imago/issues/162)) ([a4cf863](https://github.com/cordanaLLM/imago/commit/a4cf863914fdabb17a87e6a12b18feebb9354678)), closes [#161](https://github.com/cordanaLLM/imago/issues/161)
+* **ci:** give the kernel pin pull request metadata and a signed commit ([#106](https://github.com/cordanaLLM/imago/issues/106)) ([cb1428e](https://github.com/cordanaLLM/imago/commit/cb1428e0b9f050c165b9eb6d3217dc527cd294fa))
+* **ci:** install xorriso so the image build can author its cloud-init seed ([#39](https://github.com/cordanaLLM/imago/issues/39)) ([cd2ce0c](https://github.com/cordanaLLM/imago/commit/cd2ce0cbd83418a82fdccc1bd8b184d1aa199a9a))
+* **ci:** lock mcp 1.30.0 in the semgrep job through an override ([#181](https://github.com/cordanaLLM/imago/issues/181)) ([6e9ada4](https://github.com/cordanaLLM/imago/commit/6e9ada434ca4e4cd05387f100ae1b284ffbc1826))
+* **ci:** pin the pages upload action to a release that pins its inner action ([#56](https://github.com/cordanaLLM/imago/issues/56)) ([d2c1edd](https://github.com/cordanaLLM/imago/commit/d2c1edd01bf62e01d889643b8cd8376e882d13d0)), closes [#6](https://github.com/cordanaLLM/imago/issues/6)
+* **ci:** pin the two kernel contract actions to commits that exist ([#59](https://github.com/cordanaLLM/imago/issues/59)) ([533bb99](https://github.com/cordanaLLM/imago/commit/533bb996f56b70c64724109ec61042ddf7007579)), closes [#47](https://github.com/cordanaLLM/imago/issues/47)
+* **ci:** prove the Gitleaks and Semgrep jobs refuse a planted finding ([#97](https://github.com/cordanaLLM/imago/issues/97)) ([8fd918a](https://github.com/cordanaLLM/imago/commit/8fd918aad9398f6e87b7a6998910c587d2159f9e))
+* **ci:** re-run the PR metadata gate on milestone changes and test it ([#98](https://github.com/cordanaLLM/imago/issues/98)) ([a801940](https://github.com/cordanaLLM/imago/commit/a8019408269fc48fa7bdd752f5cfff32cc6eef86))
+* **ci:** read PR metadata through here-strings, not echo pipes ([#201](https://github.com/cordanaLLM/imago/issues/201)) ([66c8b8f](https://github.com/cordanaLLM/imago/commit/66c8b8f83ad7321a195fe7b8e67cb1785919879d))
+* **ci:** run codespell on every pull request and exempt the planted typo ([#105](https://github.com/cordanaLLM/imago/issues/105)) ([a71672a](https://github.com/cordanaLLM/imago/commit/a71672a2087e7578afecd812f6b6f707e100ecb8))
+* **ci:** scan Go dependencies with govulncheck in CI ([#95](https://github.com/cordanaLLM/imago/issues/95)) ([eee0ed9](https://github.com/cordanaLLM/imago/commit/eee0ed99585be92480d0c4c6050cf4cc7c89e8b5))
+* **ci:** scan the pip lockfiles with Trivy and fail on a gap ([#94](https://github.com/cordanaLLM/imago/issues/94)) ([7dd9110](https://github.com/cordanaLLM/imago/commit/7dd9110a03e171018c489fcc80705c9bbe5b85bd))
+* **ci:** stop the metadata gate from cancelling its own runs ([#155](https://github.com/cordanaLLM/imago/issues/155)) ([5e66917](https://github.com/cordanaLLM/imago/commit/5e66917d07c75f25af134563d020c5e6e8600743))
+* **ci:** update scorecard-action to v2.4.4 and fix pymdown-extensions in pages ([#7](https://github.com/cordanaLLM/imago/issues/7)) ([ebc41ae](https://github.com/cordanaLLM/imago/commit/ebc41ae7aa976efcdd14a836feb7c36908357f33))
+* **ci:** wait only for gate checks and count run time in required-checks ([#182](https://github.com/cordanaLLM/imago/issues/182)) ([ff26f29](https://github.com/cordanaLLM/imago/commit/ff26f29fd5a00fe33f39c0b890dae75998f1ff04))
+* **cli:** validate and quote cloud-init and boot command input ([#101](https://github.com/cordanaLLM/imago/issues/101)) ([e65b309](https://github.com/cordanaLLM/imago/commit/e65b309fa4429f411af81c5928e24f2dc78766eb))
+* **deps:** raise Go to 1.27.3 for GO-2026-6809 ([#199](https://github.com/cordanaLLM/imago/issues/199)) ([c57a9df](https://github.com/cordanaLLM/imago/commit/c57a9dfc52b386c5b55ccdad918996de1b18d0c4))
+* **docs:** resolve internal markdown links for strict mkdocs build ([#9](https://github.com/cordanaLLM/imago/issues/9)) ([c6c4968](https://github.com/cordanaLLM/imago/commit/c6c4968b43cc09de5607caa94677a0097d28da6f))
+* **engine:** synchronize flavor catalog, support truenas cloudinit, port mock sandbox, and add systems benchmarks ([#29](https://github.com/cordanaLLM/imago/issues/29)) ([62e5533](https://github.com/cordanaLLM/imago/commit/62e5533b73556dfb378bae16286c09bfd51e7265))
+* **flavors:** pin only published upstream packages for every flavor ([#166](https://github.com/cordanaLLM/imago/issues/166)) ([9394202](https://github.com/cordanaLLM/imago/commit/9394202595effca3b34a0dfd0299adb7bdac406a)), closes [#165](https://github.com/cordanaLLM/imago/issues/165)
+* **governance:** copy the renamed forge milestones into milestones.json ([#126](https://github.com/cordanaLLM/imago/issues/126)) ([7f57411](https://github.com/cordanaLLM/imago/commit/7f57411615c9981eed7252b334028d9a675daddc)), closes [#6](https://github.com/cordanaLLM/imago/issues/6)
+* **k3s:** install the K3s unit disabled and refuse an enabled one ([#179](https://github.com/cordanaLLM/imago/issues/179)) ([bf068b6](https://github.com/cordanaLLM/imago/commit/bf068b6e97e48a8929e32e1185774cedecbfce13))
+* **k8s:** drop the hardcoded image fallbacks from the precache script ([#195](https://github.com/cordanaLLM/imago/issues/195)) ([e4a23cb](https://github.com/cordanaLLM/imago/commit/e4a23cb0610276456633a9e3220a3f57f8146ada))
+* **kernel:** bound every error text of the kernel contract parsers ([#122](https://github.com/cordanaLLM/imago/issues/122)) ([a6a6477](https://github.com/cordanaLLM/imago/commit/a6a64770163f828d2ad0915615277bedb1ee7c0a))
+* **kernel:** decode the requirement exactly as the schema owner does ([#133](https://github.com/cordanaLLM/imago/issues/133)) ([42267db](https://github.com/cordanaLLM/imago/commit/42267db9e99348f15b88af92dec8447dc11ce83d)), closes [#48](https://github.com/cordanaLLM/imago/issues/48)
+* **manifest:** refuse duplicate keys through encoding/json/v2 ([#191](https://github.com/cordanaLLM/imago/issues/191)) ([9536170](https://github.com/cordanaLLM/imago/commit/9536170fe909b84b6d8871828e5f107c6d49611f))
+* **mcp:** refuse paths, backends and tiers outside each tool's range ([#107](https://github.com/cordanaLLM/imago/issues/107)) ([557319a](https://github.com/cordanaLLM/imago/commit/557319a7992de4c0059c97ad9f341ee5c47690bd)), closes [#6](https://github.com/cordanaLLM/imago/issues/6)
+* **mcp:** send the Hindsight tenant key and name each failure ([#130](https://github.com/cordanaLLM/imago/issues/130)) ([6fae091](https://github.com/cordanaLLM/imago/commit/6fae091da796c68839c4fa7da91e345b66118bbc)), closes [#36](https://github.com/cordanaLLM/imago/issues/36)
+* **packer:** make the QEMU accelerator a variable so CI can emulate ([#40](https://github.com/cordanaLLM/imago/issues/40)) ([cd95117](https://github.com/cordanaLLM/imago/commit/cd95117ac7e44369f6100ad8301fbe72f71ef830))
+* **packer:** seal the build account in the shutdown command, which is the last act ([#42](https://github.com/cordanaLLM/imago/issues/42)) ([3c37d75](https://github.com/cordanaLLM/imago/commit/3c37d75f27c8c29264187f2eb42012563ed23719))
+* **precache:** pin preheated images to tags that exist, and fail when one cannot be cached ([#44](https://github.com/cordanaLLM/imago/issues/44)) ([16f964b](https://github.com/cordanaLLM/imago/commit/16f964b4dafadac2b1f0a662c7dcbb4b7bb29bee))
+* **provisioner:** seal the build account last, and install a cdebug that exists ([#41](https://github.com/cordanaLLM/imago/issues/41)) ([c748e35](https://github.com/cordanaLLM/imago/commit/c748e3557c4334622452184acb1e156733732125))
+* **release:** release the package as imago and keep both version copies in step ([#57](https://github.com/cordanaLLM/imago/issues/57)) ([ea1e8b0](https://github.com/cordanaLLM/imago/commit/ea1e8b0e9c92007b7c8fc2ff5786ecafbb3938f0)), closes [#45](https://github.com/cordanaLLM/imago/issues/45)
+* **release:** sign SHA256SUMS and ship Syft SBOMs per flavor ([#103](https://github.com/cordanaLLM/imago/issues/103)) ([da67979](https://github.com/cordanaLLM/imago/commit/da67979f88dd69a1226aa9e13adad9f36ac9a956))
+* **release:** start at 0.1.0 and hold 1.0.0 until its milestone closes ([#109](https://github.com/cordanaLLM/imago/issues/109)) ([a62d71f](https://github.com/cordanaLLM/imago/commit/a62d71f1aa325fdfcbd8db3c82ee53b86cc1d1b5)), closes [#6](https://github.com/cordanaLLM/imago/issues/6)
+* **renovate:** give update PRs the metadata the PR gate requires ([#194](https://github.com/cordanaLLM/imago/issues/194)) ([5d2dc3c](https://github.com/cordanaLLM/imago/commit/5d2dc3c30e9eb68e9ab6a37bbf9c5c4a1c15ac2e))
+* **scripts:** close the five open Python code scanning findings ([#67](https://github.com/cordanaLLM/imago/issues/67)) ([e68a733](https://github.com/cordanaLLM/imago/commit/e68a7337834615683aae5db0e4274e82ce10f328)), closes [#6](https://github.com/cordanaLLM/imago/issues/6)
+* **security:** ignore GO-2026-5932 in osv-scanner.toml until 2027-02-15 ([#184](https://github.com/cordanaLLM/imago/issues/184)) ([9927d27](https://github.com/cordanaLLM/imago/commit/9927d27f8f80ede205241522200d83551760850b))
+* **standards:** re-adopt the Praetor engine and make provisioners fail when a step fails ([#54](https://github.com/cordanaLLM/imago/issues/54)) ([6b178dd](https://github.com/cordanaLLM/imago/commit/6b178dd4114d7e7df1722fdd4c20fd8e3659eb5e))
+* **tests:** bound the CDI package installation and retry the container removal ([#78](https://github.com/cordanaLLM/imago/issues/78)) ([cd6ae5f](https://github.com/cordanaLLM/imago/commit/cd6ae5f696dba73d38e869da6735ea5fc1d8b45a)), closes [#6](https://github.com/cordanaLLM/imago/issues/6)
+* **tests:** bound the Docker probe by measurement and name its cause ([#156](https://github.com/cordanaLLM/imago/issues/156)) ([d21d8fc](https://github.com/cordanaLLM/imago/commit/d21d8fc2fd911dafd9dc94a5bc5cfe111b8f5a33)), closes [#157](https://github.com/cordanaLLM/imago/issues/157)
+* **tests:** fail live tests in CI when a prerequisite is missing ([#91](https://github.com/cordanaLLM/imago/issues/91)) ([8ac4c2f](https://github.com/cordanaLLM/imago/commit/8ac4c2f1631281c92dba1e5ea8b7b3d00bcd24d3))
+* **tests:** make every exit of run_preparation explicit ([#173](https://github.com/cordanaLLM/imago/issues/173)) ([d32d553](https://github.com/cordanaLLM/imago/commit/d32d5535a3734852bfa6ef5bbc7ac01b3adc24ec))
+* **tests:** separate the sshd container check from the package installation ([#74](https://github.com/cordanaLLM/imago/issues/74)) ([9115cff](https://github.com/cordanaLLM/imago/commit/9115cffe41b8f3cf6d129f7f86c0120d85bb3933))
+* **versions:** qualify image pins with their registry host ([#160](https://github.com/cordanaLLM/imago/issues/160)) ([403559e](https://github.com/cordanaLLM/imago/commit/403559edcd3e89927cdc43753bf15bf7556076e2)), closes [#159](https://github.com/cordanaLLM/imago/issues/159)
+
+
+### Performance Improvements
+
+* **base:** add fstrim timer, fast cloud-init, zram and virtio scheduling ([#15](https://github.com/cordanaLLM/imago/issues/15)) ([043ad8a](https://github.com/cordanaLLM/imago/commit/043ad8a1de823f7d97c858c8fa35dfa3e9150ae2))
+
 ## [Unreleased]
 
 ### Added
