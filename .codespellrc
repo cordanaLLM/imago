@@ -2,5 +2,5 @@
 # site is the local MkDocs output. package-lock.json holds package names and
 # tools/figures/player/player.js and loader.js are minified bundles (dated codespell
 # exceptions in .standards.yaml); neither is prose.
-skip = .git,output-images,packer_cache,*.qcow2,*.img,*.lock,.pytest_cache,*.zst,*.iso,site,package-lock.json,./tools/figures/player/player.js,./tools/figures/player/loader.js
+skip = .git,output-images,packer_cache,*.qcow2,*.img,*.lock,.pytest_cache,*.zst,*.iso,site,package-lock.json,./tools/figures/player/player.js
 ignore-words-list = nts,ptb,vainfo,clinfo,amdgpu,radeonsi,cgroup,cgroups,cgroupfs,containerd,virtio,virtiofs,unraid,resolute,nd,renderd,te,hart,unparseable
