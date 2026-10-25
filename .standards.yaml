@@ -98,6 +98,12 @@ exceptions:
       reason: minified third-party interfig bundle
       entered: "2026-10-18"
       expires: "2026-10-28"
+    - rule: backlog.caps.forge_alerts
+      tool: backlog
+      category: A
+      reason: "code-scanning #12 MaintainedID (Scorecard): repository created 2026-09-09, the 90-day age check clears on 2026-12-08; Category A, interval to that date; ledger finding-security-alerts-761e8013c4-20261025-1105"
+      entered: "2026-10-25"
+      expires: "2026-12-08"
 register:
     sources:
         expected: 13
