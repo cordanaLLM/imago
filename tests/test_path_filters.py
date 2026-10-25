@@ -236,8 +236,22 @@ def test_planted_filtered_jobs_are_refused(job):
         ("cmd/**", "cmd/a/b.go", "cmdx/a.go"),
         (".github/*.json", ".github/a.json", ".github/rulesets/main.json"),
         ("scripts/*.sh", "scripts/a.sh", "scripts/x/a.sh"),
+        (".github/requirements/**", ".github/requirements/sast.txt", ".github/other/sast.txt"),
     ],
 )
 def test_glob_regex_semantics(pattern, hit, miss):
     regex = glob_regex(pattern)
     assert regex.match(hit) and not regex.match(miss)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        ".github/requirements/sast.txt",
+        ".github/requirements/sast-overrides.txt",
+    ],
+)
+def test_test_python_filter_matches_sast_requirements(path: str) -> None:
+    """Modifying SAST locks or overrides must run the pytest suite (governance floor checks, #204)."""
+    patterns = [glob_regex(p) for p in flatten(filters()["test-python"])]
+    assert any(regex.match(path) for regex in patterns), f"test-python: {path} not in its filter"
