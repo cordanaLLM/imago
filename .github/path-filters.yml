@@ -62,6 +62,7 @@ test-python:
   - *packer
   - *shell
   - *workflows
+  - '.github/requirements/**'
 docs-strict:
   - *docs
   - *workflows

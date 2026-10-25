@@ -19,7 +19,12 @@ REQUIREMENTS_DIR = REPO_ROOT / ".github" / "requirements"
 PIP_INSTALL = re.compile(r"\bpip3?\s+install\b(.*)$")
 OVERRIDES_SUFFIX = "-overrides.txt"
 # Fixed versions an override must keep in its lock (advisory, package, lowest fixed version).
-OVERRIDE_FLOORS = {"sast": [("GHSA-84m7-p3x7-pcfv", "mcp", (1, 30, 0))]}
+OVERRIDE_FLOORS = {
+    "sast": [
+        ("GHSA-84m7-p3x7-pcfv", "mcp", (1, 30, 0)),
+        ("GHSA-xcq7-p3pf-p88h", "opentelemetry-api", (1, 45, 1)),
+    ]
+}
 # The last revision published under Apache-2.0; every later one is EUPL-1.2 (ADR-0023).
 APACHE_LAST_REVISION = "44a6bfa"
 # Built from two parts so that this file does not carry the header it searches for.
