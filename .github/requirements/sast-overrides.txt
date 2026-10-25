@@ -3,3 +3,18 @@
 # mcp==1.29.0, which GHSA-84m7-p3x7-pcfv affects (fixed in 1.30.0). The semgrep job runs
 # `semgrep scan` only and never starts the MCP server; drop this entry once semgrep allows 1.30.0.
 mcp==1.30.0
+# opentelemetry-api<=1.45.0 is affected by GHSA-xcq7-p3pf-p88h (fixed in 1.45.1). semgrep 1.180.0
+# pins the OpenTelemetry packages at 1.37.0 / 0.58b0, and a plain upgrade makes the resolver
+# fall back to semgrep 1.79.0. The API cannot move alone (the 1.37.0 exporters import names it
+# lacks), so the whole release set moves to 1.45.1 / 0.66b1. Drop these entries once semgrep
+# allows opentelemetry-api 1.45.1.
+opentelemetry-api==1.45.1
+opentelemetry-exporter-otlp-proto-common==1.45.1
+opentelemetry-exporter-otlp-proto-http==1.45.1
+opentelemetry-proto==1.45.1
+opentelemetry-sdk==1.45.1
+opentelemetry-instrumentation==0.66b1
+opentelemetry-instrumentation-requests==0.66b1
+opentelemetry-instrumentation-threading==0.66b1
+opentelemetry-semantic-conventions==0.66b1
+opentelemetry-util-http==0.66b1
