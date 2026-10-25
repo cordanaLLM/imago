@@ -97,11 +97,11 @@
         }
       },
       "lts": {
-        "version": "6.18.56-lusoris4",
-        "artifact_digest": "sha256:5c61837e6a6b17317aaa85498199de1245e6ea310a2191331bd42a0dcf630729",
+        "version": "6.18.58-lusoris1",
+        "artifact_digest": "sha256:23c0aa7ea6cb831f0819873aeddaddf02491a5d475eac92b56b86096df73072d",
         "provenance": {
-          "tag": "v6.18.56-lts-lusoris4",
-          "revision": "d7250d2bf59c8f40c711c67be421f1c5cfaf8268",
+          "tag": "v6.18.58-lts-lusoris1",
+          "revision": "da4302530cf76bcf20693360dad1e0becbd988d3",
           "bundle": "SHA256SUMS.bundle"
         }
       },
