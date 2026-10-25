@@ -106,20 +106,20 @@
         }
       },
       "mainstream": {
-        "version": "7.2.10-lusoris4",
-        "artifact_digest": "sha256:2ae846b417f01a96e7094eec41d78a863501723f362676212605f6d3d77fc258",
+        "version": "7.2.11-lusoris1",
+        "artifact_digest": "sha256:6104645aa31b3fc16f4b719ef562e33779fee845fdf1137d6f2a3f1b3c255cdf",
         "provenance": {
-          "tag": "v7.2.10-mainstream-lusoris4",
-          "revision": "d7250d2bf59c8f40c711c67be421f1c5cfaf8268",
+          "tag": "v7.2.11-mainstream-lusoris1",
+          "revision": "0687960a7e22aef4e6cf627115e758a480690e98",
           "bundle": "SHA256SUMS.bundle"
         }
       },
       "realtime": {
-        "version": "7.2.10-lusoris4",
-        "artifact_digest": "sha256:e1e589f77d55dd67f5bf52a8051f6a90e4b22eaf3b332d2a937133496b989805",
+        "version": "7.2.11-lusoris1",
+        "artifact_digest": "sha256:54445d3a390ece46d20bbb09e6cbb5f05e279be870285ccada24eaf69ce8f9e9",
         "provenance": {
-          "tag": "v7.2.10-realtime-lusoris4",
-          "revision": "d7250d2bf59c8f40c711c67be421f1c5cfaf8268",
+          "tag": "v7.2.11-realtime-lusoris1",
+          "revision": "0687960a7e22aef4e6cf627115e758a480690e98",
           "bundle": "SHA256SUMS.bundle"
         }
       }
