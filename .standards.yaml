@@ -90,14 +90,8 @@ exceptions:
       path: tools/figures/player/player.js
       category: C
       reason: minified third-party interfig bundle
-      entered: "2026-10-18"
-      expires: "2026-10-28"
-    - rule: codespell
-      path: tools/figures/player/loader.js
-      category: C
-      reason: minified third-party interfig bundle
-      entered: "2026-10-18"
-      expires: "2026-10-28"
+      entered: "2026-10-25"
+      expires: "2026-11-04"
     - rule: backlog.caps.forge_alerts
       tool: backlog
       category: A
