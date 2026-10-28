@@ -5,7 +5,6 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -124,19 +123,6 @@ func textResult(text string) *coremcp.CallToolResult {
 	return &coremcp.CallToolResult{Content: []coremcp.Content{&coremcp.TextContent{Text: text}}}
 }
 
-func errorResult(err error) *coremcp.CallToolResult {
-	return &coremcp.CallToolResult{IsError: true, Content: []coremcp.Content{&coremcp.TextContent{Text: err.Error()}}}
-}
-
-// jsonResult renders v as indented JSON; an encoding failure is a tool error.
-func jsonResult(v any) (*coremcp.CallToolResult, error) {
-	out, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return nil, fmt.Errorf("mcp: encode result: %w", err)
-	}
-	return textResult(string(out)), nil
-}
-
 func registerFlavorTools(s *coremcp.Server) {
 	coremcp.AddTool(s, &coremcp.Tool{
 		Name:        "list_flavors",
@@ -150,15 +136,13 @@ func registerFlavorTools(s *coremcp.Server) {
 
 func listFlavorsHandler(_ context.Context, _ *coremcp.CallToolRequest, args ListFlavorsArgs) (*coremcp.CallToolResult, any, error) {
 	if args.Tier == "" {
-		res, err := jsonResult(flavors.All())
-		return res, nil, err
+		return nil, flavors.All(), nil
 	}
 	list := flavors.FilterByTier(args.Tier)
 	if len(list) == 0 {
-		return errorResult(fmt.Errorf("mcp: unknown tier %q; known tiers: %s", args.Tier, tierIDs())), nil, nil
+		return nil, nil, fmt.Errorf("mcp: unknown tier %q; known tiers: %s", args.Tier, tierIDs())
 	}
-	res, err := jsonResult(list)
-	return res, nil, err
+	return nil, list, nil
 }
 
 func tierIDs() string {
@@ -173,10 +157,9 @@ func tierIDs() string {
 func getFlavorHandler(_ context.Context, _ *coremcp.CallToolRequest, args GetFlavorArgs) (*coremcp.CallToolResult, any, error) {
 	fl, err := flavors.Get(args.FlavorID)
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
-	res, err := jsonResult(fl)
-	return res, nil, err
+	return nil, fl, nil
 }
 
 func registerManifestTools(s *coremcp.Server) {
@@ -189,11 +172,11 @@ func registerManifestTools(s *coremcp.Server) {
 func validateManifestHandler(_ context.Context, _ *coremcp.CallToolRequest, args ValidateManifestArgs) (*coremcp.CallToolResult, any, error) {
 	p, err := repoRelativePath(args.Path, "versions.json")
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
 	m, err := manifest.Load(p)
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
 	msg := fmt.Sprintf("Validation SUCCESS: Distribution %s (%s %s), K8s %s, Containerd %s, Docker CE %s",
 		m.Distro.Name, m.Distro.Release, m.Distro.Version, m.Kubernetes.Version, m.Runtimes.Containerd, m.Runtimes.DockerCE)
@@ -209,7 +192,7 @@ func registerCloudInitTools(s *coremcp.Server) {
 
 func generateCloudInitHandler(_ context.Context, _ *coremcp.CallToolRequest, args GenerateCloudInitArgs) (*coremcp.CallToolResult, any, error) {
 	if _, err := flavors.Get(args.Flavor); err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
 	cfg := cloudinit.DefaultConfig(args.Flavor)
 	if args.Hostname != "" {
@@ -223,7 +206,7 @@ func generateCloudInitHandler(_ context.Context, _ *coremcp.CallToolRequest, arg
 	}
 	ud, err := cloudinit.GenerateUserData(cfg)
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
 	return textResult(ud), nil, nil
 }
@@ -238,10 +221,9 @@ func registerStandardsTools(s *coremcp.Server) {
 func getStandardsHandler(_ context.Context, _ *coremcp.CallToolRequest, args GetStandardsArgs) (*coremcp.CallToolResult, any, error) {
 	std, err := standards.Get(args.FlavorID)
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
-	res, err := jsonResult(std)
-	return res, nil, err
+	return nil, std, nil
 }
 
 func registerTrackerTools(s *coremcp.Server) {
@@ -258,19 +240,17 @@ func registerTrackerTools(s *coremcp.Server) {
 func listEpicsHandler(_ context.Context, _ *coremcp.CallToolRequest, _ ListEpicsArgs) (*coremcp.CallToolResult, any, error) {
 	epics, err := tracker.LoadEpics(filepath.Join(".github", "epics.json"))
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
-	res, err := jsonResult(epics)
-	return res, nil, err
+	return nil, epics, nil
 }
 
 func getMilestonesHandler(_ context.Context, _ *coremcp.CallToolRequest, _ GetMilestonesArgs) (*coremcp.CallToolResult, any, error) {
 	ms, err := tracker.LoadMilestones(filepath.Join(".github", "milestones.json"))
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
-	res, err := jsonResult(ms)
-	return res, nil, err
+	return nil, ms, nil
 }
 
 func registerComplianceTools(s *coremcp.Server) {
@@ -283,11 +263,11 @@ func registerComplianceTools(s *coremcp.Server) {
 func inspectComplianceHandler(_ context.Context, _ *coremcp.CallToolRequest, args InspectComplianceArgs) (*coremcp.CallToolResult, any, error) {
 	p, err := repoRelativePath(args.Path, filepath.Join("tests", "compliance", "goss.yaml"))
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
 	data, err := os.ReadFile(filepath.Clean(p))
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
 	return textResult(string(data)), nil, nil
 }
@@ -308,7 +288,7 @@ func registerExecutionTools(s *coremcp.Server, deps Deps) {
 func triggerBuildHandler(deps Deps) func(context.Context, *coremcp.CallToolRequest, TriggerBuildArgs) (*coremcp.CallToolResult, any, error) {
 	return func(ctx context.Context, _ *coremcp.CallToolRequest, args TriggerBuildArgs) (*coremcp.CallToolResult, any, error) {
 		if err := builder.Validate(builder.Backend(args.Backend), args.Flavor); err != nil {
-			return errorResult(err), nil, nil
+			return nil, nil, err
 		}
 		if !args.DryRun && !args.Confirmed {
 			preview := fmt.Sprintf("Trigger image build for flavor %q via backend %q", args.Flavor, args.Backend)
@@ -319,8 +299,8 @@ func triggerBuildHandler(deps Deps) func(context.Context, *coremcp.CallToolReque
 			}, preview)
 			return textResult(stagedMessage(staged, args.Flavor, args.Backend)), nil, nil
 		}
-		res, err := dispatchBuild(ctx, args.Backend, args.Flavor, args.DryRun, "")
-		return res, nil, err
+		res, err := dispatchBuild(ctx, args.Backend, args.Flavor, args.DryRun)
+		return nil, res, err
 	}
 }
 
@@ -329,9 +309,8 @@ func stagedMessage(staged *StagedAction, flavor, backend string) string {
 		staged.ID, flavor, backend, staged.ID)
 }
 
-// dispatchBuild runs the build dispatcher and renders the result, prefixed by
-// an optional confirmation banner. A refused dispatch is an error result.
-func dispatchBuild(ctx context.Context, backend, flavor string, dryRun bool, prefix string) (*coremcp.CallToolResult, error) {
+// dispatchBuild runs the build dispatcher and preserves the CLI hint on refusal.
+func dispatchBuild(ctx context.Context, backend, flavor string, dryRun bool) (builder.Result, error) {
 	res, err := builder.Dispatch(ctx, builder.Request{
 		Backend: builder.Backend(backend),
 		Flavor:  flavor,
@@ -341,13 +320,9 @@ func dispatchBuild(ctx context.Context, backend, flavor string, dryRun bool, pre
 		if backend == string(builder.BackendLocal) && errors.Is(err, builder.ErrBackendUnavailable) {
 			err = fmt.Errorf("%w; local executor available from the CLI: imago build --backend local", err)
 		}
-		return errorResult(err), nil
+		return builder.Result{}, err
 	}
-	out, err := json.MarshalIndent(res, "", "  ")
-	if err != nil {
-		return nil, fmt.Errorf("mcp: encode result: %w", err)
-	}
-	return textResult(prefix + string(out)), nil
+	return res, nil
 }
 
 func applyFlavorHandler(_ context.Context, _ *coremcp.CallToolRequest, args ApplyFlavorArgs) (*coremcp.CallToolResult, any, error) {
@@ -356,7 +331,7 @@ func applyFlavorHandler(_ context.Context, _ *coremcp.CallToolRequest, args Appl
 		DryRun:   args.DryRun,
 	})
 	if err != nil {
-		return errorResult(err), nil, nil
+		return nil, nil, err
 	}
 	return textResult(script), nil, nil
 }
@@ -378,8 +353,7 @@ func registerStagingTools(s *coremcp.Server, deps Deps) {
 
 func listStagedActionsHandler(deps Deps) func(context.Context, *coremcp.CallToolRequest, ListStagedActionsArgs) (*coremcp.CallToolResult, any, error) {
 	return func(_ context.Context, _ *coremcp.CallToolRequest, _ ListStagedActionsArgs) (*coremcp.CallToolResult, any, error) {
-		res, err := jsonResult(deps.Stager.List())
-		return res, nil, err
+		return nil, deps.Stager.List(), nil
 	}
 }
 
@@ -387,7 +361,7 @@ func confirmActionHandler(deps Deps) func(context.Context, *coremcp.CallToolRequ
 	return func(ctx context.Context, _ *coremcp.CallToolRequest, args ConfirmActionArgs) (*coremcp.CallToolResult, any, error) {
 		act, err := deps.Stager.Confirm(args.ActionID)
 		if err != nil {
-			return errorResult(err), nil, nil
+			return nil, nil, err
 		}
 		if act.Tool != "trigger_build" {
 			return textResult(fmt.Sprintf("✅ Action %s confirmed (tool: %s)", act.ID, act.Tool)), nil, nil
@@ -395,16 +369,15 @@ func confirmActionHandler(deps Deps) func(context.Context, *coremcp.CallToolRequ
 		flavor, _ := act.Payload["flavor"].(string)
 		backend, _ := act.Payload["backend"].(string)
 		dryRun, _ := act.Payload["dry_run"].(bool)
-		prefix := fmt.Sprintf("Action %s confirmed; dispatch result:\n", act.ID)
-		res, err := dispatchBuild(ctx, backend, flavor, dryRun, prefix)
-		return res, nil, err
+		res, err := dispatchBuild(ctx, backend, flavor, dryRun)
+		return nil, res, err
 	}
 }
 
 func discardActionHandler(deps Deps) func(context.Context, *coremcp.CallToolRequest, DiscardStagedActionArgs) (*coremcp.CallToolResult, any, error) {
 	return func(_ context.Context, _ *coremcp.CallToolRequest, args DiscardStagedActionArgs) (*coremcp.CallToolResult, any, error) {
 		if err := deps.Stager.Discard(args.ActionID); err != nil {
-			return errorResult(err), nil, nil
+			return nil, nil, err
 		}
 		return textResult(fmt.Sprintf("Action %q discarded successfully", args.ActionID)), nil, nil
 	}

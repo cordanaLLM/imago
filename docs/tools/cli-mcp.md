@@ -302,6 +302,8 @@ imago mcp --transport=http --addr=:8899
 
 The input schema of each tool is inferred from its argument struct in `pkg/mcp` and checked by the MCP Go SDK before the tool runs: a missing required argument, a value of the wrong type or an argument the tool does not know is refused with `validating "arguments"` and never reaches the handler. `pkg/mcp/schema_contract_test.go` pins the required and known arguments listed above.
 
+JSON-returning tools use the SDK's typed output handling: `structuredContent` carries the result and the text content contains the same compact JSON, including top-level lists. Handler errors become `isError: true` with the original error message as text. Plain-text messages, YAML and scripts retain their text format. `pkg/mcp/result_codec_test.go` checks the list result and error text over an MCP session.
+
 ---
 
 ### 3.4 Two-Phase Staged Operations & Human-in-the-Loop Guardrails
