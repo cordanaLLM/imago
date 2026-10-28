@@ -104,7 +104,7 @@ func TestMCPToolsAcceptBoundaryInput(t *testing.T) {
 		{"list_epics_empty_object", "list_epics", map[string]any{}, "EPIC-01"},
 		{"get_milestones_empty_object", "get_milestones", map[string]any{}, "1.0"},
 		{"apply_flavor_live_script", "apply_flavor", map[string]any{"flavor_id": "base-generic", "dry_run": false}, "#!/usr/bin/env bash"},
-		{"trigger_build_dry_run_last_backend", "trigger_build", map[string]any{"flavor": "appliance-game-server", "backend": "github", "dry_run": true}, `"status": "planned"`},
+		{"trigger_build_dry_run_last_backend", "trigger_build", map[string]any{"flavor": "appliance-game-server", "backend": "github", "dry_run": true}, `"status":"planned"`},
 		{"list_staged_actions_empty", "list_staged_actions", nil, "[]"},
 	}
 	for _, tc := range cases {
