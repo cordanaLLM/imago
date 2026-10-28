@@ -61,8 +61,8 @@ func successfulRunner(t *testing.T, e builder.LocalExecutor) fakeRunner {
 			return err
 		}
 		assert.Equal(t, []string{"build", "-only=docker-generic.qemu.image", "-var", "output_dir=" + e.OutputDir,
-			"-var", "flavor=docker-generic", "-var", "image_name=lusoris-cloud", "."}, args)
-		artifact := filepath.Join(e.OutputDir, "docker-generic", "lusoris-cloud-docker-generic.qcow2")
+			"-var", "flavor=docker-generic", "-var", "image_name=imago-cloud", "."}, args)
+		artifact := filepath.Join(e.OutputDir, "docker-generic", "imago-cloud-docker-generic.qcow2")
 		if err := os.MkdirAll(filepath.Dir(artifact), 0o755); err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func TestLocalExecutorSuccess(t *testing.T) {
 	assert.True(t, res.Success)
 	assert.Equal(t, builder.StatusSucceeded, res.Status)
 	assert.Equal(t, fmt.Sprintf("%x", sha256.Sum256([]byte("built qcow2 bytes"))), res.ArtifactSHA256)
-	assert.Equal(t, filepath.Join(e.OutputDir, "docker-generic", "lusoris-cloud-docker-generic.qcow2"), res.Artifact)
+	assert.Equal(t, filepath.Join(e.OutputDir, "docker-generic", "imago-cloud-docker-generic.qcow2"), res.Artifact)
 	assert.Regexp(t, `docker-generic-\d{8}T\d{6}Z\.log$`, res.RunLog)
 	log, err := os.ReadFile(res.RunLog)
 	require.NoError(t, err)
@@ -128,7 +128,7 @@ func TestLocalExecutorPreflightRefusals(t *testing.T) {
 
 // writeStaleArtifact leaves a qcow2 dated before the build, as an earlier run would.
 func writeStaleArtifact(e builder.LocalExecutor) error {
-	artifact := filepath.Join(e.OutputDir, "docker-generic", "lusoris-cloud-docker-generic.qcow2")
+	artifact := filepath.Join(e.OutputDir, "docker-generic", "imago-cloud-docker-generic.qcow2")
 	if err := os.MkdirAll(filepath.Dir(artifact), 0o755); err != nil {
 		return err
 	}

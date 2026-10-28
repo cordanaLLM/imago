@@ -1,6 +1,6 @@
 # Universal Architecture and Form Factor Specification
 
-`lusoris-cloud-images` targets a multi-architecture matrix spanning three processor instruction set architectures (ISAs): **x86_64 (amd64)**, **arm64 (aarch64)**, and **riscv64**. This document specifies hardware interfaces, firmware contracts, kernel configurations, and peripheral passthrough profiles for each supported form factor.
+`imago` targets a multi-architecture matrix spanning three processor instruction set architectures (ISAs): **x86_64 (amd64)**, **arm64 (aarch64)**, and **riscv64**. This document specifies hardware interfaces, firmware contracts, kernel configurations, and peripheral passthrough profiles for each supported form factor.
 
 ---
 

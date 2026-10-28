@@ -294,8 +294,8 @@ def sparse(path: Path, size: int) -> Path:
 
 
 def test_sizes_accepts_one_byte_under_the_limit_and_writes_the_summary(tmp_path, capsys):
-    raw = sparse(tmp_path / "lusoris-cloud-base-generic.raw.zst", assets.ASSET_LIMIT_BYTES - 1)
-    qcow2 = sparse(tmp_path / "lusoris-cloud-base-generic.qcow2.zst", 1024)
+    raw = sparse(tmp_path / "imago-cloud-base-generic.raw.zst", assets.ASSET_LIMIT_BYTES - 1)
+    qcow2 = sparse(tmp_path / "imago-cloud-base-generic.qcow2.zst", 1024)
     summary = tmp_path / "summary.md"
     summary.write_text("earlier step\n", encoding="utf-8")
     assert assets.main(["sizes", "--summary", str(summary), str(qcow2), str(raw)]) == 0

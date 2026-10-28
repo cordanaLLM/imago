@@ -5,7 +5,7 @@ labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
-      value: Thank you for suggesting an improvement to `lusoris-cloud-images`!
+      value: Thank you for suggesting an improvement to `imago`!
   - type: textarea
     id: problem
     attributes:

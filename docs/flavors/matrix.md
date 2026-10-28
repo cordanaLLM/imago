@@ -2,7 +2,7 @@
 
 A published release and the weekly schedule build `base-generic`, `docker-generic` and `k8s-node-generic`; every other flavor builds on a manual run of `release-matrix.yml` with its `flavor` input (or locally, see the [Quickstart](https://github.com/cordanaLLM/imago#quickstart)). Manual runs of different flavors run side by side; a second manual run of the same flavor on the same branch waits for the first, and a third replaces the waiting one.
 
-`lusoris-cloud-images` structures operating system images across four orthogonal dimensions: **Platform**, **Workload Tier**, **Hardware Acceleration**, and **Security Hardening**.
+`imago` structures operating system images across four orthogonal dimensions: **Platform**, **Workload Tier**, **Hardware Acceleration**, and **Security Hardening**.
 
 All 44 flavors originate from a single base configuration and are customized via declarative Packer pipelines.
 

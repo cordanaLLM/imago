@@ -1,6 +1,6 @@
 # New Flavor Addition Quality Gate Checklist
 
-> Rigorous verification checklist for adding any new image flavor to `lusoris-cloud-images`. Follow every gate before proposing a pull request.
+> Rigorous verification checklist for adding any new image flavor to `imago`. Follow every gate before proposing a pull request.
 
 ---
 

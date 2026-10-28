@@ -10,7 +10,7 @@ Deploying operating systems to bare-metal servers often requires heavy PXE insta
 
 ## Decision
 
-We deliver compressed raw disk images (`.raw.zst`) and provide `/usr/local/bin/lusoris-install-to-disk`:
+We deliver compressed raw disk images (`.raw.zst`) and provide `/usr/local/bin/imago-install-to-disk`:
 
 1. The tool streams the image over HTTPS directly through `zstdcat` into `dd of=/dev/nvmeX bs=4M`.
 2. Memory consumption is limited to the zstd stream buffer (< 50MB).

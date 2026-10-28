@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-As autonomous AI engineering agents (`agy`, Claude Code, Cursor, and the AI Studio Managed Agents fleet) take on complex, long-running architectural workflows in `lusoris-cloud-images`, two operational bottlenecks emerged:
+As autonomous AI engineering agents (`agy`, Claude Code, Cursor, and the AI Studio Managed Agents fleet) take on complex, long-running architectural workflows in `imago`, two operational bottlenecks emerged:
 
 1. **Context Window Saturation from Monolithic Skills**:
    The initial agent skill library embedded full reference tables (e.g. all 44 flavors, Packer target flags, hardware requirements, and lengthy test instructions) directly inside top-level `SKILL.md` files. When multiple skills are scanned or loaded during prompt discovery, hundreds of tokens are consumed before task execution even begins.

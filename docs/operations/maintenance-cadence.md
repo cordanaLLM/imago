@@ -1,6 +1,6 @@
 # Operational Maintenance Cadences and Contributor SOPs
 
-To guarantee long-term stability, automated dependency freshness, and zero-drift security across all 44 flavors, `lusoris-cloud-images` operates on four deterministic operational cadences: **Weekly**, **Monthly**, **Quarterly**, and **Annual**.
+To guarantee long-term stability, automated dependency freshness, and zero-drift security across all 44 flavors, `imago` operates on four deterministic operational cadences: **Weekly**, **Monthly**, **Quarterly**, and **Annual**.
 
 ---
 
@@ -108,7 +108,7 @@ Annual maintenance focuses on cryptographic identity hygiene and architectural r
 
 ## 6. Immutable Image Deprecation & Fleet Lifecycle Policy
 
-Following [ADR-0011](../adr/0011-enterprise-golden-image-compliance-and-lifecycle.md), production infrastructure deployed with `lusoris-cloud-images` operates on a strict **Zero-Patching Fleet Immutability** model:
+Following [ADR-0011](../adr/0011-enterprise-golden-image-compliance-and-lifecycle.md), production infrastructure deployed with `imago` operates on a strict **Zero-Patching Fleet Immutability** model:
 
 1. **Strict 30-Day Image Lifespan**:
    - Published golden images enforce a 30-day active lifespan. Autoscaling node pools and hypervisor clusters are recycled continuously over newly forged baselines.

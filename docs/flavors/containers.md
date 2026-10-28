@@ -1,6 +1,6 @@
 # Container Appliance Flavors
 
-`lusoris-cloud-images` provides pre-configured, production-grade container host appliances supporting both **Docker CE 29.8** and **Rootless Podman 5.x**.
+`imago` provides pre-configured, production-grade container host appliances supporting both **Docker CE 29.8** and **Rootless Podman 5.x**.
 
 ---
 

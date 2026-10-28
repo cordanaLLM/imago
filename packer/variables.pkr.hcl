@@ -1,6 +1,6 @@
 variable "image_name" {
   type        = string
-  default     = "lusoris-cloud"
+  default     = "imago-cloud"
   description = "Base output name for the generated image"
 }
 

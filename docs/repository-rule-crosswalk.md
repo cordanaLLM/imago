@@ -1,6 +1,6 @@
 # Repository-Rule Crosswalk
 
-This ledger records which recurring engineering conventions from the maintainer's other fleet repositories (`VMAFx/vmafx`, `20-watts-was-enough`, `golusoris/*`) were adopted, adapted, staged, or rejected in `lusoris-cloud-images`. It prevents future maintainers and autonomous agents from copying tooling without verifying that its invariant applies to an OS image forge.
+This ledger records which recurring engineering conventions from the maintainer's other fleet repositories (`VMAFx/vmafx`, `20-watts-was-enough`, `golusoris/*`) were adopted, adapted, staged, or rejected in `imago`. It prevents future maintainers and autonomous agents from copying tooling without verifying that its invariant applies to an OS image forge.
 
 ---
 
@@ -30,7 +30,7 @@ Across the reference repositories, the stable architectural pattern is:
 
 ---
 
-## 3. Adoption Matrix for `lusoris-cloud-images`
+## 3. Adoption Matrix for `imago`
 
 | Reference Convention | Local Decision | Concrete Surface |
 | :--- | :--- | :--- |
@@ -66,4 +66,4 @@ The following repository settings were verified via `gh api`:
 - **Merge Settings**: Squash and rebase merges allowed; merge commits disabled; delete branch on merge enabled.
 - **Workflow Permissions**: default token permission `read` and `can_approve_pull_request_reviews: true` to enable Release Please automation. `.standards.yaml` declares both under `overrides.actions`, and the online `praetorctl audit` (run by `make verify-all` and the pre-push hook) fails when the forge value differs, naming whether the repository or the organisation changed it (issue #45).
 - **Branch Protection on `main`**: Required status checks as listed in `.github/rulesets/main.json`, the `required-checks` aggregator among them (ADR-0027); strict linear history; force-pushes and deletions blocked.
-- **Project Tracking**: GitHub Project V2 [`lusoris-cloud-images Roadmap`](https://github.com/users/lusoris/projects/1) tracking active epics.
+- **Project Tracking**: GitHub Project V2 [`imago Roadmap`](https://github.com/users/lusoris/projects/1) tracking active epics.

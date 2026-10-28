@@ -1,6 +1,6 @@
-# Contributing to lusoris-cloud-images
+# Contributing to imago
 
-Thank you for your interest in contributing to `lusoris-cloud-images`! We welcome contributions ranging from new hardware acceleration stacks and hypervisor targets to security hardening and bug fixes.
+Thank you for your interest in contributing to `imago`! We welcome contributions ranging from new hardware acceleration stacks and hypervisor targets to security hardening and bug fixes.
 
 ---
 

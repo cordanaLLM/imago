@@ -5,7 +5,7 @@ labels: ["enhancement", "flavor-request"]
 body:
   - type: markdown
     attributes:
-      value: Request a new combination in the lusoris-cloud-images 4D matrix!
+      value: Request a new combination in the imago 4D matrix!
   - type: input
     id: proposed_name
     attributes:

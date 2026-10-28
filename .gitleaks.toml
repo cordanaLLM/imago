@@ -1,4 +1,4 @@
-title = "lusoris-cloud-images gitleaks configuration"
+title = "imago gitleaks configuration"
 
 [extend]
 useDefault = true

@@ -1,6 +1,6 @@
 # TrueNAS SCALE & CORE VM Integration Guide
 
-All `lusoris-cloud-images` flavors are engineered for high-performance virtualized operation within TrueNAS SCALE (Debian KVM) and TrueNAS CORE (FreeBSD bhyve).
+All `imago` flavors are engineered for high-performance virtualized operation within TrueNAS SCALE (Debian KVM) and TrueNAS CORE (FreeBSD bhyve).
 
 ---
 
@@ -19,7 +19,7 @@ An image of 2 GiB or more is too large for one release asset, so the release car
 cd /mnt/tank/vm-images/
 
 # Download and stream-decompress the Lusoris flavor (e.g. docker-generic or k8s-node-generic)
-curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > docker-generic.qcow2
+curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/imago-cloud-docker-generic.qcow2.zst | zstdcat > docker-generic.qcow2
 
 # Create a sparse Zvol for maximum performance (e.g. 32GB)
 zfs create -V 32G -s tank/vms/docker-node-zvol

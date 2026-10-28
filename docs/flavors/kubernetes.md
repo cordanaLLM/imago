@@ -2,7 +2,7 @@
 
 `k8s-node-*` flavors provide production-grade, hardened Kubernetes worker node appliances running on Ubuntu 26.04 LTS (Resolute) with containerd 2.x and strict Cgroup v2 resource accounting.
 
-To balance zero first-boot latency with disk footprint, `lusoris-cloud-images` provides both **Lean (Zero-Preheat)** and **Preheated CNI Profiles** (`cilium`, `calico`, `flannel`).
+To balance zero first-boot latency with disk footprint, `imago` provides both **Lean (Zero-Preheat)** and **Preheated CNI Profiles** (`cilium`, `calico`, `flannel`).
 
 ---
 

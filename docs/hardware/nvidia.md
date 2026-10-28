@@ -1,6 +1,6 @@
 # NVIDIA Multi-Generational Acceleration Stacks
 
-To prevent driver incompatibilities, symbol conflicts, and runtime panics across disparate GPU microarchitectures, `lusoris-cloud-images` segments NVIDIA support into four distinct hardware generations plus a dedicated datacenter tier.
+To prevent driver incompatibilities, symbol conflicts, and runtime panics across disparate GPU microarchitectures, `imago` segments NVIDIA support into four distinct hardware generations plus a dedicated datacenter tier.
 
 All modern and bleeding flavors generate native Container Device Interface (CDI) specifications at `/etc/cdi/nvidia.yaml`, providing seamless device pass-through across Docker, Podman, and containerd without wrapper runtimes.
 

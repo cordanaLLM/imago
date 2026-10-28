@@ -15,7 +15,7 @@ Supported hardware: AMD Radeon RX 6000/7000/8000 series, Ryzen APUs, Radeon Pro,
 
 ## 2. AMD ROCm Compute Stacks (`*-amd-rocm` / `*-rocm`)
 
-`lusoris-cloud-images` segments AMD compute into **ROCm Legacy** and **ROCm Bleeding-Edge**:
+`imago` segments AMD compute into **ROCm Legacy** and **ROCm Bleeding-Edge**:
 
 ### Version pins and apt source
 

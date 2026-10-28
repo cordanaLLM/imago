@@ -1,6 +1,6 @@
 # NAS & Storage Appliances Integration Guide
 
-> Comprehensive operating guide for deploying, optimizing, and interconnecting `lusoris-cloud-images` with open-source and commercial Network Attached Storage (NAS) platforms.
+> Comprehensive operating guide for deploying, optimizing, and interconnecting `imago` with open-source and commercial Network Attached Storage (NAS) platforms.
 
 ---
 
@@ -15,7 +15,7 @@ OpenMediaVault is a Debian-based NAS solution popular in lightweight homelab env
   - Download the `.qcow2.zst` artifact into the OMV storage pool; an image of 2 GiB or more ships as `.part00`, `.part01`, ... parts, joined as [Supply Chain Security](../security/supply-chain.md#1-cryptographic-signing-via-cosign) shows:
 
     ```bash
-    zstdcat lusoris-cloud-docker-generic.qcow2.zst > /srv/dev-disk-by-uuid-.../vms/docker-node.qcow2
+    zstdcat imago-cloud-docker-generic.qcow2.zst > /srv/dev-disk-by-uuid-.../vms/docker-node.qcow2
     ```
 
   - Attach via Cockpit UI with VirtIO bus and network bridge.

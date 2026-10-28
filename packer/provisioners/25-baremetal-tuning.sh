@@ -66,14 +66,14 @@ EOF
 
 install_disk_stream_helper() {
   echo "==> Installing bare-metal direct-to-disk stream helper..."
-  cat <<'EOF' | sudo tee /usr/local/bin/lusoris-install-to-disk
+  cat <<'EOF' | sudo tee /usr/local/bin/imago-install-to-disk
 #!/usr/bin/env bash
-# Stream and flash a compressed lusoris cloud image directly to physical storage.
+# Stream and flash a compressed imago cloud image directly to physical storage.
 set -euo pipefail
 
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <image-url-or-file.raw.zst> <target-disk-dev>"
-  echo "Example: $0 https://github.com/<owner>/imago/releases/download/<tag>/lusoris-cloud-base-generic.raw.zst /dev/nvme0n1"
+  echo "Example: $0 https://github.com/<owner>/imago/releases/download/<tag>/imago-cloud-base-generic.raw.zst /dev/nvme0n1"
   exit 1
 fi
 
@@ -105,7 +105,7 @@ echo "==> Flash complete. Re-reading partition table..."
 sudo partprobe "${DEST}" || true
 echo "==> Ready to boot."
 EOF
-  sudo chmod +x /usr/local/bin/lusoris-install-to-disk
+  sudo chmod +x /usr/local/bin/imago-install-to-disk
 }
 
 main() {

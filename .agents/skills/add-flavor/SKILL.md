@@ -1,13 +1,13 @@
 ---
 name: add-flavor
-description: Add a new image flavor (hardware or workload tier) to lusoris-cloud-images with full SSOT, test, and documentation synchrony.
+description: Add a new image flavor (hardware or workload tier) to imago with full SSOT, test, and documentation synchrony.
 references:
   - references/flavor-checklist.md
 ---
 
 # Add Flavor Skill
 
-Follow this end-to-end workflow when creating new OS image flavor in `lusoris-cloud-images`.
+Follow this end-to-end workflow when creating new OS image flavor in `imago`.
 
 ## Invariants to Preserve
 1. **Single Source of Truth**: All versions, container tags, and driver branches must be defined in `versions.json`. Never hardcode strings in templates or provisioners.

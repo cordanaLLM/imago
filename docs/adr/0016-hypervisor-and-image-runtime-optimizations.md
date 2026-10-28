@@ -8,11 +8,11 @@ Accepted
 
 ## Context
 
-`lusoris-cloud-images` produces virtual machine and bare-metal OS images for high-density virtualization (Proxmox VE, Unraid, VMware ESXi, KVM) and production compute clusters. An exhaustive architectural audit across the image lifecycle identified 6 optimization vectors that significantly enhance boot speed, virtualized I/O throughput, host memory density, and supply chain provenance:
+`imago` produces virtual machine and bare-metal OS images for high-density virtualization (Proxmox VE, Unraid, VMware ESXi, KVM) and production compute clusters. An exhaustive architectural audit across the image lifecycle identified 6 optimization vectors that significantly enhance boot speed, virtualized I/O throughput, host memory density, and supply chain provenance:
 
 1. **Early Boot & Filesystem Expansion Latency**: Traditional cloud-init relies on a Python-based `growpart` module that executes several seconds into userspace, blocking service startup. Modern systemd provides `systemd-growfs-root.service` capable of instant in-kernel or early initramfs filesystem expansion ($< 5\text{ms}$).
 2. **Virtual Disk I/O & Cluster Sizing**: Default QCOW2 images use a 64KB cluster size. In heavy database (`cloudnative-pg`) and container image pull (`docker-*`, `k8s-node-*`) workloads, 64KB clusters trigger high metadata lookup overhead and severe write amplification. Formatting virtual disks with 1MB clusters (`cluster_size=1M`) and `extended_l2=on` yields $20\text{--}30\%$ higher sequential and random write throughput.
-3. **Multi-Hypervisor Format Delivery**: Consuming environments require native image formats beyond QCOW2 without manual user conversion: `.raw.zst` (direct disk streaming via `lusoris-install-to-disk`, microVMs), `.vmdk.zst` (VMware ESXi), `.vhdx.zst` (Hyper-V/WSL2), and `.tar.zst` (Incus / LXD system containers).
+3. **Multi-Hypervisor Format Delivery**: Consuming environments require native image formats beyond QCOW2 without manual user conversion: `.raw.zst` (direct disk streaming via `imago-install-to-disk`, microVMs), `.vmdk.zst` (VMware ESXi), `.vhdx.zst` (Hyper-V/WSL2), and `.tar.zst` (Incus / LXD system containers).
 4. **Host Memory Density & Transparent Deduplication**: When hypervisors host multiple identical Lusoris instances, Kernel Samepage Merging (KSM) in the host kernel can deduplicate shared read-only memory pages (e.g. libc, systemd, kernel text), increasing guest density by $30\text{--}50\%$.
 5. **Multi-Queue Networking & eBPF Acceleration**: High-bandwidth virtualized networks (10GbE / 25GbE / 100GbE) default to 1 VirtIO network queue per interface, causing single-core bottlenecking. Binding network queues to available vCPUs (`ethtool -L eth0 combined $(nproc)`) enables line-rate multi-core packet processing.
 6. **Supply Chain Attestation & Immutability**: Production environments demand cryptographic verification and SBOM traceability for every published operating system artifact.
@@ -37,7 +37,7 @@ We establish an enterprise image optimization architecture across 6 core technic
 
 - **Matrix Delivery Pipeline**: Release artifacts are generated in 5 standard formats:
   - `.qcow2.zst`: Proxmox VE, OpenStack, KVM.
-  - `.raw.zst`: Bare-metal streaming (`lusoris-install-to-disk`), Firecracker, Cloud-Hypervisor.
+  - `.raw.zst`: Bare-metal streaming (`imago-install-to-disk`), Firecracker, Cloud-Hypervisor.
   - `.vmdk.zst`: VMware ESXi / vSphere.
   - `.vhdx.zst`: Hyper-V and Windows WSL2.
   - `.rootfs.tar.zst`: Incus / LXD Linux system containers.

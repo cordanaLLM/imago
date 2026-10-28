@@ -8,14 +8,14 @@ Accepted
 
 ## Context
 
-`lusoris-cloud-images` was bootstrapped with Ubuntu LTS (currently Ubuntu 26.04 LTS Resolute Minimal, maintaining Ubuntu 24.04 LTS compatibility) as its foundational distribution. Ubuntu was selected because of its comprehensive driver support for modern hardware accelerators (NVIDIA 535–615 CUDA stacks, Intel Xe/Xe2 Media & Level Zero runtimes, AMD ROCm 10) and robust upstream cloud-init integration.
+`imago` was bootstrapped with Ubuntu LTS (currently Ubuntu 26.04 LTS Resolute Minimal, maintaining Ubuntu 24.04 LTS compatibility) as its foundational distribution. Ubuntu was selected because of its comprehensive driver support for modern hardware accelerators (NVIDIA 535–615 CUDA stacks, Intel Xe/Xe2 Media & Level Zero runtimes, AMD ROCm 10) and robust upstream cloud-init integration.
 
 However, relying exclusively on a single base distribution creates structural limitations:
 
 1. **Footprint Overhead for Non-GPU Appliances**: Lightweight microVMs, DNS gateways (`appliance-gateway-dns`), and storage heads (`cloudnative-storage`) do not require Ubuntu's accelerated driver ecosystem and benefit significantly from Debian's minimal package surface or Alpine's sub-50MB rootfs.
 2. **Upstream Stability Demands**: CNCF storage and database appliances require predictable kernel stability and minimal package churn, for which Debian (Bookworm 12 / Trixie 13) is an industry gold standard.
 3. **Declarative Immutable Root Paradigm**: Modern immutable container hosts (`cloudnative-generic`) increasingly move toward OCI image-based boot (`bootc` on Fedora/CentOS Stream) rather than traditional package-based rootfs installations.
-4. **Architectural Confusion in Documentation**: Presenting Ubuntu as the only possible upstream base obscures the long-term design contract of `lusoris-cloud-images` as a multi-distribution OS image forge.
+4. **Architectural Confusion in Documentation**: Presenting Ubuntu as the only possible upstream base obscures the long-term design contract of `imago` as a multi-distribution OS image forge.
 
 ## Decision
 
@@ -72,7 +72,7 @@ Shell provisioners will retain strict Holzmann Power of 10 constraints ($\le 60$
 - Establishes a transparent, authoritative roadmap for expanding beyond Ubuntu LTS.
 - Clearly delineates which workloads stay on Ubuntu (hardware-accelerated GPU and AI inference) versus those that migrate to Debian or Alpine (minimal microVMs, DNS, storage).
 - Ensures future schema expansions to `versions.json` remain structured, typed, and backwards-compatible.
-- Eliminates documentation and architectural ambiguity regarding the scope of `lusoris-cloud-images`.
+- Eliminates documentation and architectural ambiguity regarding the scope of `imago`.
 
 ### Negative / Trade-offs
 
