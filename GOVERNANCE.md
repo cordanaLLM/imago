@@ -2,7 +2,7 @@
 
 ## Overview
 
-`lusoris-cloud-images` is an open-source project driven by community contributors and maintainers. This document outlines how decisions are made, how maintainership is earned, and how architectural directions are established.
+`imago` is an open-source project driven by community contributors and maintainers. This document outlines how decisions are made, how maintainership is earned, and how architectural directions are established.
 
 ## Decision Making & Architecture Decision Records (ADRs)
 

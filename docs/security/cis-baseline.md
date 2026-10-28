@@ -1,8 +1,8 @@
 # CIS Benchmark Hardening Baseline
 
-`lusoris-cloud-images` enforces Center for Internet Security (CIS) Benchmark Level 1 hardening standards directly at image build time.
+`imago` enforces Center for Internet Security (CIS) Benchmark Level 1 hardening standards directly at image build time.
 
-## Kernel Sysctl Hardening (`/etc/sysctl.d/99-lusoris.conf`)
+## Kernel Sysctl Hardening (`/etc/sysctl.d/99-imago.conf`)
 
 - **Memory Protection**: `fs.suid_dumpable = 0`, `kernel.randomize_va_space = 2` (ASLR), `kernel.kptr_restrict = 2`, `kernel.dmesg_restrict = 1`.
 - **Filesystem Link Protection**: `fs.protected_hardlinks = 1`, `fs.protected_symlinks = 1`.

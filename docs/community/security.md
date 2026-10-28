@@ -1,13 +1,13 @@
 <!-- markdownlint-disable MD013 MD024 -->
 # Security Policy & Audit Ledger
 
-> Authoritative security documentation, vulnerability disclosure SLAs, and continuous automated security audit findings for `lusoris-cloud-images`.
+> Authoritative security documentation, vulnerability disclosure SLAs, and continuous automated security audit findings for `imago`.
 
 ---
 
 ## 1. Security Philosophy & Threat Model
 
-`lusoris-cloud-images` produces hardened, production-ready cloud and bare-metal OS images designed for enterprise virtualization and edge compute. Our threat model assumes:
+`imago` produces hardened, production-ready cloud and bare-metal OS images designed for enterprise virtualization and edge compute. Our threat model assumes:
 
 - Untrusted multi-tenant host environments where guest images must be hardened against privilege escalation, kernel info leaks, and unauthenticated network probing.
 - Fully automated, reproducible build pipelines where supply-chain tampering and unauthorized artifact mutation are actively prevented via cryptographic verification and dependency pinning.

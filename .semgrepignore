@@ -1,4 +1,4 @@
-# Semgrep ignore rules for lusoris-cloud-images
+# Semgrep ignore rules for imago
 packer_cache/
 output-*/
 output-images/

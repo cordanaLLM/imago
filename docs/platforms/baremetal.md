@@ -1,19 +1,19 @@
 # Bare-Metal & iPXE Deployment Guide
 
-`lusoris-cloud-images` provides bare-metal optimized images with physical hardware tuning, microcode errata mitigations, and storage expansion.
+`imago` provides bare-metal optimized images with physical hardware tuning, microcode errata mitigations, and storage expansion.
 
-## 1. Direct Block Flashing (`lusoris-install-to-disk`)
+## 1. Direct Block Flashing (`imago-install-to-disk`)
 
 You can flash a compressed `.raw.zst` directly to physical NVMe or SATA storage from any live rescue environment (e.g. Ubuntu live CD, SystemRescue, Hetzner Rescue).
 
-Each release of your fork carries the raw disk image of every flavor that `.github/workflows/release-matrix.yml` builds (`base-generic`, `docker-generic`, `k8s-node-generic`) as `lusoris-cloud-<flavor>.raw.zst`, next to the `.qcow2.zst`. Both are listed in the release's `SHA256SUMS`, which the workflow signs with cosign. The helper needs the raw image: handed a `.qcow2.zst`, it finds no partition table and stops. The target disk must be at least the image's disk size (20 GiB, `disk_size` in `packer/variables.pkr.hcl`); the first boot grows the root partition to fill it.
+Each release of your fork carries the raw disk image of every flavor that `.github/workflows/release-matrix.yml` builds (`base-generic`, `docker-generic`, `k8s-node-generic`) as `imago-cloud-<flavor>.raw.zst`, next to the `.qcow2.zst`. Both are listed in the release's `SHA256SUMS`, which the workflow signs with cosign. The helper needs the raw image: handed a `.qcow2.zst`, it finds no partition table and stops. The target disk must be at least the image's disk size (20 GiB, `disk_size` in `packer/variables.pkr.hcl`); the first boot grows the root partition to fill it.
 
 Set `OWNER` to the account or organisation that holds your fork and `TAG` to the release you want, then check the image against the signed checksums before you write it:
 
 ```bash
 OWNER=your-account
 TAG=v0.1.0
-for asset in lusoris-cloud-base-generic.raw.zst SHA256SUMS SHA256SUMS.bundle; do
+for asset in imago-cloud-base-generic.raw.zst SHA256SUMS SHA256SUMS.bundle; do
   curl -fsSLO "https://github.com/${OWNER}/imago/releases/download/${TAG}/${asset}"
 done
 cosign verify-blob --bundle SHA256SUMS.bundle \
@@ -25,13 +25,13 @@ sha256sum --check --ignore-missing SHA256SUMS
 Write the checked file with the built-in helper utility:
 
 ```bash
-lusoris-install-to-disk lusoris-cloud-base-generic.raw.zst /dev/nvme0n1
+imago-install-to-disk imago-cloud-base-generic.raw.zst /dev/nvme0n1
 ```
 
 Or stream it straight from the release without storing it, which skips the checksum check:
 
 ```bash
-curl -fsSL "https://github.com/${OWNER}/imago/releases/download/${TAG}/lusoris-cloud-base-generic.raw.zst" | \
+curl -fsSL "https://github.com/${OWNER}/imago/releases/download/${TAG}/imago-cloud-base-generic.raw.zst" | \
   zstdcat | sudo dd of=/dev/nvme0n1 bs=4M status=progress conv=fsync
 ```
 
@@ -53,7 +53,7 @@ flowchart LR
     end
 
     subgraph RemoteStorage["Release Server / Object Storage"]
-        RemoteImg[("lusoris-*.raw.zst<br/><small>Compressed Image Stream</small>")]:::remote
+        RemoteImg[("imago-*.raw.zst<br/><small>Compressed Image Stream</small>")]:::remote
     end
 
     subgraph TargetDrive["Target Physical NVMe / SATA Disk"]

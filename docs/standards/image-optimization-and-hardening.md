@@ -1,6 +1,6 @@
 # Ultra-Deep Image Optimization, Slimming & Hardening Specification
 
-`lusoris-cloud-images` achieves sub-second cold boot times (< 1.5s on modern NVMe hypervisors), minimal storage footprints (~400–600MB reductions over stock distributions), and enterprise compliance adhering to **CIS Benchmark Level 2** and **BSI IT-Grundschutz SYS.1.3**. This document defines the technical architecture of these optimizations.
+`imago` achieves sub-second cold boot times (< 1.5s on modern NVMe hypervisors), minimal storage footprints (~400–600MB reductions over stock distributions), and enterprise compliance adhering to **CIS Benchmark Level 2** and **BSI IT-Grundschutz SYS.1.3**. This document defines the technical architecture of these optimizations.
 
 ---
 
@@ -111,7 +111,7 @@ While Ubuntu LTS (Ubuntu 26.04 LTS Resolute Minimal, maintaining Ubuntu 24.04 LT
 
 ## 6. Modern Container Runtimes & Zero-Footprint Diagnostics
 
-Following insights from the container ecosystem and [`pditommaso/awesome-containers`](https://github.com/pditommaso/awesome-containers) codified in [ADR-0010](../adr/0010-container-ecosystem-runtimes-and-tooling.md), container workloads in `lusoris-cloud-images` implement modern performance and operational standards:
+Following insights from the container ecosystem and [`pditommaso/awesome-containers`](https://github.com/pditommaso/awesome-containers) codified in [ADR-0010](../adr/0010-container-ecosystem-runtimes-and-tooling.md), container workloads in `imago` implement modern performance and operational standards:
 
 1. **Dual OCI Runtime Engines (`runc` & `crun`)**:
    - Standard `runc` remains active for default compatibility.

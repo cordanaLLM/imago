@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-A deep engineering audit of `lusoris-cloud-images` against Holzmann NASA/JPL Power of 10 rules, project architectural principles ([`docs/principles.md`](../principles.md)), and upstream cloud-native ecosystem standards (Kubernetes 1.37, containerd 2.3.5, Ubuntu 26.04 Resolute, NIST SP 800-53 SI-4, and CDI 0.6.0) identified several latent gaps and optimization opportunities across the golden image pipeline:
+A deep engineering audit of `imago` against Holzmann NASA/JPL Power of 10 rules, project architectural principles ([`docs/principles.md`](../principles.md)), and upstream cloud-native ecosystem standards (Kubernetes 1.37, containerd 2.3.5, Ubuntu 26.04 Resolute, NIST SP 800-53 SI-4, and CDI 0.6.0) identified several latent gaps and optimization opportunities across the golden image pipeline:
 
 1. **Universal Multi-Architecture Portability (Principle 9)**:
    Hardware provisioners for AMD ROCm (`32-gpu-amd-rocm.sh`) and Docker CE (`40-docker-runtime.sh`) contained hardcoded `[arch=amd64]` strings in APT repository configurations. When building or cross-compiling on ARM64 (`aarch64`) or RISC-V (`riscv64`) targets, APT indexing failed or pinned foreign architectures, breaking the universal architecture invariant.
@@ -47,7 +47,7 @@ We implement systematic modernization, hardening, and test enforcement across th
 ### 4. NIST SP 800-53 SI-4 Kernel Audit Logging
 
 - Replaced `audit=0` in default GRUB command-line strings with `audit=1 audit_backlog_limit=8192`.
-- Added `net.ipv4.tcp_syncookies = 1` to `/etc/sysctl.d/99-lusoris.conf` to fully satisfy CIS Level 2 network baseline and Goss compliance assertions.
+- Added `net.ipv4.tcp_syncookies = 1` to `/etc/sysctl.d/99-imago.conf` to fully satisfy CIS Level 2 network baseline and Goss compliance assertions.
 
 ### 5. Declarative Compliance-as-Code & MCP Tooling
 

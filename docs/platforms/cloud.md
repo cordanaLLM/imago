@@ -1,6 +1,6 @@
 # Public & Private Cloud Generic Deployment Guide
 
-`lusoris-cloud-images` images are multi-cloud portable and support all major public and private cloud environments out of the box.
+`imago` images are multi-cloud portable and support all major public and private cloud environments out of the box.
 
 ## Supported Cloud Environments
 
@@ -16,8 +16,8 @@ Cloud-init is unconstrained and dynamically detects your hosting cloud provider:
 ## Launching on OpenStack via Glance
 
 ```bash
-openstack image create "lusoris-base-generic" \
-  --file lusoris-cloud-base-generic.qcow2 \
+openstack image create "imago-base-generic" \
+  --file imago-cloud-base-generic.qcow2 \
   --disk-format qcow2 \
   --container-format bare \
   --public

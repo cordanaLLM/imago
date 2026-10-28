@@ -1,6 +1,6 @@
 # Google AI Studio Managed Agents & Multi-Agent Orchestration
 
-`lusoris-cloud-images` defines a fleet of specialized **Managed Agents** powered by the **Google Antigravity Agent** (`antigravity-preview-05-2026`) and **Gemini Deep Research Agent** (`deep-research-pro-preview-12-2025`), following the official Google Gemini Managed Agents architecture.
+`imago` defines a fleet of specialized **Managed Agents** powered by the **Google Antigravity Agent** (`antigravity-preview-05-2026`) and **Gemini Deep Research Agent** (`deep-research-pro-preview-12-2025`), following the official Google Gemini Managed Agents architecture.
 
 ---
 

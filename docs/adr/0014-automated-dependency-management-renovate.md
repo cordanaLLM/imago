@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-`lusoris-cloud-images` depends on upstream operating system bases, container runtimes (`containerd`, `crun`, `stargz-snapshotter`), Kubernetes versions and preheated container images, diagnostic binaries (`cdebug`, `enroot`), NVIDIA/AMD/Intel drivers and GPU device plugins, and Python/Go testing and build automation.
+`imago` depends on upstream operating system bases, container runtimes (`containerd`, `crun`, `stargz-snapshotter`), Kubernetes versions and preheated container images, diagnostic binaries (`cdebug`, `enroot`), NVIDIA/AMD/Intel drivers and GPU device plugins, and Python/Go testing and build automation.
 
 The repository enforces strict security and architectural invariants:
 

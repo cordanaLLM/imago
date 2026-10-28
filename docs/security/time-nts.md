@@ -4,7 +4,7 @@ Network Time Security (NTS) provides cryptographic authentication for the Networ
 
 ## Multi-Tiered Topology
 
-`lusoris-cloud-images` implements a fault-tolerant multi-tier NTS topology configured in `/etc/chrony/sources.d/global-nts.sources`:
+`imago` implements a fault-tolerant multi-tier NTS topology configured in `/etc/chrony/sources.d/global-nts.sources`:
 
 1. **Tier 1: Global Anycast NTS**
    - `server time.cloudflare.com iburst nts`

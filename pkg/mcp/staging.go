@@ -1,5 +1,5 @@
 // Copyright 2026 Lusoris
-// Package mcp wires a Model Context Protocol (MCP) server exposing lusoris-cloud-images
+// Package mcp wires a Model Context Protocol (MCP) server exposing imago
 // tool capabilities to AI agents and IDEs.
 package mcp
 

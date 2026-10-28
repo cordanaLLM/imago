@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-An architectural review of the broader container ecosystem—specifically cataloged in [`pditommaso/awesome-containers`](https://github.com/pditommaso/awesome-containers), [`iximiuz/awesome-container-tinkering`](https://github.com/iximiuz/awesome-container-tinkering), [`ramitsurana/awesome-kubernetes`](https://github.com/ramitsurana/awesome-kubernetes), and [`cloudnativebasel/awesome-cloud-native`](https://github.com/cloudnativebasel/awesome-cloud-native)—identified four critical leverage points to significantly improve container performance, operator ergonomics, and CI validation in `lusoris-cloud-images`:
+An architectural review of the broader container ecosystem—specifically cataloged in [`pditommaso/awesome-containers`](https://github.com/pditommaso/awesome-containers), [`iximiuz/awesome-container-tinkering`](https://github.com/iximiuz/awesome-container-tinkering), [`ramitsurana/awesome-kubernetes`](https://github.com/ramitsurana/awesome-kubernetes), and [`cloudnativebasel/awesome-cloud-native`](https://github.com/cloudnativebasel/awesome-cloud-native)—identified four critical leverage points to significantly improve container performance, operator ergonomics, and CI validation in `imago`:
 
 1. **OCI Runtime Memory & Startup Overhead**: The standard OCI runtime (`runc`) is written in Go and carries measurable memory (~25MB resident set per process under heavy load) and startup latency. In dense edge environments (`k3s-agent-*`) or large-scale Kubernetes clusters (`k8s-node-*`), switching to an ultra-fast C-based OCI runtime (`crun`) reduces memory usage to ~4MB and speeds up container creation by 2–3x while providing native cgroups v2, Wasm/WASI, and checkpoint/restore capabilities.
 2. **Cold-Boot Image Delays for Multi-Gigabyte Workloads**: Cloud-native AI workloads (`ai-infer-*`, Ollama, vLLM, PyTorch, CUDA) ship container images ranging from 5GB to 25GB. Standard containerd pulls 100% of the image before launching the process. Lazy-pulling technologies like `stargz-snapshotter` (eStargz, CNCF) enable instant pod startup ($< 2\text{s}$) by streaming file blocks on-demand over HTTP range requests.
@@ -18,7 +18,7 @@ An architectural review of the broader container ecosystem—specifically catalo
 
 ## Decision
 
-We adopt a phased modernization program integrating high-leverage container ecosystem technologies into `lusoris-cloud-images`:
+We adopt a phased modernization program integrating high-leverage container ecosystem technologies into `imago`:
 
 ### 1. Dual OCI Runtime Engine (`runc` + `crun`) in Kubernetes & Container Hosts
 

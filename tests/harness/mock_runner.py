@@ -519,7 +519,7 @@ class ExecutionResult:
     sandbox_root: Path | None = None
 
     def read_file(self, rel_path: str) -> str | None:
-        """Read content of a file created in the sandbox (e.g. 'etc/sysctl.d/99-lusoris.conf')."""
+        """Read content of a file created in the sandbox (e.g. 'etc/sysctl.d/99-imago.conf')."""
         if not self.sandbox_root:
             return None
         target = self.sandbox_root / rel_path.lstrip("/\\")

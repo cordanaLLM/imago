@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-`lusoris-cloud-images` provides hardened virtual machine and bare-metal OS images across 7 workload tiers (Base OS, Docker/Podman, Multi-Node Kubernetes, K3s Edge Fleet, CloudNative Storage, AI Inference, and Homelab Appliances).
+`imago` provides hardened virtual machine and bare-metal OS images across 7 workload tiers (Base OS, Docker/Podman, Multi-Node Kubernetes, K3s Edge Fleet, CloudNative Storage, AI Inference, and Homelab Appliances).
 
 An architectural review of developer and operator workflows identified four critical unaddressed use cases:
 
@@ -64,7 +64,7 @@ We formalize the architectural roadmap for developer workstations, standalone Ku
 
 ### Positive
 
-- **Complete Developer Journey**: Extends `lusoris-cloud-images` from hypervisor infrastructure to day-to-day developer productivity.
+- **Complete Developer Journey**: Extends `imago` from hypervisor infrastructure to day-to-day developer productivity.
 - **Zero-Barrier Single-Node K8s**: Enables instant local Kubernetes clusters without cluster-api or multi-node setup complexity.
 - **Operational Diversity**: Supports teams and homelabbers seeking lightweight alternatives (Docker Swarm, Nomad) to heavy Kubernetes clusters.
 - **Hard Rule 10 Compliance**: All proposed profiles and templates strictly preserve the RFC 1918 zero-leak invariant.

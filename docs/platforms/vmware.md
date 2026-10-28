@@ -1,6 +1,6 @@
 # VMware ESXi & vSphere Deployment Guide
 
-`lusoris-cloud-images` natively supports VMware ESXi, vSphere, and Workstation.
+`imago` natively supports VMware ESXi, vSphere, and Workstation.
 
 ## Hypervisor Integration
 

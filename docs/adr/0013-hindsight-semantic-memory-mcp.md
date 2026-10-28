@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-Autonomous engineering agents in `lusoris-cloud-images` operate across multiple sessions, worktrees, and feature branches. Without a persistent memory substrate, each new session suffers from contextual amnesia:
+Autonomous engineering agents in `imago` operate across multiple sessions, worktrees, and feature branches. Without a persistent memory substrate, each new session suffers from contextual amnesia:
 
 1. **Context Window Exhaustion**: Agents spend significant token budgets repeatedly rediscovering established architectural constraints, ADRs, test patterns, and historical bug resolutions.
 2. **Loss of Experiential Knowledge**: Decisions reached during debugging sessions, performance profiling (e.g., QEMU CPU pin flags, B580 concurrency bounds), or security reviews are discarded when the chat session terminates.
@@ -24,7 +24,7 @@ We require a standardized bridge to connect Antigravity IDE, Claude Code, Cursor
 
 ## Decision
 
-We integrate Hindsight semantic memory into `lusoris-cloud-images` via a dual-layer Model Context Protocol (MCP) architecture:
+We integrate Hindsight semantic memory into `imago` via a dual-layer Model Context Protocol (MCP) architecture:
 
 ### 1. Dual-Layer MCP Configuration Standard
 

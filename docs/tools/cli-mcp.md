@@ -1,6 +1,6 @@
 # Imago: Unified CLI & AI Model Context Protocol (MCP) Server
 
-`imago` is the Go 1.27 engineering CLI and official Model Context Protocol (MCP) server of the image forge (`cordanaLLM/imago`, formerly `lusoris-cloud-images`). It unifies the 44-flavor catalog, cloud-init generator, multi-backend build dispatcher, imageless host provisioning, machine-verifiable hardening standards, recurring Epics/Milestones lifecycle tracking, and the routed planning graph. It is composed from [golusoris core](https://github.com/golusoris/golusoris): `core/clikit` builds the command tree, `core/log` provides the logger, `core/clock` supplies time, and `core/mcp` owns the MCP transport.
+`imago` is the Go 1.27 engineering CLI and official Model Context Protocol (MCP) server of the image forge (`cordanaLLM/imago`). It unifies the 44-flavor catalog, cloud-init generator, multi-backend build dispatcher, imageless host provisioning, machine-verifiable hardening standards, recurring Epics/Milestones lifecycle tracking, and the routed planning graph. It is composed from [golusoris core](https://github.com/golusoris/golusoris): `core/clikit` builds the command tree, `core/log` provides the logger, `core/clock` supplies time, and `core/mcp` owns the MCP transport.
 
 ---
 
@@ -130,7 +130,7 @@ imago build --flavor=cloudnative-storage --backend=proxmox
 
 The defaults are `--packer-dir=./packer`, `--output-dir=./output-images` (ignored by `.gitignore`) and `--versions=versions.json`; relative paths resolve from the CLI's working directory. `builder.LoadPins` reads `build.packer.version`, `build.packer_plugins.qemu.version` and the current platform's `sha256_<GOOS>_<GOARCH>` from the manifest, refusing absent or malformed pins and duplicate JSON keys at any depth. The executor checks the first line of `packer version` and hashes the installed QEMU plugin before starting a build. It installs nothing. Plugin lookup uses `PACKER_PLUGIN_PATH`, falling back to `$HOME/.config/packer/plugins`, following the [Packer configuration reference](https://developer.hashicorp.com/packer/docs/configure#packer_plugin_path).
 
-Packer runs with the requested flavor, output directory and `image_name=lusoris-cloud` explicitly set. Its stdout and stderr go to `output-images/logs/<flavor>-<UTC timestamp>.log`; the artifact is `output-images/<flavor>/lusoris-cloud-<flavor>.qcow2`. A successful command prints `==> Build succeeded: <flavor>`, `Run log: <path>`, `Artifact: <path>` and `SHA256: <hex>`. Success requires Packer exit 0 and a regular artifact file written after the build started, whose SHA256 has been streamed; a file left from an earlier run is refused. Failure exits 1; a Packer failure names its log. An existing log with the same flavor and second is refused rather than overwritten (`pkg/builder/local_test.go`).
+Packer runs with the requested flavor, output directory and `image_name=imago-cloud` explicitly set. Its stdout and stderr go to `output-images/logs/<flavor>-<UTC timestamp>.log`; the artifact is `output-images/<flavor>/imago-cloud-<flavor>.qcow2`. A successful command prints `==> Build succeeded: <flavor>`, `Run log: <path>`, `Artifact: <path>` and `SHA256: <hex>`. Success requires Packer exit 0 and a regular artifact file written after the build started, whose SHA256 has been streamed; a file left from an earlier run is refused. Failure exits 1; a Packer failure names its log. An existing log with the same flavor and second is refused rather than overwritten (`pkg/builder/local_test.go`).
 
 In Go, `builder.Dispatch` keeps its refusal-only default. `builder.DispatchWith` accepts an explicit executor map; the CLI registers only `builder.BackendLocal`. Local `Result` evidence fields are `run_log`, `artifact` and `artifact_sha256`, with `status: "succeeded"` and `success: true` only after verification. A dry run keeps `status: "planned"`, `dry_run: true` and `success: false`, without evidence. `Request.Timeout` bounds local execution, defaulting to two hours when zero; an earlier caller deadline still applies. Timeout errors match both `builder.ErrBuildTimeout` and `context.DeadlineExceeded` (`pkg/builder/builder_test.go`, `pkg/builder/local_test.go`).
 
@@ -360,7 +360,7 @@ sequenceDiagram
 
 ## 4. Hindsight Semantic Memory & Cluster Knowledge Integration
 
-Beyond the repository image forge tools, `lusoris-cloud-images` natively integrates with the self-hosted **Hindsight** (`v0.8.4`) semantic memory engine deployed in the companion `lusoris/k8s` cluster ([ADR-0013](../adr/0013-hindsight-semantic-memory-mcp.md)).
+Beyond the repository image forge tools, `imago` natively integrates with the self-hosted **Hindsight** (`v0.8.4`) semantic memory engine deployed in the companion `lusoris/k8s` cluster ([ADR-0013](../adr/0013-hindsight-semantic-memory-mcp.md)).
 
 ```mermaid
 flowchart TD
@@ -411,7 +411,7 @@ Both manifests declare the stdio Hindsight bridge and optional cluster knowledge
       "args": ["scripts/hindsight_mcp_server.py"],
       "env": {
         "HINDSIGHT_URL": "http://127.0.0.1:8888",
-        "HINDSIGHT_BANK": "lusoris-cloud-images",
+        "HINDSIGHT_BANK": "imago",
         "HINDSIGHT_API_KEY": "${HINDSIGHT_API_KEY:-}"
       }
     },

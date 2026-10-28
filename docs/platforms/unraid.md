@@ -1,6 +1,6 @@
 # Unraid VM & VirtFS Integration Guide
 
-All `lusoris-cloud-images` flavors are engineered for seamless operation in Unraid's KVM environment.
+All `imago` flavors are engineered for seamless operation in Unraid's KVM environment.
 
 ## 1. Importing the Image to Unraid
 
@@ -10,7 +10,7 @@ An image of 2 GiB or more is too large for one release asset, so the release car
 
    ```bash
    cd /mnt/user/domains/my-appliance/
-   curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > vdisk1.qcow2
+   curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/imago-cloud-docker-generic.qcow2.zst | zstdcat > vdisk1.qcow2
    ```
 
 2. In the Unraid Web GUI:
@@ -27,7 +27,7 @@ An image of 2 GiB or more is too large for one release asset, so the release car
 
 ## 3. Host Share Passthrough (VirtFS & virtiofs)
 
-All `lusoris-cloud-images` kernels load `9p`, `9pnet`, and `virtiofs` modules at boot.
+All `imago` kernels load `9p`, `9pnet`, and `virtiofs` modules at boot.
 
 ### Using virtiofs
 

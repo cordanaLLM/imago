@@ -14,7 +14,7 @@ Lusoris images can be imported directly into WSL2 as custom distributions, provi
 
    ```powershell
    # In PowerShell (Windows Terminal)
-   wsl --import lusoris-cloud C:\WSL\lusoris-cloud .\output-images\base-generic\rootfs.tar.gz --version 2
+   wsl --import imago-cloud C:\WSL\imago-cloud .\output-images\base-generic\rootfs.tar.gz --version 2
    ```
 
 2. Verify distribution registration:
@@ -23,7 +23,7 @@ Lusoris images can be imported directly into WSL2 as custom distributions, provi
    wsl -l -v
    # Output:
    #   NAME             STATE           VERSION
-   # * lusoris-cloud    Running         2
+   # * imago-cloud      Running         2
    ```
 
 ### 1.2 Declarative Configuration (`/etc/wsl.conf`)

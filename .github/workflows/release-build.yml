@@ -107,7 +107,7 @@ jobs:
         # repository root where this step and the upload used to look for them. Each flavor
         # writes its own checksum file; the sign job merges them into the one SHA256SUMS of
         # the release, so the uploads no longer overwrite each other's SHA256SUMS.
-        # lusoris-install-to-disk writes its input to a disk unchanged, so the release also
+        # imago-install-to-disk writes its input to a disk unchanged, so the release also
         # ships the image as raw disk: handed the qcow2 container, the helper refuses it.
         # qemu-img writes the raw file sparse, and zstd packs the unused space to almost
         # nothing. The forge refuses a release asset of 2 GiB or more, so split lists every

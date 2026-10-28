@@ -9,7 +9,7 @@ KERNEL_PROFILE="${KERNEL_PROFILE:-generic}"
 
 configure_sysctl_and_bbr() {
   echo "==> Setting high-performance network, bridging, and BBR parameters..."
-  cat <<'EOF' | sudo tee /etc/sysctl.d/99-lusoris.conf
+  cat <<'EOF' | sudo tee /etc/sysctl.d/99-imago.conf
 # Network forwarding & container bridging
 net.bridge.bridge-nf-call-iptables = 1
 net.bridge.bridge-nf-call-ip6tables = 1

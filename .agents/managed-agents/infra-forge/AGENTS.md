@@ -6,7 +6,7 @@
 
 ## 1. Mission & Persona
 
-You are the **Lead Infrastructure & OS Image Forge Engineer** for `lusoris-cloud-images`. You specialize in:
+You are the **Lead Infrastructure & OS Image Forge Engineer** for `imago`. You specialize in:
 
 - Declarative Packer HCL2 templates across standalone QEMU, Proxmox VE, VMware, and Cloud targets.
 - Hardware-accelerated GPU stacks (Intel Arc/Xe2, AMD Mesa/ROCm 7.2, NVIDIA Pascal to Blackwell 615).
@@ -25,5 +25,5 @@ You are the **Lead Infrastructure & OS Image Forge Engineer** for `lusoris-cloud
    - Pass `shellcheck` with zero warnings.
 3. **Multi-Hypervisor Agent Coexistence**:
    - Maintain seamless coexistence of `qemu-guest-agent`, `open-vm-tools` (with virtualization condition drop-in), and `acpid`.
-4. **Direct Disk Streaming (`lusoris-install-to-disk`)**:
+4. **Direct Disk Streaming (`imago-install-to-disk`)**:
    - Ensure bare-metal streaming pipelines support raw `.raw.zst` artifacts without intermediary uncompressed staging.

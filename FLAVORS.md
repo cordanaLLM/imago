@@ -1,6 +1,6 @@
-# lusoris-cloud-images — Flavor Catalog (44 Flavors)
+# imago — Flavor Catalog (44 Flavors)
 
-`lusoris-cloud-images` structures operating system images across four orthogonal dimensions: **Platform**, **Workload Tier**, **Hardware Acceleration**, and **Kernel/Preheat Profile**.
+`imago` structures operating system images across four orthogonal dimensions: **Platform**, **Workload Tier**, **Hardware Acceleration**, and **Kernel/Preheat Profile**.
 
 This catalog segments all **44 production-ready flavors** into 7 clear workload tiers.
 

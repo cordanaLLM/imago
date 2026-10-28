@@ -15,7 +15,7 @@ Instead of deploying generic stock distributions that spend minutes pulling giga
 - **Zero Base Bloat**: Complete purge of `snapd`, `lxd`, Ubuntu Pro telemetry, and unneeded documentation.
 - **Hardware Acceleration Tiers**: Tailored GPU driver stacks for Intel Arc/Xe, AMD Mesa & ROCm, and NVIDIA generational CUDA (Pascal 580, Ampere/Ada 595, Hopper/Blackwell Open Modules + Fabric Manager).
 - **Multi-Hypervisor Portability**: Coexisting `qemu-guest-agent` and `open-vm-tools` plus Unraid `virtiofs` and `9p` host sharing out of the box.
-- **Bare-Metal Performance Engine**: NVMe low-latency I/O scheduling, BBR congestion control, auto-growroot on first boot, and streaming direct flash (`lusoris-install-to-disk`).
+- **Bare-Metal Performance Engine**: NVMe low-latency I/O scheduling, BBR congestion control, auto-growroot on first boot, and streaming direct flash (`imago-install-to-disk`).
 - **Resilient Global Time**: Cryptographically authenticated Network Time Security (NTS) using Cloudflare Anycast and European national metrology institutes (PTB, Netnod, SIDN, 3eck).
 - **Multi-Distribution Upstream Matrix**: Production foundation on Ubuntu 26.04/24.04 LTS for high-velocity hardware acceleration, backed by an authoritative roadmap ([ADR-0009](adr/0009-multi-distribution-base-roadmap.md)) expanding to Debian Bookworm/Trixie and Alpine Linux.
 - **Single Source of Truth (`versions.json`)**: Every upstream package, container image tag, and driver branch is centrally defined and automated via Renovate.

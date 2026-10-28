@@ -11,14 +11,14 @@ Accepted
 Modern cloud security engineering dictates that machine and container images must be engineered as immutable, cryptographically attested software artifacts rather than long-lived systems patched in place. Industry best practices—cataloged in the architectural standard *"Engineering Hardened, Optimized, and Compliant Cloud Infrastructure Images"*—prescribe end-to-end controls across the golden image factory lifecycle:
 
 1. **Cryptographic SSH Hardening & Certificate Authorities (CA)**: Traditional static SSH key management incurs operational overhead, credential drift, and rotation debt. Moving to an OpenSSH Certificate Authority (`TrustedUserCAKeys`) with modern cryptographic cipher suites (`chacha20-poly1305`, `aes256-gcm`, `curve25519-sha256`) eliminates static authorized keys in favor of short-lived, identity-bound certificates while disabling root login and legacy MACs.
-2. **Regulatory & Hardening Compliance Crosswalk**: While `lusoris-cloud-images` already implements CIS Ubuntu Benchmark Level 2 and BSI IT-Grundschutz SYS.1.3, enterprise adoption requires explicit compliance crosswalks to federal standards: **NIST SP 800-53 (Rev. 5)** (Least Privilege AC-6, Configuration Baseline CM-6, Flaw Remediation SI-2, Monitoring SI-4) and **NIST SP 800-190** (Application Container Security Guide).
+2. **Regulatory & Hardening Compliance Crosswalk**: While `imago` already implements CIS Ubuntu Benchmark Level 2 and BSI IT-Grundschutz SYS.1.3, enterprise adoption requires explicit compliance crosswalks to federal standards: **NIST SP 800-53 (Rev. 5)** (Least Privilege AC-6, Configuration Baseline CM-6, Flaw Remediation SI-2, Monitoring SI-4) and **NIST SP 800-190** (Application Container Security Guide).
 3. **Multi-Cloud KMS Encryption & Auto Scaling Safety**: In multi-account public cloud architectures, sharing encrypted machine images requires Customer Managed Keys (CMKs). A frequent operational failure occurs when target Auto Scaling Groups attempt to launch instances using cross-account AMIs without explicit KMS grants assigned to `AWSServiceRoleForAutoScaling`. Establishing standard KMS grant patterns prevents scaling loop terminations.
 4. **Automated 30-Day Image Deprecation & Zero-Patching**: Production cloud fleets must never be patched in place. Golden images must enforce a maximum 30-day lifecycle, utilizing automated cloud provider deprecation flags (`aws ec2 enable-image-deprecation`) to drive continuous node recycling over fresh baselines.
 5. **Dynamic Compliance-as-Code Validation**: Static linting must be complemented by declarative, dynamic compliance validation (such as Goss or InSpec) asserting kernel parameters, filesystem blacklists, and daemon configurations prior to snapshot finalization.
 
 ## Decision
 
-We formalize an enterprise compliance and multi-cloud lifecycle contract for `lusoris-cloud-images`:
+We formalize an enterprise compliance and multi-cloud lifecycle contract for `imago`:
 
 ### 1. OpenSSH Hardening Drop-in (`00-hardened-sshd.conf`)
 
@@ -53,7 +53,7 @@ We formalize an enterprise compliance and multi-cloud lifecycle contract for `lu
 
 ### Positive
 
-- **Federal & Enterprise Audit Readiness**: Aligns `lusoris-cloud-images` with DISA STIG, NIST SP 800-53, and NIST SP 800-190 standards alongside CIS Benchmark Level 2.
+- **Federal & Enterprise Audit Readiness**: Aligns `imago` with DISA STIG, NIST SP 800-53, and NIST SP 800-190 standards alongside CIS Benchmark Level 2.
 - **Elimination of Static SSH Keys**: Enables enterprise fleets to transition to ephemeral, identity-backed OpenSSH user certificates.
 - **Zero-Patching Fleet Immutability**: Guarantees production nodes run on fresh, uncorrupted base layers without configuration drift.
 - **Operational Safety**: Avoids the top production pitfalls (broken package managers from `/tmp` noexec, auditd buffer panics, and cross-account KMS launch failures).

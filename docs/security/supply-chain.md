@@ -1,6 +1,6 @@
 # Supply Chain Security & Attestation
 
-Every official `lusoris-cloud-images` release follows modern supply-chain security best practices:
+Every official `imago` release follows modern supply-chain security best practices:
 
 ## 1. Cryptographic Signing via Cosign
 
@@ -21,7 +21,7 @@ The forge refuses a release asset of 2 GiB or more, so the build cuts each large
 
 ```bash
 python3 -I tools/ci/release_assets.py join --sums SHA256SUMS \
-  --out lusoris-cloud-k8s-node-nvidia.qcow2.zst lusoris-cloud-k8s-node-nvidia.qcow2.zst.part*
+  --out imago-cloud-k8s-node-nvidia.qcow2.zst imago-cloud-k8s-node-nvidia.qcow2.zst.part*
 ```
 
 `cat` over the parts in order gives the same file; `sha256sum --check --ignore-missing SHA256SUMS` then checks it.

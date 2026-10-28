@@ -5,7 +5,7 @@ description: Generate strict Conventional Commits messages conforming to the rep
 
 # Conventional Commit Message Drafting
 
-All commits in `lusoris-cloud-images` must follow Conventional Commits specification.
+All commits in `imago` must follow Conventional Commits specification.
 
 ## Format
 ```text

@@ -435,12 +435,12 @@ class TestContainerIntegration:
             install_openssh(sshd_container.name, 0.01)
 
     def test_sysctl_configuration_syntax_in_ubuntu(self) -> None:
-        """Verify 99-lusoris.conf sysctl configuration file parses without syntax errors."""
+        """Verify 99-imago.conf sysctl configuration file parses without syntax errors."""
         script_path = PROVISIONERS_DIR / "20-kernel-sysctl.sh"
         content = script_path.read_text(encoding="utf-8")
 
-        # Extract heredoc between cat <<'EOF' | sudo tee /etc/sysctl.d/99-lusoris.conf and EOF
-        start_marker = "cat <<'EOF' | sudo tee /etc/sysctl.d/99-lusoris.conf\n"
+        # Extract heredoc between cat <<'EOF' | sudo tee /etc/sysctl.d/99-imago.conf and EOF
+        start_marker = "cat <<'EOF' | sudo tee /etc/sysctl.d/99-imago.conf\n"
         end_marker = "\nEOF\n"
         start_idx = content.find(start_marker)
         assert start_idx != -1
@@ -450,11 +450,11 @@ class TestContainerIntegration:
 
         bash_cmd = f"""set -euo pipefail
 mkdir -p /etc/sysctl.d
-cat <<'EOF' > /etc/sysctl.d/99-lusoris.conf
+cat <<'EOF' > /etc/sysctl.d/99-imago.conf
 {sysctl_conf}
 EOF
 # Verify key-value formatting
-grep -v '^#' /etc/sysctl.d/99-lusoris.conf | grep -v '^[[:space:]]*$' | while read -r line; do
+grep -v '^#' /etc/sysctl.d/99-imago.conf | grep -v '^[[:space:]]*$' | while read -r line; do
   if ! echo "$line" | grep -q ' = '; then
     echo "MALFORMED_LINE: $line" >&2
     exit 1

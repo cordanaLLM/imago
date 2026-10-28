@@ -1,5 +1,5 @@
 # Copyright 2026 Lusoris
-"""Flash test of `lusoris-install-to-disk` against a loop device.
+"""Flash test of `imago-install-to-disk` against a loop device.
 
 The helper is taken byte for byte from the heredoc in
 `packer/provisioners/25-baremetal-tuning.sh` that installs it, so the test runs the program
@@ -33,7 +33,7 @@ PROVISIONER = ROOT / "packer" / "provisioners" / "25-baremetal-tuning.sh"
 MIB = 1024 * 1024
 TIMEOUT = 120
 
-HELPER_RE = re.compile(r"cat <<'EOF' \| sudo tee /usr/local/bin/lusoris-install-to-disk\n(.*?)\nEOF\n", re.DOTALL)
+HELPER_RE = re.compile(r"cat <<'EOF' \| sudo tee /usr/local/bin/imago-install-to-disk\n(.*?)\nEOF\n", re.DOTALL)
 
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
@@ -43,8 +43,8 @@ def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
 @pytest.fixture(scope="module")
 def helper(tmp_path_factory: pytest.TempPathFactory) -> Path:
     match = HELPER_RE.search(PROVISIONER.read_text(encoding="utf-8"))
-    assert match, f"no lusoris-install-to-disk heredoc in {PROVISIONER}"
-    path = tmp_path_factory.mktemp("helper") / "lusoris-install-to-disk"
+    assert match, f"no imago-install-to-disk heredoc in {PROVISIONER}"
+    path = tmp_path_factory.mktemp("helper") / "imago-install-to-disk"
     path.write_text(match.group(1) + "\n", encoding="utf-8")
     path.chmod(0o755)
     return path
@@ -228,4 +228,4 @@ def test_usage_example_downloads_from_the_readers_fork(helper: Path) -> None:
     done = flash(helper)
     example = done.stdout.splitlines()[1].split()
     assert example[0] == "Example:"
-    assert example[2] == "https://github.com/<owner>/imago/releases/download/<tag>/lusoris-cloud-base-generic.raw.zst"
+    assert example[2] == "https://github.com/<owner>/imago/releases/download/<tag>/imago-cloud-base-generic.raw.zst"

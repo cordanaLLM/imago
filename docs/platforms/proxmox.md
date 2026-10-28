@@ -1,6 +1,6 @@
 # Proxmox VE Deployment Guide
 
-`lusoris-cloud-images` natively supports Proxmox VE via automated template cloning or direct `.qcow2` import.
+`imago` natively supports Proxmox VE via automated template cloning or direct `.qcow2` import.
 
 ## Direct Import via CLI (`qm importdisk`)
 
@@ -8,10 +8,10 @@ An image of 2 GiB or more is too large for one release asset, so the release car
 
 ```bash
 # 1. Download and decompress the desired release image
-curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/lusoris-cloud-docker-generic.qcow2.zst | zstdcat > /tmp/image.qcow2
+curl -fsSL https://github.com/cordanaLLM/imago/releases/latest/download/imago-cloud-docker-generic.qcow2.zst | zstdcat > /tmp/image.qcow2
 
 # 2. Create a VM shell (ID: 9000)
-qm create 9000 --name "lusoris-docker-template" --memory 4096 --cores 4 --net0 virtio,bridge=vmbr0
+qm create 9000 --name "imago-docker-template" --memory 4096 --cores 4 --net0 virtio,bridge=vmbr0
 
 # 3. Import disk into Proxmox storage (e.g. local-lvm)
 qm importdisk 9000 /tmp/image.qcow2 local-lvm
@@ -52,7 +52,7 @@ packer build -var-file=proxmox.pkrvars.hcl -only="base-intel.proxmox-clone.templ
 
 ## 3. Built-In Proxmox Guest Optimizations
 
-Every `lusoris-cloud-images` template includes out-of-the-box performance and storage enhancements tailored for Proxmox VE:
+Every `imago` template includes out-of-the-box performance and storage enhancements tailored for Proxmox VE:
 
 - **Automated Discard & TRIM (`fstrim.timer`)**: With `discard=on` set on the virtual disk, `fstrim.timer` runs weekly inside the guest to reclaim unused space on Proxmox ZFS pools, Ceph RBD, or thin-LVM without manual intervention.
 - **Fast Cloud-Init Discovery**: Datasources are pre-configured to `[ NoCloud, ConfigDrive, None ]`, bypassing slow public-cloud probe scans and accelerating cold boots by 3–8 seconds.

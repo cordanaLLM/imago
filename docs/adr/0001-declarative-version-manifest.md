@@ -10,7 +10,7 @@ Originally, component versions (Kubernetes binaries, container image tags, drive
 
 ## Decision
 
-We consolidate all versions into a single root [`versions.json`](https://github.com/lusoris/lusoris-cloud-images/blob/main/versions.json) file:
+We consolidate all versions into a single root [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json) file:
 
 1. Packer decodes the file natively using `jsondecode(file("${path.root}/../versions.json"))`.
 2. Packer injects versions dynamically into shell provisioners via `environment_vars`.

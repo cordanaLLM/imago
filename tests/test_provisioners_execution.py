@@ -59,8 +59,8 @@ class TestProvisionersExecution:
         res = sandbox.run_script(script, env_vars={"KERNEL_PROFILE": "ai-infer"})
         assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
 
-        sysctl_conf = res.read_file("etc/sysctl.d/99-lusoris.conf")
-        assert sysctl_conf is not None, "99-lusoris.conf was not created"
+        sysctl_conf = res.read_file("etc/sysctl.d/99-imago.conf")
+        assert sysctl_conf is not None, "99-imago.conf was not created"
         assert "net.ipv4.tcp_syncookies = 1" in sysctl_conf
         assert "net.ipv4.tcp_congestion_control = bbr" in sysctl_conf
         assert "net.core.default_qdisc = fq" in sysctl_conf

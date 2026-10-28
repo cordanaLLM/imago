@@ -1,6 +1,6 @@
 # Open Standards and Sovereign Infrastructure Architecture
 
-`lusoris-cloud-images` is engineered on open, vendor-neutral infrastructure standards, eliminating proprietary hypervisor lock-in and complying with European sovereign software regulations. This document defines the architectural standards implemented across the repository.
+`imago` is engineered on open, vendor-neutral infrastructure standards, eliminating proprietary hypervisor lock-in and complying with European sovereign software regulations. This document defines the architectural standards implemented across the repository.
 
 ---
 

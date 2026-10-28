@@ -58,7 +58,7 @@ type LocalExecutor struct {
 	LookPath  func(string) (string, error)
 }
 
-const localImageName = "lusoris-cloud"
+const localImageName = "imago-cloud"
 
 // Execute accepts local requests only, including when called outside DispatchWith.
 func (e LocalExecutor) Execute(ctx context.Context, req Request) (res Result, err error) {

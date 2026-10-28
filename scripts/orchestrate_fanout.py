@@ -2,7 +2,7 @@
 # Copyright 2026 Lusoris
 # SPDX-License-Identifier: EUPL-1.2
 """
-Multi-Agent Fan-Out & Git Worktree Orchestrator for lusoris-cloud-images.
+Multi-Agent Fan-Out & Git Worktree Orchestrator for imago.
 Enforces Rule 11 (Worktree Hygiene) by fanning out specialized background agents
 into isolated git worktrees outside the checkout: the workstation's central
 worktrees folder, two levels above the main checkout, or the folder that

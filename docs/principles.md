@@ -1,6 +1,6 @@
-# lusoris-cloud-images — Engineering Principles & Operating Contract
+# imago — Engineering Principles & Operating Contract
 
-This document defines the non-negotiable engineering principles, architectural invariants, and operational standards for `lusoris-cloud-images`. It adapts the recurring fleet conventions across Lusoris and maintainer projects (`VMAFx/vmafx`, `20-watts-was-enough`, `golusoris/*`) to the requirements of an enterprise-grade, hardware-accelerated OS image forge.
+This document defines the non-negotiable engineering principles, architectural invariants, and operational standards for `imago`. It adapts the recurring fleet conventions across Lusoris and maintainer projects (`VMAFx/vmafx`, `20-watts-was-enough`, `golusoris/*`) to the requirements of an enterprise-grade, hardware-accelerated OS image forge.
 
 Every rule is codified into automated tooling, test suites, or repository gates. Where a standard cannot yet be fully enforced by tooling, it operates as an authoritative review gate.
 

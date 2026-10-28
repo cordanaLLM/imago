@@ -1,6 +1,6 @@
 # Enterprise Hardware Market and Datacenter Survey Specification
 
-To ensure `lusoris-cloud-images` operates with zero friction across real-world enterprise datacenters, second-hand server markets, and advanced homelabs, this specification codifies hardware baselines, platform quirks, and two distinct datacenter generational tiers.
+To ensure `imago` operates with zero friction across real-world enterprise datacenters, second-hand server markets, and advanced homelabs, this specification codifies hardware baselines, platform quirks, and two distinct datacenter generational tiers.
 
 ---
 

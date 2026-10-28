@@ -1,6 +1,6 @@
 # Flavor-by-Flavor Hardening and Verification Standards
 
-`lusoris-cloud-images` defines explicit, verifiable hardening contracts for every workload tier and hardware stack across all 44 flavors. These contracts are machine-verifiable via `imago standards [flavor]`, `imago lint`, and the automated health audit suite.
+`imago` defines explicit, verifiable hardening contracts for every workload tier and hardware stack across all 44 flavors. These contracts are machine-verifiable via `imago standards [flavor]`, `imago lint`, and the automated health audit suite.
 
 ---
 
@@ -61,7 +61,7 @@ flowchart TD
    - `open-vm-tools.service` enabled with `ConditionVirtualization=vmware` drop-in.
    - `acpid.service` enabled for graceful host shutdown signals.
    - `spice-vdagent.service` enabled for desktop console clipboard integration.
-4. **Kernel Parameters (`/etc/sysctl.d/99-lusoris-kernel.conf`)**:
+4. **Kernel Parameters (`/etc/sysctl.d/99-imago-kernel.conf`)**:
    - `net.ipv4.tcp_congestion_control = bbr`
    - `net.core.default_qdisc = fq`
    - `vm.swappiness = 10`
@@ -211,12 +211,12 @@ flowchart TD
 
 ## 9. NIST SP 800-53 (Rev. 5) & NIST SP 800-190 Compliance Crosswalk
 
-Following [ADR-0011](../adr/0011-enterprise-golden-image-compliance-and-lifecycle.md), all `lusoris-cloud-images` flavors implement a formal crosswalk to federal cybersecurity standards:
+Following [ADR-0011](../adr/0011-enterprise-golden-image-compliance-and-lifecycle.md), all `imago` flavors implement a formal crosswalk to federal cybersecurity standards:
 
-| Regulatory Standard | Control ID | Concrete Implementation in `lusoris-cloud-images` | Automated Verification |
+| Regulatory Standard | Control ID | Concrete Implementation in `imago` | Automated Verification |
 | :--- | :--- | :--- | :--- |
 | **NIST SP 800-53** | **AC-6 (Least Privilege)** | Non-essential setuid/setgid bits stripped; execution permissions restricted on low-level toolchains (`chmod 0700 /usr/bin/as /usr/bin/byacc`); unprivileged runtime UIDs (UID >= 10001). | `test_provisioners_no_banned_constructs` |
-| **NIST SP 800-53** | **CM-6 (Configuration Settings)** | 100% declarative SSOT in [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json); zero hardcoded distribution URLs or versions; sysctl hardening in `/etc/sysctl.d/99-lusoris.conf`. | `test_schema_conformance`, `goss.yaml` |
+| **NIST SP 800-53** | **CM-6 (Configuration Settings)** | 100% declarative SSOT in [`versions.json`](https://github.com/cordanaLLM/imago/blob/main/versions.json); zero hardcoded distribution URLs or versions; sysctl hardening in `/etc/sysctl.d/99-imago.conf`. | `test_schema_conformance`, `goss.yaml` |
 | **NIST SP 800-53** | **SI-2 (Flaw Remediation)** | Zero in-place patching policy. Base images are regenerated on weekly cadences with upstream security errata, producing immutable release artifacts. | CI matrix rebuilds, 30-day deprecation flags |
 | **NIST SP 800-53** | **SI-4 (Information Monitoring)** | Audit subsystem configured with safe buffer scaling (`-b 8192 -f 1`); BPF JIT hardened (`bpf_jit_harden = 2`); eBPF execution restricted to administrative contexts. | `tests/compliance/goss.yaml` |
 | **NIST SP 800-190** | **Application Container Security** | Default compilers (`gcc`, `make`, `clang`) purged from runtime layers; read-only rootfilesystems (`cloudnative-*`); seccomp default profiles; rootless Podman execution (`41-podman-runtime.sh`). | `test_all_flavors_in_catalog_and_matrix` |

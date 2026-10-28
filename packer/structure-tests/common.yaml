@@ -52,9 +52,9 @@ fileContentTests:
       - "rtconutc"
       - "minsources 3"
 
-  # Checks 20-kernel-sysctl.sh:12-62 (/etc/sysctl.d/99-lusoris.conf)
+  # Checks 20-kernel-sysctl.sh:12-62 (/etc/sysctl.d/99-imago.conf)
   - name: "bbr congestion control sysctl parameters"
-    path: "/etc/sysctl.d/99-lusoris.conf"
+    path: "/etc/sysctl.d/99-imago.conf"
     expectedContents:
       - "net\\.ipv4\\.tcp_congestion_control = bbr"
       - "net\\.core\\.default_qdisc = fq"
