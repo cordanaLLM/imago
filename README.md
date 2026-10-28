@@ -185,6 +185,8 @@ make build-ai-infer-nvidia     # AI inference appliance (vLLM / NUMA tuning)
 
 The `imago build --backend local` CLI also executes Packer after checking the installed toolchain pins from `versions.json`, then reports the run log, QCOW2 path and SHA256. Other backends refuse execution; `--dry-run` validates plans for every backend. See [local build flags and evidence](docs/tools/cli-mcp.md#24-local-builds-and-plan-validation-build).
 
+MCP tools returning JSON provide `structuredContent` and matching compact JSON text through the Go SDK; tool errors preserve their message in `isError: true` results. See [MCP tool contracts](docs/tools/cli-mcp.md#33-registered-mcp-tools).
+
 ---
 
 ## Repository & Documentation Map

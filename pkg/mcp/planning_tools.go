@@ -3,7 +3,6 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -49,16 +48,12 @@ func registerPlanningTools(s *coremcp.Server) {
 func routePlanHandler(_ context.Context, _ *coremcp.CallToolRequest, args RoutePlanArgs) (*coremcp.CallToolResult, any, error) {
 	routed, err := routePlanFiles(args.PlanPath, args.RoutingPath)
 	if err != nil {
-		return &coremcp.CallToolResult{IsError: true, Content: []coremcp.Content{&coremcp.TextContent{Text: err.Error()}}}, nil, nil
+		return nil, nil, err
 	}
 	if args.ReadyOnly {
 		routed = planning.Ready(routed)
 	}
-	out, err := json.MarshalIndent(routed, "", "  ")
-	if err != nil {
-		return nil, nil, fmt.Errorf("mcp: encode result: %w", err)
-	}
-	return &coremcp.CallToolResult{Content: []coremcp.Content{&coremcp.TextContent{Text: string(out)}}}, nil, nil
+	return nil, routed, nil
 }
 
 // routePlanFiles loads both planning files from repository-relative paths and routes them.
