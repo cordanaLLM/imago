@@ -6,6 +6,7 @@
 set -euo pipefail
 
 CDEBUG_VERSION="${CDEBUG_VERSION:-0.0.19}"
+CRUN_VERSION="${CRUN_VERSION:?CRUN_VERSION must come from versions.json}"
 
 install_podman_packages() {
   echo "==> Installing Podman, Buildah, Skopeo, Netavark, and crun on Ubuntu 26.04..."
@@ -19,6 +20,18 @@ install_podman_packages() {
     aardvark-dns \
     slirp4netns \
     uidmap
+}
+
+# crun comes from the distribution archive; runtimes.crun in versions.json is the lowest
+# release the image accepts, so an archive older than the pin fails the build.
+verify_crun_version() {
+  local installed
+  installed="$(dpkg-query -W -f='${Version}' crun)"
+  if ! dpkg --compare-versions "${installed}" ge "${CRUN_VERSION}"; then
+    echo "crun ${installed} from the archive is older than the pinned ${CRUN_VERSION}" >&2
+    return 1
+  fi
+  echo "    crun ${installed} satisfies the pin ${CRUN_VERSION}."
 }
 
 configure_quadlet_and_rootless() {
@@ -57,6 +70,7 @@ install_cdebug() {
 
 main() {
   install_podman_packages
+  verify_crun_version
   configure_quadlet_and_rootless
   install_cdebug
   echo "==> 41-podman-runtime: Complete."

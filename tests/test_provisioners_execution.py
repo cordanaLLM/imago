@@ -15,7 +15,8 @@ from tests.harness.mock_runner import GIT_BASH, MockSandbox
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ROCM_ENV = {"ROCM_VERSION": "7.2.4", "ROCM_REPO": "https://repo.example.com/rocm", "ROCM_APT_SUITE": "noble"}
-K8S_ENV = {"CDEBUG_VERSION": "0.0.0"}
+K8S_ENV = {"CDEBUG_VERSION": "0.0.0", "K8S_VERSION": "1.37.0", "CRUN_VERSION": "1.20"}
+PODMAN_ENV = {"CDEBUG_VERSION": "0.0.0", "CRUN_VERSION": "1.20"}
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
 
@@ -119,12 +120,39 @@ class TestProvisionersExecution:
         assert "log-driver" in daemon_json
         assert "max-size" in daemon_json
 
-    def test_50_k8s_runtime_refuses_a_missing_cdebug_pin(self, tmp_path: Path, require_bash) -> None:
-        """Without the versions.json cdebug pin the script stops before it installs anything."""
-        res = MockSandbox(tmp_path).run_script(PROVISIONERS_DIR / "50-k8s-runtime.sh", env_vars={"CDEBUG_VERSION": ""})
+    @pytest.mark.parametrize("unset", sorted(K8S_ENV))
+    def test_50_k8s_runtime_refuses_a_missing_pin(self, tmp_path: Path, require_bash, unset: str) -> None:
+        """Without a versions.json pin the script stops before it installs anything."""
+        res = MockSandbox(tmp_path).run_script(PROVISIONERS_DIR / "50-k8s-runtime.sh", env_vars={**K8S_ENV, unset: ""})
         assert res.returncode != 0
-        assert "CDEBUG_VERSION" in res.stderr
+        assert unset in res.stderr
         assert not res.find_commands("apt-get")
+
+    def test_50_k8s_runtime_pins_the_kubernetes_patch_release(self, tmp_path: Path, require_bash) -> None:
+        """kubelet, kubeadm and kubectl install at the K8S_VERSION patch release, not the channel head."""
+        res = MockSandbox(tmp_path).run_script(PROVISIONERS_DIR / "50-k8s-runtime.sh", env_vars=K8S_ENV)
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+        installs = [cmd for cmd in res.find_commands("apt-get") if "kubeadm" in cmd]
+        assert len(installs) == 1
+        for package in ("kubelet", "kubeadm", "kubectl"):
+            assert f"{package}=1.37.0-*" in installs[0]
+
+    @pytest.mark.parametrize(
+        ("script", "env"),
+        [("50-k8s-runtime.sh", K8S_ENV), ("41-podman-runtime.sh", PODMAN_ENV)],
+    )
+    @pytest.mark.parametrize(("archive", "accepted"), [("1.19.2-1", False), ("1.20", True), ("1.21-1ubuntu3", True)])
+    @pytest.mark.usefixtures("require_bash")
+    def test_crun_archive_release_meets_the_pin(
+        self, tmp_path: Path, script: str, env: dict[str, str], archive: str, accepted: bool
+    ) -> None:
+        """An archive crun older than CRUN_VERSION fails the build; the pin itself and newer pass."""
+        res = MockSandbox(tmp_path).run_script(
+            PROVISIONERS_DIR / script, env_vars={**env, "MOCK_CRUN_VERSION": archive}
+        )
+        assert (res.returncode == 0) is accepted, res.stderr
+        if not accepted:
+            assert f"crun {archive} from the archive is older than the pinned 1.20" in res.stderr
 
     def test_50_k8s_runtime_containerd2_cri(self, tmp_path: Path, require_bash) -> None:
         """Verify 50-k8s-runtime.sh generates containerd 2.x CRI runtime schema with crun."""

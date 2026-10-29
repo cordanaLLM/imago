@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Copyright 2026 Lusoris
 # 50-k8s-runtime.sh — Install containerd CRI runtime and Kubernetes node components
-# Consumes K8S_MAJOR_MINOR injected dynamically from versions.json (Ubuntu 26.04).
+# Consumes K8S_MAJOR_MINOR, K8S_VERSION and CRUN_VERSION injected from versions.json (Ubuntu 26.04).
 # Complies with NASA/JPL Power of 10: short functions (<= 60 lines), checked returns.
 set -euo pipefail
 
 K8S_MAJOR_MINOR="${K8S_MAJOR_MINOR:-1.37}"
+K8S_VERSION="${K8S_VERSION:?K8S_VERSION must come from versions.json}"
+CRUN_VERSION="${CRUN_VERSION:?CRUN_VERSION must come from versions.json}"
 IMG_PAUSE="${IMG_PAUSE:-registry.k8s.io/pause:3.10}"
 CDEBUG_VERSION="${CDEBUG_VERSION:?CDEBUG_VERSION must come from versions.json}"
 
@@ -59,6 +61,18 @@ EOF
   sudo systemctl enable --now containerd
 }
 
+# crun comes from the distribution archive; runtimes.crun in versions.json is the lowest
+# release the image accepts, so an archive older than the pin fails the build.
+verify_crun_version() {
+  local installed
+  installed="$(dpkg-query -W -f='${Version}' crun)"
+  if ! dpkg --compare-versions "${installed}" ge "${CRUN_VERSION}"; then
+    echo "crun ${installed} from the archive is older than the pinned ${CRUN_VERSION}" >&2
+    return 1
+  fi
+  echo "    crun ${installed} satisfies the pin ${CRUN_VERSION}."
+}
+
 setup_kubernetes_packages() {
   echo "==> Setting up Kubernetes official repository (v${K8S_MAJOR_MINOR})..."
   sudo mkdir -p -m 755 /etc/apt/keyrings
@@ -69,10 +83,11 @@ setup_kubernetes_packages() {
     sudo tee /etc/apt/sources.list.d/kubernetes.list
 
   sudo apt-get update
+  # pkgs.k8s.io versions read <patch>-<revision> (1.37.0-1.1); the glob pins the patch release.
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    kubelet \
-    kubeadm \
-    kubectl
+    "kubelet=${K8S_VERSION}-*" \
+    "kubeadm=${K8S_VERSION}-*" \
+    "kubectl=${K8S_VERSION}-*"
 
   sudo apt-mark hold kubelet kubeadm kubectl
   sudo systemctl enable kubelet
@@ -99,6 +114,7 @@ install_cdebug() {
 
 main() {
   setup_containerd
+  verify_crun_version
   setup_kubernetes_packages
   install_cdebug
   echo "==> 50-k8s-runtime: Complete."
