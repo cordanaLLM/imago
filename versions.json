@@ -65,7 +65,7 @@
   },
   "build": {
     "packer": {
-      "version": "1.16.1",
+      "version": "1.16.2",
       "sha256_linux_amd64": "1ee97a23df2180919352029030e20b45c176861125421fd3a06c1d78a0565a47",
       "zip_sha256_linux_amd64": "af38a9e93e4ed1b9ca68206ae969c64c300c82a3dde46a780dfa629f0867f651"
     },
