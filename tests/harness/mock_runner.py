@@ -245,9 +245,21 @@ dpkg() {
     echo "${MOCK_ARCH}"
     return 0
   fi
+  # --compare-versions A ge B: sort -V stands in for the Debian ordering of plain releases.
+  if [ "$1" = "--compare-versions" ] && [ "$3" = "ge" ]; then
+    [ "$(printf '%s\n%s\n' "$2" "$4" | sort -V | head -n1)" = "$4" ]
+    return
+  fi
   return 0
 }
 export -f dpkg
+
+# dpkg-query -W -f='${Version}' reports MOCK_CRUN_VERSION, the release the archive serves.
+dpkg-query() {
+  echo "dpkg-query $*" >> "$SANDBOX_ROOT/journal_cmds.log"
+  printf '%s' "${MOCK_CRUN_VERSION:-1.21-1ubuntu3}"
+}
+export -f dpkg-query
 
 uname() {
   if [ "$1" = "-m" ]; then

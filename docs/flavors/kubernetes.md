@@ -111,6 +111,7 @@ Following [ADR-0010](../adr/0010-container-ecosystem-runtimes-and-tooling.md), a
 
 - **Default Runtime (`runc`)**: Guarantees universal compatibility with third-party tools, security scanners, and stock Kubernetes workloads.
 - **Accelerated Runtime (`crun`)**: Pre-registered in `/etc/containerd/config.toml` (`io.containerd.runc.v2` with `BinaryName = "crun"`). Cuts container creation latency by 2–3x and reduces per-container runtime resident memory from ~25MB to ~4MB.
+- **crun version floor**: `crun` comes from the Ubuntu archive; `runtimes.crun` in `versions.json` is the lowest release the image accepts, and `50-k8s-runtime.sh` and `41-podman-runtime.sh` fail the build when the archive ships an older one.
 
 To utilize `crun` on any deployment, define a cluster `RuntimeClass` and reference it in the Pod spec:
 
