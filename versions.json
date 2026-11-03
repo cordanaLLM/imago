@@ -65,9 +65,9 @@
   },
   "build": {
     "packer": {
-      "version": "1.16.1",
-      "sha256_linux_amd64": "1ee97a23df2180919352029030e20b45c176861125421fd3a06c1d78a0565a47",
-      "zip_sha256_linux_amd64": "af38a9e93e4ed1b9ca68206ae969c64c300c82a3dde46a780dfa629f0867f651"
+      "version": "1.16.2",
+      "sha256_linux_amd64": "6f64a1e9e71be8b3a2f0225ccf0d51b5446fbf79d9ad323e917a0126ab6ee38a",
+      "zip_sha256_linux_amd64": "abbfe0cf74985084112659b53e3565f264f70a20914c3b7c4f789f54f61c2414"
     },
     "packer_plugins": {
       "qemu": {

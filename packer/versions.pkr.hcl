@@ -1,6 +1,6 @@
 # Sourced from versions.json (build.packer.version, build.packer_plugins.*); enforced by tests/test_packer_pins.py.
 packer {
-  required_version = "= 1.16.1"
+  required_version = "= 1.16.2"
   required_plugins {
     qemu = {
       version = "= 1.1.7"
