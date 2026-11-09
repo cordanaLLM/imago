@@ -3,13 +3,13 @@ module github.com/cordanaLLM/imago
 go 1.27.3
 
 require (
-	github.com/golusoris/golusoris/core v0.12.1
+	github.com/golusoris/golusoris/core v0.12.2
 	github.com/google/jsonschema-go v0.4.3
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/fx v1.24.0
-	go.yaml.in/yaml/v3 v3.0.5
+	go.yaml.in/yaml/v3 v3.0.6
 )
 
 require (
