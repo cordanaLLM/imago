@@ -44,16 +44,22 @@ def get_all_provisioner_content() -> str:
 
 
 def is_pin_read_by_provisioners(name: str, provisioner_content: str) -> bool:
-    return bool(re.search(rf"\$\{{?{name}\b", provisioner_content))
+    """A pin is read when a line that is not a whole-line shell comment expands its exact name."""
+    pattern = re.compile(rf"\$\{{?{name}\b")
+    return any(pattern.search(line) for line in provisioner_content.splitlines() if not line.lstrip().startswith("#"))
 
 
 class TestVersionPinsConsumed:
     def test_pin_reader_detection(self) -> None:
         """A pin counts as read only through a shell expansion of its exact name."""
-        content = 'CUDA_VER="${CUDA_LEGACY:?}"\necho "$ROCM_VERSION"\n# ROCM_LEGACY_VERSION is gone\n'
+        content = (
+            'CUDA_VER="${CUDA_LEGACY:?}"\necho "$ROCM_VERSION"\n# ROCM_LEGACY_VERSION is gone\n'
+            '  # echo "$CUDA_MAINSTREAM"\n'
+        )
         assert is_pin_read_by_provisioners("CUDA_LEGACY", content)
         assert is_pin_read_by_provisioners("ROCM_VERSION", content)
         assert not is_pin_read_by_provisioners("ROCM_LEGACY_VERSION", content)
+        assert not is_pin_read_by_provisioners("CUDA_MAINSTREAM", content)
         assert not is_pin_read_by_provisioners("CUDA_LEGACY_EXTRA", content)
         assert not is_pin_read_by_provisioners("CUDA", content)
 
