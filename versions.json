@@ -17,9 +17,9 @@
       "cilium_operator": "quay.io/cilium/operator-generic:v1.20.1",
       "kube_vip": "ghcr.io/kube-vip/kube-vip:v1.2.3",
       "node_exporter": "docker.io/prom/node-exporter:v1.12.1",
-      "calico_cni": "docker.io/calico/cni:v3.32.2",
+      "calico_cni": "docker.io/calico/cni:v3.32.4",
       "calico_node": "docker.io/calico/node:v3.33.0",
-      "calico_controllers": "docker.io/calico/kube-controllers:v3.32.2",
+      "calico_controllers": "docker.io/calico/kube-controllers:v3.32.4",
       "flannel": "docker.io/flannel/flannel:v0.28.10",
       "flannel_cni": "docker.io/flannel/flannel-cni-plugin:v1.9.1-flannel1"
     }
@@ -33,7 +33,7 @@
       "rocm_bleeding_version": "7.2.4",
       "rocm_repo": "https://repo.radeon.com/rocm",
       "rocm_apt_suite": "noble",
-      "k8s_plugin": "docker.io/rocm/k8s-device-plugin:1.31.0.11"
+      "k8s_plugin": "docker.io/rocm/k8s-device-plugin:1.31.0.12"
     },
     "nvidia": {
       "legacy_driver": "580",
