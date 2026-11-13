@@ -30,7 +30,6 @@ locals {
   cuda_mainstream          = local.manifest.drivers.nvidia.cuda_mainstream
   cuda_modern              = local.manifest.drivers.nvidia.cuda_modern
   cuda_bleeding            = local.manifest.drivers.nvidia.cuda_bleeding
-  rocm_legacy_version      = local.manifest.drivers.amd.rocm_legacy_version
   rocm_bleeding_version    = local.manifest.drivers.amd.rocm_bleeding_version
   rocm_repo                = local.manifest.drivers.amd.rocm_repo
   rocm_apt_suite           = local.manifest.drivers.amd.rocm_apt_suite
@@ -75,7 +74,6 @@ locals {
     "CUDA_MODERN=${local.cuda_modern}",
     "CUDA_BLEEDING=${local.cuda_bleeding}",
     "ROCM_VERSION=${local.rocm_bleeding_version}",
-    "ROCM_LEGACY_VERSION=${local.rocm_legacy_version}",
     "ROCM_REPO=${local.rocm_repo}",
     "ROCM_APT_SUITE=${local.rocm_apt_suite}"
   ]

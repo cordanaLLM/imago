@@ -15,20 +15,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 BUILDS_HCL_PATH = REPO_ROOT / "packer" / "builds.pkr.hcl"
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
-EXCEPTIONS: dict[str, dict[str, str]] = {
-    "CUDA_LEGACY": {
-        "reason": "33-gpu-nvidia-legacy.sh installs the driver branch only; no script installs a CUDA toolkit of this version; wire it or drop the pin (#83 follow-up, category C, renewed 2026-10-29)",
-        "expires": "2026-11-08",
-    },
-    "CUDA_MAINSTREAM": {
-        "reason": "34-gpu-nvidia-mainstream.sh installs the driver branch only; no script installs a CUDA toolkit of this version; wire it or drop the pin (#83 follow-up, category C, renewed 2026-10-29)",
-        "expires": "2026-11-08",
-    },
-    "ROCM_LEGACY_VERSION": {
-        "reason": "32-gpu-amd-rocm.sh reads ROCM_VERSION only; wire it or drop the pin (#83 follow-up, category C, renewed 2026-10-29)",
-        "expires": "2026-11-08",
-    },
-}
+# Pins in local.common_env that no provisioner reads: name -> {reason, expires}.
+EXCEPTIONS: dict[str, dict[str, str]] = {}
 
 ENROOT_TARGETS = {
     "base-nvidia-datacenter",
