@@ -15,20 +15,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 BUILDS_HCL_PATH = REPO_ROOT / "packer" / "builds.pkr.hcl"
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
-EXCEPTIONS: dict[str, dict[str, str]] = {
-    "CUDA_LEGACY": {
-        "reason": "33-gpu-nvidia-legacy.sh installs the driver branch only; no script installs a CUDA toolkit of this version; wire it or drop the pin (#83 follow-up, category C, renewed 2026-10-29)",
-        "expires": "2026-11-08",
-    },
-    "CUDA_MAINSTREAM": {
-        "reason": "34-gpu-nvidia-mainstream.sh installs the driver branch only; no script installs a CUDA toolkit of this version; wire it or drop the pin (#83 follow-up, category C, renewed 2026-10-29)",
-        "expires": "2026-11-08",
-    },
-    "ROCM_LEGACY_VERSION": {
-        "reason": "32-gpu-amd-rocm.sh reads ROCM_VERSION only; wire it or drop the pin (#83 follow-up, category C, renewed 2026-10-29)",
-        "expires": "2026-11-08",
-    },
-}
+# Pins in local.common_env that no provisioner reads: name -> {reason, expires}.
+EXCEPTIONS: dict[str, dict[str, str]] = {}
 
 ENROOT_TARGETS = {
     "base-nvidia-datacenter",
@@ -56,10 +44,25 @@ def get_all_provisioner_content() -> str:
 
 
 def is_pin_read_by_provisioners(name: str, provisioner_content: str) -> bool:
-    return bool(re.search(rf"\$\{{?{name}\b", provisioner_content))
+    """A pin is read when a line that is not a whole-line shell comment expands its exact name."""
+    pattern = re.compile(rf"\$\{{?{name}\b")
+    return any(pattern.search(line) for line in provisioner_content.splitlines() if not line.lstrip().startswith("#"))
 
 
 class TestVersionPinsConsumed:
+    def test_pin_reader_detection(self) -> None:
+        """A pin counts as read only through a shell expansion of its exact name."""
+        content = (
+            'CUDA_VER="${CUDA_LEGACY:?}"\necho "$ROCM_VERSION"\n# ROCM_LEGACY_VERSION is gone\n'
+            '  # echo "$CUDA_MAINSTREAM"\n'
+        )
+        assert is_pin_read_by_provisioners("CUDA_LEGACY", content)
+        assert is_pin_read_by_provisioners("ROCM_VERSION", content)
+        assert not is_pin_read_by_provisioners("ROCM_LEGACY_VERSION", content)
+        assert not is_pin_read_by_provisioners("CUDA_MAINSTREAM", content)
+        assert not is_pin_read_by_provisioners("CUDA_LEGACY_EXTRA", content)
+        assert not is_pin_read_by_provisioners("CUDA", content)
+
     def test_exceptions_validity(self) -> None:
         """Verify exceptions: unexpired, present in common_env, and not consumed (no stale entry)."""
         common_env_names = get_common_env_names()

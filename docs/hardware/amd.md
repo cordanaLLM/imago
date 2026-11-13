@@ -24,7 +24,7 @@ Supported hardware: AMD Radeon RX 6000/7000/8000 series, Ryzen APUs, Radeon Pro,
 | Field | Value | Use |
 | :--- | :--- | :--- |
 | `rocm_bleeding_version` | `7.2.4` | the ROCm release the image installs (`ROCM_VERSION`) |
-| `rocm_legacy_version` | `6.4.4` | the last 6.x release; pinned, not yet installed by any flavor |
+| `rocm_legacy_version` | `6.4.4` | the last 6.x release; pinned and checked by `tools/ci/upstream_sources.py`, but not passed to the build and not installed by any flavor |
 | `rocm_repo` | `https://repo.radeon.com/rocm` | key `rocm.gpg.key` and `apt/<version>` live below it |
 | `rocm_apt_suite` | `noble` | the apt suite of the ROCm repository |
 
