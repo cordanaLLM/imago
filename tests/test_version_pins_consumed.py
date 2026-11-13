@@ -48,6 +48,15 @@ def is_pin_read_by_provisioners(name: str, provisioner_content: str) -> bool:
 
 
 class TestVersionPinsConsumed:
+    def test_pin_reader_detection(self) -> None:
+        """A pin counts as read only through a shell expansion of its exact name."""
+        content = 'CUDA_VER="${CUDA_LEGACY:?}"\necho "$ROCM_VERSION"\n# ROCM_LEGACY_VERSION is gone\n'
+        assert is_pin_read_by_provisioners("CUDA_LEGACY", content)
+        assert is_pin_read_by_provisioners("ROCM_VERSION", content)
+        assert not is_pin_read_by_provisioners("ROCM_LEGACY_VERSION", content)
+        assert not is_pin_read_by_provisioners("CUDA_LEGACY_EXTRA", content)
+        assert not is_pin_read_by_provisioners("CUDA", content)
+
     def test_exceptions_validity(self) -> None:
         """Verify exceptions: unexpired, present in common_env, and not consumed (no stale entry)."""
         common_env_names = get_common_env_names()

@@ -17,6 +17,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 ROCM_ENV = {"ROCM_VERSION": "7.2.4", "ROCM_REPO": "https://repo.example.com/rocm", "ROCM_APT_SUITE": "noble"}
 K8S_ENV = {"CDEBUG_VERSION": "0.0.0", "K8S_VERSION": "1.37.0", "CRUN_VERSION": "1.20"}
 PODMAN_ENV = {"CDEBUG_VERSION": "0.0.0", "CRUN_VERSION": "1.20"}
+NVIDIA_ENV = {
+    "33-gpu-nvidia-legacy.sh": {"NVIDIA_LEGACY_DRIVER": "580", "CUDA_LEGACY": "13.0"},
+    "34-gpu-nvidia-mainstream.sh": {"NVIDIA_MAINSTREAM_DRIVER": "595", "CUDA_MAINSTREAM": "13.2"},
+}
 PROVISIONERS_DIR = REPO_ROOT / "packer" / "provisioners"
 
 
@@ -106,6 +110,31 @@ class TestProvisionersExecution:
         assert res.returncode != 0
         assert unset in res.stderr
         assert not res.find_commands("curl")
+
+    @pytest.mark.parametrize(("script", "env"), sorted(NVIDIA_ENV.items()))
+    def test_nvidia_driver_branch_logs_its_cuda_label(
+        self, tmp_path: Path, require_bash, script: str, env: dict[str, str]
+    ) -> None:
+        """The legacy and mainstream branches read their CUDA pin and log it with the driver branch."""
+        res = MockSandbox(tmp_path).run_script(PROVISIONERS_DIR / script, env_vars=env)
+        assert res.returncode == 0, f"Script failed with stderr: {res.stderr}"
+        branch = next(value for name, value in env.items() if name.startswith("NVIDIA_"))
+        cuda = next(value for name, value in env.items() if name.startswith("CUDA_"))
+        assert f"branch {branch} (CUDA {cuda})" in res.stdout
+
+    @pytest.mark.parametrize(
+        ("script", "unset"), [(script, name) for script, env in sorted(NVIDIA_ENV.items()) for name in sorted(env)]
+    )
+    def test_nvidia_driver_branch_refuses_a_missing_pin(
+        self, tmp_path: Path, require_bash, script: str, unset: str
+    ) -> None:
+        """Without a versions.json value the script stops before it configures a repository."""
+        env = {**NVIDIA_ENV[script], unset: ""}
+        res = MockSandbox(tmp_path).run_script(PROVISIONERS_DIR / script, env_vars=env)
+        assert res.returncode != 0
+        assert unset in res.stderr
+        assert not res.find_commands("curl")
+        assert not res.find_commands("apt-get")
 
     def test_40_docker_runtime_execution(self, tmp_path: Path, require_bash) -> None:
         """Verify 40-docker-runtime.sh generates daemon.json and uses dynamic arch."""
